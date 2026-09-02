@@ -94,6 +94,7 @@ var relationships: Dictionary = {}
 var last_relationship_changes: Array[Dictionary] = []
 var last_knowledge_shares: Array[Dictionary] = []
 var knowledge_events: Array[Dictionary] = []
+var last_event_knowledge: Array[Dictionary] = []
 var last_decisions: Array[Dictionary] = []
 var decisions: Array[Dictionary] = []
 var decision_archive: Array[Dictionary] = []

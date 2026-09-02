@@ -83,6 +83,43 @@ const EVENTS := {
 	}
 }
 
+# Canonical facts that existing events can make publicly observable. Conditions
+# are checked against world state AFTER the event handler and clamping have run,
+# so an event the world absorbed teaches nothing. Every notable entity witnesses
+# these directly; nothing here creates decisions, relationships, or statistics.
+const EVENT_KNOWLEDGE := {
+	"drought": {
+		"id": "aster_food_shortage",
+		"subject_id": "aster",
+		"topic": "food_shortage",
+		"claim": "Aster does not have enough food",
+		"confidence": 90,
+		"truth_state": "true",
+		"fresh_for_years": 3,
+		"conditions": [{"field": "food_level", "op": "lte", "value": 1}]
+	},
+	"unrest": {
+		"id": "aster_unrest",
+		"subject_id": "aster",
+		"topic": "danger_unrest",
+		"claim": "Order is breaking down in Aster",
+		"confidence": 90,
+		"truth_state": "true",
+		"fresh_for_years": 3,
+		"conditions": [{"field": "stability_level", "op": "lte", "value": 0}]
+	},
+	"good_harvest": {
+		"id": "aster_surplus",
+		"subject_id": "aster",
+		"topic": "surplus",
+		"claim": "Aster's stores are full again",
+		"confidence": 90,
+		"truth_state": "true",
+		"fresh_for_years": 3,
+		"conditions": [{"field": "food_level", "op": "gte", "value": 2}]
+	}
+}
+
 var state := WorldState.new()
 var interpretation_system := InterpretationSystem.new()
 var decision_rules := DecisionRules.new()
@@ -170,6 +207,7 @@ func advance_year() -> Dictionary:
 	state.last_interpretation = ""
 	state.last_interpretation_id = ""
 	state.clamp_values()
+	state.last_event_knowledge = tick_event_knowledge()
 	state_changed.emit()
 	return {"ok": true, "message": state.last_result}
 
@@ -293,6 +331,96 @@ func tick_decisions() -> Array[Dictionary]:
 			continue
 		made.append(state.record_decision(decision))
 	return made
+
+
+func tick_event_knowledge() -> Array[Dictionary]:
+	# Turns the current event into one canonical fact, learned directly by every
+	# notable entity. Repeat observations refresh the same stable knowledge id.
+	var learned: Array[Dictionary] = []
+	var template: Dictionary = EVENT_KNOWLEDGE.get(state.current_event_id, {})
+	if template.is_empty():
+		return learned
+	for condition: Dictionary in template.get("conditions", []):
+		if not _event_condition_met(condition):
+			return learned
+	var knowledge_id := str(template["id"])
+	var fact := {
+		"id": knowledge_id,
+		"subject_id": str(template["subject_id"]),
+		"topic": str(template["topic"]),
+		"claim": str(template["claim"]),
+		"confidence": int(template["confidence"]),
+		"truth_state": str(template["truth_state"]),
+		"objective_truth_state": str(template["truth_state"]),
+		"fresh_for_years": int(template["fresh_for_years"])
+	}
+	var entity_ids: Array = state.notable_entities.keys()
+	entity_ids.sort()
+	for entity_id_value in entity_ids:
+		var entity_id := str(entity_id_value)
+		var refreshed := state.has_knowledge(entity_id, knowledge_id)
+		var record := state.learn_direct_knowledge(entity_id, fact)
+		if record.is_empty():
+			continue
+		learned.append({
+			"entity_id": entity_id,
+			"knowledge_id": knowledge_id,
+			"event_id": state.current_event_id,
+			"topic": str(record["topic"]),
+			"confidence": int(record["confidence"]),
+			"year": state.year,
+			"refreshed": refreshed
+		})
+	_log_event_knowledge(learned)
+	return learned
+
+
+func _event_condition_met(condition: Dictionary) -> bool:
+	var left := _event_state_value(str(condition["field"]))
+	var right := int(condition["value"])
+	match str(condition["op"]):
+		"gte":
+			return left >= right
+		"lte":
+			return left <= right
+		"eq":
+			return left == right
+	return false
+
+
+func _event_state_value(field: String) -> int:
+	match field:
+		"food_level":
+			return state.food_level
+		"stability_level":
+			return state.stability_level
+		"prosperity_level":
+			return state.prosperity_level
+		"military_level":
+			return state.military_level
+		"faith":
+			return state.faith
+		"population":
+			return state.population
+	return 0
+
+
+func _log_event_knowledge(learned: Array[Dictionary]) -> void:
+	if not debug_logging_enabled or learned.is_empty():
+		return
+	var first: Dictionary = learned[0]
+	var names: Array[String] = []
+	for entry: Dictionary in learned:
+		names.append(str(entry["entity_id"]))
+	print("[Worldsim][Year %d][Event Knowledge] event=%s fact=%s topic=%s confidence=%d %s=%s" % [
+		state.year,
+		str(first["event_id"]),
+		str(first["knowledge_id"]),
+		str(first["topic"]),
+		int(first["confidence"]),
+		"refreshed_for" if bool(first["refreshed"]) else "learned_by",
+		", ".join(names)
+	])
 
 
 func evaluate_decisions(actor_id: String) -> Array[Dictionary]:

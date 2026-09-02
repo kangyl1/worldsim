@@ -1,9 +1,14 @@
 extends Control
 
 const ACTION_KEYS := ["send_rain", "bless_harvest", "speak_mortal", "do_nothing"]
+# Events that read as an active crisis on the map.
+const CRISIS_EVENTS := ["drought", "unrest"]
 
 var simulation := WorldSimulation.new()
 var action_buttons: Array[Button] = []
+# Selection is interface state. It deliberately does not live in WorldState,
+# so looking at a place can never change what is true about the world.
+var selected_location_id: String = "aster"
 
 @onready var year_value: Label = %YearValue
 @onready var power_value: Label = %PowerValue
@@ -13,9 +18,9 @@ var action_buttons: Array[Button] = []
 @onready var time_value: Label = %TimeValue
 @onready var event_title: Label = %EventTitle
 @onready var event_description: Label = %EventDescription
-@onready var event_ascii: Label = %EventAscii
 @onready var result_text: RichTextLabel = %ResultText
-@onready var status_text: RichTextLabel = %StatusText
+@onready var world_map: WorldMapView = %WorldMap
+@onready var location_text: RichTextLabel = %LocationText
 @onready var history_text: RichTextLabel = %HistoryText
 @onready var beliefs_text: RichTextLabel = %BeliefsText
 @onready var notable_text: RichTextLabel = %NotableText
@@ -28,6 +33,11 @@ func _ready() -> void:
 		action_buttons[index].pressed.connect(_on_action_pressed.bind(index))
 	advance_button.pressed.connect(_on_advance_pressed)
 	simulation.state_changed.connect(_render)
+	var location_names := {}
+	for location_id: String in simulation.state.get_location_ids():
+		location_names[location_id] = str(simulation.state.get_location(location_id)["name"])
+	world_map.set_locations(location_names)
+	world_map.location_clicked.connect(_on_location_clicked)
 	_render()
 
 
@@ -77,7 +87,6 @@ func _render() -> void:
 
 	event_title.text = str(event["title"])
 	event_description.text = str(event["description"])
-	event_ascii.text = str(event["ascii"])
 	if state.last_result.is_empty():
 		result_text.text = "[color=#7f898b]Awaiting divine input.[/color]"
 	elif state.last_interpretation.is_empty():
@@ -89,7 +98,8 @@ func _render() -> void:
 		)
 
 	_render_actions()
-	_render_status()
+	_render_map()
+	_render_location()
 	_render_history()
 	_render_beliefs()
 	_render_notable_people()
@@ -108,16 +118,103 @@ func _render_actions() -> void:
 		action_buttons[index].disabled = state.action_taken or state.divine_power < cost
 
 
-func _render_status() -> void:
+func _on_location_clicked(location_id: String) -> void:
+	if simulation.state.get_location(location_id).is_empty():
+		return
+	selected_location_id = location_id
+	_render()
+
+
+func _render_map() -> void:
 	var state := simulation.state
-	status_text.text = (
-		"[color=#68757c]SETTLEMENT[/color]       ASTER\n\n" +
-		"[color=#68757c]POPULATION[/color]       %d\n\n" % state.population +
-		"[color=#68757c]FOOD[/color]             %s\n\n" % _status_colour(state.food_name(), state.food_level) +
-		"[color=#68757c]STABILITY[/color]        %s\n\n" % _status_colour(state.stability_name(), state.stability_level) +
-		"[color=#68757c]PROSPERITY[/color]       %s\n\n" % _status_colour(state.prosperity_name(), state.prosperity_level) +
-		"[color=#68757c]MILITARY[/color]         %s" % _status_colour(state.military_name(), state.military_level)
-	)
+	var markers := {}
+	for location_id: String in state.get_location_ids():
+		markers[location_id] = {
+			"crisis": _location_in_crisis(location_id),
+			"divine": _location_is_holy(location_id)
+		}
+	world_map.set_markers(markers)
+	world_map.set_selected_location(selected_location_id)
+
+
+func _location_in_crisis(location_id: String) -> bool:
+	# Only the capital carries simulated conditions in this prototype.
+	if not bool(simulation.state.get_location(location_id).get("simulated", false)):
+		return false
+	return simulation.state.current_event_id in CRISIS_EVENTS
+
+
+func _location_is_holy(location_id: String) -> bool:
+	if not bool(simulation.state.get_location(location_id).get("simulated", false)):
+		return false
+	return not simulation.state.beliefs.is_empty()
+
+
+func _render_location() -> void:
+	var state := simulation.state
+	var location := state.get_location(selected_location_id)
+	if location.is_empty():
+		location_text.text = "[color=#68757c](No location selected.)[/color]"
+		return
+	var lines: Array[String] = [
+		"[color=#e5e1d8]%s[/color]" % str(location["name"]).to_upper(),
+		"[color=#68757c]%s[/color]\n" % _location_kind_label(str(location["kind"]))
+	]
+	if bool(location.get("simulated", false)):
+		lines.append_array(_simulated_location_lines())
+	else:
+		lines.append_array(_placeholder_location_lines(location))
+	location_text.text = "\n".join(lines)
+
+
+func _location_kind_label(kind: String) -> String:
+	match kind:
+		"capital":
+			return "Capital of the Kingdom"
+		"farming_village":
+			return "Farming village of the Kingdom"
+		"frontier_settlement":
+			return "Frontier settlement of the Kingdom"
+	return "Settlement of the Kingdom"
+
+
+func _simulated_location_lines() -> Array[String]:
+	# Every value below is read from the simulation. Nothing is stored here.
+	var state := simulation.state
+	var lines: Array[String] = [
+		"[color=#68757c]POPULATION[/color]   %d" % state.population,
+		"[color=#68757c]FOOD[/color]         %s" % _status_colour(state.food_name(), state.food_level),
+		"[color=#68757c]STABILITY[/color]    %s" % _status_colour(state.stability_name(), state.stability_level),
+		"[color=#68757c]PROSPERITY[/color]   %s" % _status_colour(state.prosperity_name(), state.prosperity_level),
+		"[color=#68757c]MILITARY[/color]     %s" % _status_colour(state.military_name(), state.military_level),
+		""
+	]
+	if _location_in_crisis(selected_location_id):
+		lines.append("[color=#d66a5e]! %s[/color]" % str(simulation.get_current_event()["title"]))
+	else:
+		lines.append("[color=#68757c]Current situation:[/color] [color=#9ca5a4]%s[/color]" % str(
+			simulation.get_current_event()["title"]
+		))
+	lines.append("")
+	lines.append("[color=#68757c]IMPORTANT PEOPLE[/color]")
+	var entity_ids := _sorted_entity_ids()
+	if entity_ids.is_empty():
+		lines.append("[color=#68757c](none)[/color]")
+	for entity_id: String in entity_ids:
+		var entity := state.get_notable_entity(entity_id)
+		lines.append("[color=#9ca5a4]  %s[/color]" % str(entity.get("name", entity_id)))
+	return lines
+
+
+func _placeholder_location_lines(location: Dictionary) -> Array[String]:
+	return [
+		"[color=#68757c]Primary role:[/color] [color=#9ca5a4]%s[/color]" % str(location.get("role", "Unknown")),
+		"",
+		"[color=#68757c]Detailed settlement simulation:[/color]",
+		"[color=#73627f]Not yet implemented.[/color]",
+		"",
+		"[color=#68757c]Kingdom-wide conditions are shown under the capital.[/color]"
+	]
 
 
 func _status_colour(value: String, level: int) -> String:

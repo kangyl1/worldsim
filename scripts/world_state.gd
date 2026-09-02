@@ -13,6 +13,11 @@ const KNOWLEDGE_CONFIDENCE_MIN := 0
 const KNOWLEDGE_CONFIDENCE_MAX := 100
 const DEFAULT_KNOWLEDGE_FRESH_YEARS := 3
 const MAX_STORED_DECISIONS := 40
+# Version 0.1 keeps one region and three settlements, per the GDD prototype
+# scope. Locations carry identity only: no statistics are stored here, because
+# the simulation still tracks kingdom-wide values. Per-settlement state can be
+# added later without the interface changing shape.
+const LOCATION_ORDER := ["aster", "westfield", "frontier"]
 
 var year: int = 12
 var population: int = 486
@@ -90,6 +95,7 @@ var reputation_pressure := {
 var reputation_changes: Array[String] = []
 var interpretation_history: Array[String] = []
 var notable_entities: Dictionary = {}
+var locations: Dictionary = {}
 var relationships: Dictionary = {}
 var last_relationship_changes: Array[Dictionary] = []
 var last_knowledge_shares: Array[Dictionary] = []
@@ -107,6 +113,9 @@ var history_archive: Array[String] = [
 
 
 func _init() -> void:
+	add_location("aster", "Aster", "capital", "Seat of the kingdom", true)
+	add_location("westfield", "Westfield", "farming_village", "Agriculture", false)
+	add_location("frontier", "Frontier", "frontier_settlement", "Border watch", false)
 	# These IDs are stable handles for later knowledge, rumor, and consequence data.
 	add_notable_entity("aster_king", "The King", "person", ["ambitious"])
 	add_notable_entity("mara", "Mara", "person", ["compassionate", "loyal"])
@@ -171,6 +180,45 @@ func add_notable_entity(
 		"knowledge": {}
 	}
 	return true
+
+
+func add_location(
+	location_id: String,
+	display_name: String,
+	location_kind: String,
+	role: String,
+	simulated: bool
+) -> bool:
+	if location_id.is_empty() or locations.has(location_id):
+		return false
+	locations[location_id] = {
+		"id": location_id,
+		"name": display_name,
+		"kind": location_kind,
+		"role": role,
+		# False means this settlement has no simulated statistics of its own yet.
+		"simulated": simulated
+	}
+	return true
+
+
+func get_location(location_id: String) -> Dictionary:
+	return locations.get(location_id, {}).duplicate(true)
+
+
+func get_location_ids() -> Array[String]:
+	var ordered: Array[String] = []
+	for location_id: String in LOCATION_ORDER:
+		if locations.has(location_id):
+			ordered.append(location_id)
+	var extra: Array[String] = []
+	for location_id_value in locations.keys():
+		var location_id := str(location_id_value)
+		if location_id not in ordered:
+			extra.append(location_id)
+	extra.sort()
+	ordered.append_array(extra)
+	return ordered
 
 
 func get_notable_entity(entity_id: String) -> Dictionary:

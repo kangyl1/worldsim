@@ -1,0 +1,485 @@
+[gd_scene load_steps=11 format=3]
+
+[ext_resource type="Script" path="res://Main.gd" id="1_main"]
+
+[sub_resource type="SystemFont" id="SystemFont_mono"]
+font_names = PackedStringArray("Menlo", "Monaco", "Consolas", "Courier New", "monospace")
+
+[sub_resource type="StyleBoxFlat" id="Style_panel"]
+content_margin_left = 14.0
+content_margin_top = 12.0
+content_margin_right = 14.0
+content_margin_bottom = 12.0
+bg_color = Color(0.031, 0.043, 0.048, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.19, 0.24, 0.25, 1)
+
+[sub_resource type="StyleBoxFlat" id="Style_button"]
+content_margin_left = 14.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+bg_color = Color(0.038, 0.055, 0.061, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.19, 0.27, 0.29, 1)
+
+[sub_resource type="StyleBoxFlat" id="Style_button_hover"]
+content_margin_left = 14.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+bg_color = Color(0.047, 0.078, 0.086, 1)
+border_width_left = 2
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.29, 0.65, 0.7, 1)
+
+[sub_resource type="StyleBoxFlat" id="Style_button_pressed"]
+content_margin_left = 14.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+bg_color = Color(0.06, 0.105, 0.112, 1)
+border_width_left = 2
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.39, 0.78, 0.82, 1)
+
+[sub_resource type="StyleBoxFlat" id="Style_button_disabled"]
+content_margin_left = 14.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+bg_color = Color(0.025, 0.033, 0.036, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.105, 0.13, 0.135, 1)
+
+[sub_resource type="StyleBoxFlat" id="Style_empty"]
+bg_color = Color(0, 0, 0, 0)
+
+[sub_resource type="StyleBoxLine" id="Style_separator"]
+color = Color(0.18, 0.23, 0.24, 1)
+thickness = 1
+vertical = true
+
+[sub_resource type="StyleBoxLine" id="Style_separator_h"]
+color = Color(0.18, 0.23, 0.24, 1)
+thickness = 1
+
+[sub_resource type="Theme" id="Theme_terminal"]
+default_font = SubResource("SystemFont_mono")
+default_font_size = 14
+Button/colors/font_color = Color(0.48, 0.79, 0.83, 1)
+Button/colors/font_disabled_color = Color(0.29, 0.34, 0.35, 1)
+Button/colors/font_hover_color = Color(0.72, 0.9, 0.92, 1)
+Button/colors/font_pressed_color = Color(0.87, 0.95, 0.95, 1)
+Button/constants/outline_size = 0
+Button/font_sizes/font_size = 14
+Button/styles/disabled = SubResource("Style_button_disabled")
+Button/styles/focus = SubResource("Style_empty")
+Button/styles/hover = SubResource("Style_button_hover")
+Button/styles/normal = SubResource("Style_button")
+Button/styles/pressed = SubResource("Style_button_pressed")
+HSeparator/styles/separator = SubResource("Style_separator_h")
+Label/colors/font_color = Color(0.88, 0.86, 0.82, 1)
+PanelContainer/styles/panel = SubResource("Style_panel")
+RichTextLabel/colors/default_color = Color(0.88, 0.86, 0.82, 1)
+RichTextLabel/styles/normal = SubResource("Style_empty")
+VSeparator/styles/separator = SubResource("Style_separator")
+
+[node name="Main" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("Theme_terminal")
+script = ExtResource("1_main")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.015, 0.02, 0.022, 1)
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 16
+
+[node name="MainColumn" type="VBoxContainer" parent="Margin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="TopBar" type="PanelContainer" parent="Margin/MainColumn"]
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+
+[node name="TopRow" type="HBoxContainer" parent="Margin/MainColumn/TopBar"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Brand" type="VBoxContainer" parent="Margin/MainColumn/TopBar/TopRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 1
+
+[node name="Title" type="Label" parent="Margin/MainColumn/TopBar/TopRow/Brand"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.45, 0.78, 0.59, 1)
+theme_override_font_sizes/font_size = 23
+text = "WORLDSIM"
+
+[node name="Subtitle" type="Label" parent="Margin/MainColumn/TopBar/TopRow/Brand"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.36, 0.42, 0.43, 1)
+theme_override_font_sizes/font_size = 11
+text = "CIVILIZATION INTERPRETATION CONSOLE"
+
+[node name="Sep1" type="VSeparator" parent="Margin/MainColumn/TopBar/TopRow"]
+layout_mode = 2
+
+[node name="YearStat" type="VBoxContainer" parent="Margin/MainColumn/TopBar/TopRow"]
+custom_minimum_size = Vector2(72, 0)
+layout_mode = 2
+
+[node name="Caption" type="Label" parent="Margin/MainColumn/TopBar/TopRow/YearStat"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.46, 0.48, 1)
+theme_override_font_sizes/font_size = 10
+text = "YEAR"
+
+[node name="YearValue" type="Label" parent="Margin/MainColumn/TopBar/TopRow/YearStat"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "12"
+
+[node name="PowerStat" type="VBoxContainer" parent="Margin/MainColumn/TopBar/TopRow"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+
+[node name="Caption" type="Label" parent="Margin/MainColumn/TopBar/TopRow/PowerStat"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.46, 0.48, 1)
+theme_override_font_sizes/font_size = 10
+text = "DIVINE POWER"
+
+[node name="PowerValue" type="Label" parent="Margin/MainColumn/TopBar/TopRow/PowerStat"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.91, 0.73, 0.37, 1)
+theme_override_font_sizes/font_size = 16
+text = "6 / 8"
+
+[node name="FollowersStat" type="VBoxContainer" parent="Margin/MainColumn/TopBar/TopRow"]
+custom_minimum_size = Vector2(86, 0)
+layout_mode = 2
+
+[node name="Caption" type="Label" parent="Margin/MainColumn/TopBar/TopRow/FollowersStat"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.46, 0.48, 1)
+theme_override_font_sizes/font_size = 10
+text = "FOLLOWERS"
+
+[node name="FollowersValue" type="Label" parent="Margin/MainColumn/TopBar/TopRow/FollowersStat"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "412"
+
+[node name="FaithStat" type="VBoxContainer" parent="Margin/MainColumn/TopBar/TopRow"]
+custom_minimum_size = Vector2(70, 0)
+layout_mode = 2
+
+[node name="Caption" type="Label" parent="Margin/MainColumn/TopBar/TopRow/FaithStat"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.46, 0.48, 1)
+theme_override_font_sizes/font_size = 10
+text = "FAITH"
+
+[node name="FaithValue" type="Label" parent="Margin/MainColumn/TopBar/TopRow/FaithStat"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.67, 0.51, 0.72, 1)
+theme_override_font_sizes/font_size = 16
+text = "34%"
+
+[node name="ReputationStat" type="VBoxContainer" parent="Margin/MainColumn/TopBar/TopRow"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+
+[node name="Caption" type="Label" parent="Margin/MainColumn/TopBar/TopRow/ReputationStat"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.46, 0.48, 1)
+theme_override_font_sizes/font_size = 10
+text = "REPUTATION"
+
+[node name="ReputationValue" type="Label" parent="Margin/MainColumn/TopBar/TopRow/ReputationStat"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "UNKNOWN"
+
+[node name="Sep2" type="VSeparator" parent="Margin/MainColumn/TopBar/TopRow"]
+layout_mode = 2
+
+[node name="TimeStat" type="VBoxContainer" parent="Margin/MainColumn/TopBar/TopRow"]
+custom_minimum_size = Vector2(142, 0)
+layout_mode = 2
+
+[node name="Caption" type="Label" parent="Margin/MainColumn/TopBar/TopRow/TimeStat"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.46, 0.48, 1)
+theme_override_font_sizes/font_size = 10
+text = "TIME FLOW"
+
+[node name="TimeValue" type="Label" parent="Margin/MainColumn/TopBar/TopRow/TimeStat"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.46, 0.78, 0.83, 1)
+theme_override_font_sizes/font_size = 13
+text = "AWAITING CHOICE"
+
+[node name="UpperRow" type="HBoxContainer" parent="Margin/MainColumn"]
+layout_mode = 2
+size_flags_vertical = 3
+stretch_ratio = 1.65
+theme_override_constants/separation = 10
+
+[node name="EventPanel" type="PanelContainer" parent="Margin/MainColumn/UpperRow"]
+custom_minimum_size = Vector2(330, 320)
+layout_mode = 2
+size_flags_horizontal = 3
+stretch_ratio = 1.0
+
+[node name="EventColumn" type="VBoxContainer" parent="Margin/MainColumn/UpperRow/EventPanel"]
+layout_mode = 2
+theme_override_constants/separation = 9
+
+[node name="PanelLabel" type="Label" parent="Margin/MainColumn/UpperRow/EventPanel/EventColumn"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.42, 0.49, 0.5, 1)
+theme_override_font_sizes/font_size = 11
+text = "EVENT  /  WORLD CONDITION"
+
+[node name="Rule" type="HSeparator" parent="Margin/MainColumn/UpperRow/EventPanel/EventColumn"]
+layout_mode = 2
+
+[node name="EventTitle" type="Label" parent="Margin/MainColumn/UpperRow/EventPanel/EventColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.91, 0.73, 0.37, 1)
+theme_override_font_sizes/font_size = 18
+text = "THE LONG DROUGHT"
+
+[node name="EventDescription" type="Label" parent="Margin/MainColumn/UpperRow/EventPanel/EventColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.73, 0.73, 0.69, 1)
+theme_override_font_sizes/font_size = 13
+text = "For three months, no rain has fallen."
+autowrap_mode = 2
+
+[node name="EventAscii" type="Label" parent="Margin/MainColumn/UpperRow/EventPanel/EventColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.38, 0.5, 0.51, 1)
+theme_override_font_sizes/font_size = 14
+text = "       _\n      /_\\\n   o  | |  o\n  /|\\ | | /|\\\n  / \\ |_| / \\"
+horizontal_alignment = 1
+
+[node name="ChoicePanel" type="PanelContainer" parent="Margin/MainColumn/UpperRow"]
+custom_minimum_size = Vector2(440, 320)
+layout_mode = 2
+size_flags_horizontal = 3
+stretch_ratio = 1.25
+
+[node name="ChoiceColumn" type="VBoxContainer" parent="Margin/MainColumn/UpperRow/ChoicePanel"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="PanelLabel" type="Label" parent="Margin/MainColumn/UpperRow/ChoicePanel/ChoiceColumn"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.46, 0.78, 0.83, 1)
+theme_override_font_sizes/font_size = 11
+text = "CHOOSE YOUR ACTION  /  KEYS 1–4"
+
+[node name="Rule" type="HSeparator" parent="Margin/MainColumn/UpperRow/ChoicePanel/ChoiceColumn"]
+layout_mode = 2
+
+[node name="Action1" type="Button" parent="Margin/MainColumn/UpperRow/ChoicePanel/ChoiceColumn"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+focus_mode = 0
+text = "1.  SEND RAIN\n     Cost: 2 Power"
+alignment = 0
+
+[node name="Action2" type="Button" parent="Margin/MainColumn/UpperRow/ChoicePanel/ChoiceColumn"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+focus_mode = 0
+text = "2.  BLESS HARVEST\n     Cost: 1 Power"
+alignment = 0
+
+[node name="Action3" type="Button" parent="Margin/MainColumn/UpperRow/ChoicePanel/ChoiceColumn"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+focus_mode = 0
+text = "3.  SPEAK THROUGH A MORTAL\n     Cost: 1 Power"
+alignment = 0
+
+[node name="Action4" type="Button" parent="Margin/MainColumn/UpperRow/ChoicePanel/ChoiceColumn"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+focus_mode = 0
+text = "4.  DO NOTHING\n     Cost: 0 Power"
+alignment = 0
+
+[node name="ResultText" type="RichTextLabel" parent="Margin/MainColumn/UpperRow/ChoicePanel/ChoiceColumn"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 11
+text = "Awaiting divine input."
+bbcode_enabled = true
+fit_content = false
+scroll_active = false
+
+[node name="StatusPanel" type="PanelContainer" parent="Margin/MainColumn/UpperRow"]
+custom_minimum_size = Vector2(290, 320)
+layout_mode = 2
+size_flags_horizontal = 3
+stretch_ratio = 0.82
+
+[node name="StatusColumn" type="VBoxContainer" parent="Margin/MainColumn/UpperRow/StatusPanel"]
+layout_mode = 2
+theme_override_constants/separation = 9
+
+[node name="PanelLabel" type="Label" parent="Margin/MainColumn/UpperRow/StatusPanel/StatusColumn"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.42, 0.49, 0.5, 1)
+theme_override_font_sizes/font_size = 11
+text = "KINGDOM STATUS"
+
+[node name="Rule" type="HSeparator" parent="Margin/MainColumn/UpperRow/StatusPanel/StatusColumn"]
+layout_mode = 2
+
+[node name="StatusText" type="RichTextLabel" parent="Margin/MainColumn/UpperRow/StatusPanel/StatusColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+text = "SETTLEMENT       ASTER\n\nPOPULATION       486\n\nFOOD             CRITICAL\n\nSTABILITY        UNEASY\n\nPROSPERITY       POOR\n\nMILITARY         WEAK"
+fit_content = true
+scroll_active = false
+
+[node name="LowerRow" type="HBoxContainer" parent="Margin/MainColumn"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="HistoryPanel" type="PanelContainer" parent="Margin/MainColumn/LowerRow"]
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+size_flags_horizontal = 3
+stretch_ratio = 2.0
+
+[node name="HistoryColumn" type="VBoxContainer" parent="Margin/MainColumn/LowerRow/HistoryPanel"]
+layout_mode = 2
+theme_override_constants/separation = 7
+
+[node name="PanelLabel" type="Label" parent="Margin/MainColumn/LowerRow/HistoryPanel/HistoryColumn"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.42, 0.49, 0.5, 1)
+theme_override_font_sizes/font_size = 11
+text = "HISTORY LOG  /  NEWEST FIRST"
+
+[node name="Rule" type="HSeparator" parent="Margin/MainColumn/LowerRow/HistoryPanel/HistoryColumn"]
+layout_mode = 2
+
+[node name="HistoryText" type="RichTextLabel" parent="Margin/MainColumn/LowerRow/HistoryPanel/HistoryColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+text = "Year 12 - The people prayed for help.\n\nYear 11 - The river began to recede.\n\nYear 8 - Aster was founded beside the Grey River.\n\nYear 1 - The world began."
+scroll_active = true
+
+[node name="BeliefsPanel" type="PanelContainer" parent="Margin/MainColumn/LowerRow"]
+custom_minimum_size = Vector2(330, 150)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="BeliefsColumn" type="VBoxContainer" parent="Margin/MainColumn/LowerRow/BeliefsPanel"]
+layout_mode = 2
+theme_override_constants/separation = 7
+
+[node name="PanelLabel" type="Label" parent="Margin/MainColumn/LowerRow/BeliefsPanel/BeliefsColumn"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.68, 0.51, 0.74, 1)
+theme_override_font_sizes/font_size = 11
+text = "ACTIVE BELIEFS  /  INTERPRETATION"
+
+[node name="Rule" type="HSeparator" parent="Margin/MainColumn/LowerRow/BeliefsPanel/BeliefsColumn"]
+layout_mode = 2
+
+[node name="BeliefsText" type="RichTextLabel" parent="Margin/MainColumn/LowerRow/BeliefsPanel/BeliefsColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+text = "(None)"
+scroll_active = true
+
+[node name="Footer" type="PanelContainer" parent="Margin/MainColumn"]
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+
+[node name="FooterRow" type="HBoxContainer" parent="Margin/MainColumn/Footer"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Hint" type="Label" parent="Margin/MainColumn/Footer/FooterRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.38, 0.44, 0.45, 1)
+theme_override_font_sizes/font_size = 11
+text = "ACTION → INTERPRETATION → BELIEF → BEHAVIOUR → HISTORY"
+
+[node name="AdvanceButton" type="Button" parent="Margin/MainColumn/Footer/FooterRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(240, 0)
+layout_mode = 2
+focus_mode = 0
+disabled = true
+text = "ADVANCE YEAR  [ENTER / SPACE]"

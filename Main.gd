@@ -6,6 +6,10 @@ const CRISIS_EVENTS := ["drought", "unrest"]
 # Monospaced rows: name on the left, power cost right-aligned to this width.
 const ACTION_ROW_WIDTH := 34
 const PERSON_META_PREFIX := "person:"
+const DEV_TAB_META := "dev_tab:"
+const DEV_PERSON_META := "dev_person:"
+const DEV_SECTIONS := ["world", "locations", "people", "knowledge", "decisions", "belief", "history"]
+const DEV_LIST_LIMIT := 24
 const BACK_META := "back"
 # Player-readable names for the intentions the decision engine records.
 const DECISION_LABELS := {
@@ -24,6 +28,10 @@ var selected_location_id: String = "aster"
 var hovered_action_index: int = -1
 var hovered_person_id: String = ""
 var selected_person_id: String = ""
+# Developer Mode is interface state only. The simulation never learns it exists.
+var developer_mode_enabled: bool = false
+var developer_section: String = "world"
+var developer_person_id: String = ""
 
 @onready var year_value: Label = %YearValue
 @onready var power_value: Label = %PowerValue
@@ -39,8 +47,10 @@ var selected_person_id: String = ""
 @onready var location_text: RichTextLabel = %LocationText
 @onready var history_text: RichTextLabel = %HistoryText
 @onready var beliefs_text: RichTextLabel = %BeliefsText
-@onready var notable_text: RichTextLabel = %NotableText
-@onready var notable_panel: PanelContainer = %NotablePanel
+@onready var dev_button: Button = %DevButton
+@onready var developer_overlay: PanelContainer = %DeveloperOverlay
+@onready var developer_tabs: RichTextLabel = %DeveloperTabs
+@onready var developer_text: RichTextLabel = %DeveloperText
 @onready var advance_button: Button = %AdvanceButton
 
 
@@ -51,6 +61,9 @@ func _ready() -> void:
 		action_buttons[index].mouse_entered.connect(_on_action_hovered.bind(index))
 		action_buttons[index].mouse_exited.connect(_on_action_unhovered.bind(index))
 	advance_button.pressed.connect(_on_advance_pressed)
+	dev_button.pressed.connect(toggle_developer_mode)
+	developer_tabs.meta_clicked.connect(_on_developer_meta)
+	developer_text.meta_clicked.connect(_on_developer_meta)
 	simulation.state_changed.connect(_render)
 	var map_locations := {}
 	for location_id: String in simulation.state.get_location_ids():
@@ -74,10 +87,8 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		advance_year()
 		get_viewport().set_input_as_handled()
 	elif event.keycode == KEY_F1:
-		# Development access to raw simulation telemetry, hidden by default.
-		notable_panel.visible = not notable_panel.visible
-		if notable_panel.visible:
-			_render_notable_people()
+		# Secondary route to the same state as the DEV button.
+		toggle_developer_mode()
 		get_viewport().set_input_as_handled()
 
 
@@ -132,8 +143,7 @@ func _render() -> void:
 	_render_location()
 	_render_history()
 	_render_beliefs()
-	if notable_panel.visible:
-		_render_notable_people()
+	_render_developer()
 	advance_button.disabled = not state.action_taken
 
 
@@ -498,19 +508,6 @@ func _render_beliefs() -> void:
 	beliefs_text.text = "\n\n".join(lines)
 
 
-# Debug inspection only: this panel reads simulation data and never changes it.
-func _render_notable_people() -> void:
-	var state := simulation.state
-	var entity_ids := _sorted_entity_ids()
-	if entity_ids.is_empty():
-		notable_text.text = "[color=#68757c](No notable people.)[/color]"
-		return
-	var blocks: Array[String] = []
-	for entity_id: String in entity_ids:
-		blocks.append(_notable_entity_block(entity_id, entity_ids))
-	notable_text.text = "\n\n".join(blocks)
-
-
 func _sorted_entity_ids() -> Array[String]:
 	# Sorted by display name, then id, so the panel never reorders itself.
 	var entries: Array[Dictionary] = []
@@ -531,55 +528,298 @@ func _sorted_entity_ids() -> Array[String]:
 	return sorted_ids
 
 
-func _notable_entity_block(entity_id: String, entity_ids: Array[String]) -> String:
+# ---------------------------------------------------------------------------
+# Developer Mode: read-only inspection of exact simulation values. Nothing in
+# this section writes to WorldState, and the panel is an overlay, so it costs
+# no layout space while closed.
+# ---------------------------------------------------------------------------
+
+func toggle_developer_mode() -> void:
+	developer_mode_enabled = not developer_mode_enabled
+	if developer_mode_enabled and developer_person_id.is_empty():
+		var entity_ids := _sorted_entity_ids()
+		if not entity_ids.is_empty():
+			developer_person_id = entity_ids[0]
+	_render_developer()
+
+
+func _on_developer_meta(meta) -> void:
+	var value := str(meta)
+	if value.begins_with(DEV_TAB_META):
+		developer_section = value.substr(DEV_TAB_META.length())
+		_render_developer()
+	elif value.begins_with(DEV_PERSON_META):
+		developer_person_id = value.substr(DEV_PERSON_META.length())
+		_render_developer()
+
+
+func _render_developer() -> void:
+	# Only does work while open, and only when the state it reads has changed.
+	dev_button.text = "DEV: ON" if developer_mode_enabled else "DEV"
+	dev_button.modulate = Color("d66a5e") if developer_mode_enabled else Color(1, 1, 1)
+	developer_overlay.visible = developer_mode_enabled
+	if not developer_mode_enabled:
+		return
+	var tabs: Array[String] = []
+	for section: String in DEV_SECTIONS:
+		var is_active := section == developer_section
+		tabs.append("[url=%s%s][color=%s]%s[/color][/url]" % [
+			DEV_TAB_META, section, "#e8be63" if is_active else "#68757c", section.to_upper()
+		])
+	developer_tabs.text = "   ".join(tabs)
+	match developer_section:
+		"world":
+			developer_text.text = "\n".join(_developer_world_lines())
+		"locations":
+			developer_text.text = "\n".join(_developer_location_lines())
+		"people":
+			developer_text.text = "\n".join(_developer_people_lines())
+		"knowledge":
+			developer_text.text = "\n".join(_developer_knowledge_lines())
+		"decisions":
+			developer_text.text = "\n".join(_developer_decision_lines())
+		"belief":
+			developer_text.text = "\n".join(_developer_belief_lines())
+		"history":
+			developer_text.text = "\n".join(_developer_history_lines())
+		_:
+			developer_text.text = "[color=#68757c]Unknown section.[/color]"
+
+
+func _dev_field(label: String, value) -> String:
+	return "[color=#68757c]%s[/color]  [color=#9ca5a4]%s[/color]" % [label.rpad(24), str(value)]
+
+
+func _dev_heading(text: String) -> String:
+	return "[color=#e8be63]%s[/color]" % text
+
+
+func _developer_world_lines() -> Array[String]:
 	var state := simulation.state
-	var entity := state.get_notable_entity(entity_id)
-	var traits: Array = entity.get("traits", [])
-	var traits_text := ", ".join(traits) if not traits.is_empty() else "(none)"
-	var lines: Array[String] = [
-		"[color=#e5e1d8]%s[/color]  [color=#68757c](%s)[/color]" % [
-			str(entity.get("name", entity_id)).to_upper(), str(entity.get("kind", "unknown"))
-		],
-		"[color=#68757c]Traits:[/color]  [color=#9ca5a4]%s[/color]" % traits_text,
-		"[color=#68757c]Relationships:[/color]"
+	return [
+		_dev_heading("WORLD STATE"),
+		_dev_field("year", state.year),
+		_dev_field("population", state.population),
+		_dev_field("food_level", "%d  (%s)" % [state.food_level, state.food_name()]),
+		_dev_field("stability_level", "%d  (%s)" % [state.stability_level, state.stability_name()]),
+		_dev_field("prosperity_level", "%d  (%s)" % [state.prosperity_level, state.prosperity_name()]),
+		_dev_field("military_level", "%d  (%s)" % [state.military_level, state.military_name()]),
+		_dev_field("faith", state.faith),
+		_dev_field("followers", state.followers),
+		_dev_field("divine_power", "%d / %d" % [state.divine_power, state.max_divine_power]),
+		_dev_field("reputation", state.reputation),
+		"",
+		_dev_heading("TURN STATE"),
+		_dev_field("current_event_id", state.current_event_id),
+		_dev_field("action_taken", state.action_taken),
+		_dev_field("previous_action_id", _or_none(state.previous_action_id)),
+		_dev_field("last_interpretation_id", _or_none(state.last_interpretation_id)),
+		_dev_field("useful_silence_outcomes", state.useful_silence_outcomes),
+		_dev_field("population_growth_bonus", state.population_growth_bonus)
 	]
-	lines.append_array(_relationship_lines(entity_id, entity_ids))
-	lines.append("[color=#68757c]Knowledge:[/color]  [color=#9ca5a4]%d[/color]" % state.get_all_knowledge(entity_id).size())
-	lines.append("[color=#68757c]Decision:[/color]  %s" % _latest_decision_text(entity_id))
-	return "\n".join(lines)
 
 
-func _relationship_lines(entity_id: String, entity_ids: Array[String]) -> Array[String]:
-	# Directed: this entity's view of others only. King -> Mara is not Mara -> King.
-	var lines: Array[String] = []
-	for target_id: String in entity_ids:
-		if target_id == entity_id:
-			continue
-		var record := simulation.state.get_relationship(entity_id, target_id)
-		if record.is_empty():
-			continue
-		var target := simulation.state.get_notable_entity(target_id)
-		lines.append("    [color=#9ca5a4]-> %s[/color]" % str(target.get("name", target_id)))
-		lines.append(
-			"       [color=#8d989d]Trust %d / Fear %d / Respect %d / Hostility %d[/color]" % [
-				int(record["trust"]), int(record["fear"]), int(record["respect"]), int(record["hostility"])
-			]
-		)
-	if lines.is_empty():
-		lines.append("    [color=#68757c](none)[/color]")
+func _developer_location_lines() -> Array[String]:
+	var state := simulation.state
+	var lines: Array[String] = [_dev_heading("LOCATIONS")]
+	for location_id: String in state.get_location_ids():
+		var location := state.get_location(location_id)
+		lines.append("")
+		lines.append("[color=#e5e1d8]%s[/color]" % location_id)
+		for key: String in ["name", "kind", "role", "simulated"]:
+			lines.append(_dev_field(key, location.get(key, "-")))
+	lines.append("")
+	lines.append("[color=#73627f]No per-location simulation values exist yet; conditions are kingdom-wide.[/color]")
 	return lines
 
 
-func _latest_decision_text(entity_id: String) -> String:
-	var records: Array[Dictionary] = simulation.state.get_decisions_for(entity_id)
+func _developer_people_lines() -> Array[String]:
+	var state := simulation.state
+	var lines: Array[String] = [_dev_heading("NOTABLE ENTITIES")]
+	for entity_id: String in _sorted_entity_ids():
+		var entity := state.get_notable_entity(entity_id)
+		var marker := ">" if entity_id == developer_person_id else " "
+		lines.append("")
+		lines.append("[url=%s%s][color=%s]%s %s[/color][/url]" % [
+			DEV_PERSON_META, entity_id,
+			"#e8be63" if entity_id == developer_person_id else "#9ca5a4",
+			marker, entity_id
+		])
+		lines.append(_dev_field("name", entity.get("name", "-")))
+		lines.append(_dev_field("kind", entity.get("kind", "-")))
+		lines.append(_dev_field("traits", ", ".join(entity.get("traits", []))))
+		lines.append(_dev_field("knowledge records", state.get_all_knowledge(entity_id).size()))
+		for target_id: String in _sorted_entity_ids():
+			if target_id == entity_id:
+				continue
+			var record := state.get_relationship(entity_id, target_id)
+			if record.is_empty():
+				continue
+			lines.append("[color=#68757c]  %s -> %s[/color]  [color=#8d989d]trust %d  fear %d  respect %d  hostility %d[/color]" % [
+				entity_id, target_id,
+				int(record["trust"]), int(record["fear"]),
+				int(record["respect"]), int(record["hostility"])
+			])
+	return lines
+
+
+func _developer_knowledge_lines() -> Array[String]:
+	var state := simulation.state
+	var lines: Array[String] = [_dev_heading("KNOWLEDGE  ·  %s" % _or_none(developer_person_id))]
+	if developer_person_id.is_empty():
+		lines.append("[color=#73627f]Select an entity in PEOPLE.[/color]")
+		return lines
+	var stored := state.get_all_knowledge(developer_person_id)
+	var knowledge_ids: Array = stored.keys()
+	knowledge_ids.sort()
+	if knowledge_ids.is_empty():
+		lines.append("[color=#73627f]No knowledge records.[/color]")
+		return lines
+	for knowledge_id_value in knowledge_ids:
+		var record: Dictionary = stored[str(knowledge_id_value)]
+		lines.append("")
+		lines.append("[color=#e5e1d8]%s[/color]" % str(record["id"]))
+		# Every stored field, including the truth the mortal cannot see.
+		for key: String in [
+			"claim", "topic", "subject_id", "confidence", "truth_state",
+			"objective_truth_state", "source_id", "source_type", "origin_source_id",
+			"transmission_count", "distorted", "invalidated", "freshness",
+			"fresh_for_years", "year_learned", "last_updated_year", "is_outdated"
+		]:
+			if not record.has(key):
+				continue
+			var colour := "#9ca5a4"
+			if key == "objective_truth_state" and str(record[key]) == "false":
+				colour = "#d66a5e"
+			if key == "distorted" and bool(record[key]):
+				colour = "#d66a5e"
+			lines.append("[color=#68757c]%s[/color]  [color=%s]%s[/color]" % [
+				key.rpad(24), colour, str(record[key])
+			])
+	return lines
+
+
+func _developer_decision_lines() -> Array[String]:
+	var state := simulation.state
+	var lines: Array[String] = [_dev_heading("DECISIONS  ·  %s" % _or_none(developer_person_id))]
+	if developer_person_id.is_empty():
+		lines.append("[color=#73627f]Select an entity in PEOPLE.[/color]")
+		return lines
+	var records: Array[Dictionary] = state.get_decisions_for(developer_person_id)
 	if records.is_empty():
-		return "[color=#68757c]-[/color]"
-	# The archive appends chronologically, so the last record is the newest.
+		lines.append("[color=#73627f]No decisions recorded.[/color]")
+		return lines
 	var latest: Dictionary = records.back()
-	var target_id := str(latest["target_id"])
-	return "[color=#e8be63]%s[/color]  [color=#8d989d]· target %s · score %d · year %d[/color]" % [
-		str(latest["decision_type"]),
-		"none" if target_id.is_empty() else target_id,
-		int(latest["score"]),
-		int(latest["year"])
-	]
+	lines.append(_dev_field("decision_id", latest["id"]))
+	lines.append(_dev_field("decision_type", latest["decision_type"]))
+	lines.append(_dev_field("target_id", _or_none(str(latest["target_id"]))))
+	lines.append(_dev_field("target_kind", latest["target_kind"]))
+	lines.append(_dev_field("base_priority", latest["base_priority"]))
+	lines.append(_dev_field("score", latest["score"]))
+	lines.append(_dev_field("priority", latest["priority"]))
+	lines.append(_dev_field("year", latest["year"]))
+	# The record already stores why it won. Render it; never recompute it.
+	for section: String in ["trait_factors", "relationship_factors", "knowledge_used", "world_state_factors"]:
+		lines.append("")
+		lines.append("[color=#76c8d5]%s[/color]" % section)
+		var factors: Array = latest.get(section, [])
+		if factors.is_empty():
+			lines.append("[color=#73627f]  (none)[/color]")
+		for factor: Dictionary in factors:
+			lines.append("[color=#8d989d]  %+d   %s[/color]" % [
+				int(factor.get("delta", 0)),
+				str(factor.get("detail", factor.get("knowledge_id", "")))
+			])
+	lines.append("")
+	lines.append("[color=#76c8d5]reasons[/color]")
+	for reason in latest.get("reasons", []):
+		lines.append("[color=#8d989d]  %s[/color]" % str(reason))
+	lines.append("")
+	lines.append("[color=#76c8d5]considered[/color]")
+	for candidate: Dictionary in latest.get("considered", []):
+		lines.append("[color=#8d989d]  %-18s %-12s score %-5d %s[/color]" % [
+			str(candidate["decision_type"]), _or_none(str(candidate["target_id"])),
+			int(candidate["score"]), str(candidate["reason"])
+		])
+	lines.append("")
+	lines.append(_dev_field("decisions recorded", records.size()))
+	return lines
+
+
+func _developer_belief_lines() -> Array[String]:
+	var state := simulation.state
+	var lines: Array[String] = [_dev_heading("ACTIVE BELIEFS")]
+	lines.append(_dev_field("beliefs", ", ".join(state.beliefs) if not state.beliefs.is_empty() else "(none)"))
+	lines.append(_dev_field("known_beliefs", state.known_beliefs.size()))
+	lines.append("")
+	lines.append(_dev_heading("BELIEF PRESSURE"))
+	lines.append_array(_dev_dictionary(state.belief_pressure))
+	lines.append("")
+	lines.append(_dev_heading("REPUTATION"))
+	lines.append(_dev_field("reputation", state.reputation))
+	lines.append_array(_dev_dictionary(state.reputation_pressure))
+	lines.append(_dev_field("reputation_changes", ", ".join(state.reputation_changes) if not state.reputation_changes.is_empty() else "(none)"))
+	lines.append("")
+	lines.append(_dev_heading("ACTION / INTERVENTION COUNTS"))
+	lines.append_array(_dev_dictionary(state.action_counts))
+	lines.append_array(_dev_dictionary(state.intervention_counts))
+	lines.append("")
+	lines.append(_dev_heading("WORLD FLAGS"))
+	lines.append_array(_dev_dictionary(state.world_flags))
+	lines.append_array(_dev_dictionary(state.world_flag_use_counts))
+	lines.append("")
+	lines.append(_dev_heading("INTERPRETATION HISTORY"))
+	lines.append(_dev_field("count", state.interpretation_history.size()))
+	lines.append("[color=#8d989d]%s[/color]" % ", ".join(_tail(state.interpretation_history, DEV_LIST_LIMIT)))
+	return lines
+
+
+func _developer_history_lines() -> Array[String]:
+	var state := simulation.state
+	var lines: Array[String] = [_dev_heading("HISTORY ARCHIVE  (%d entries, newest last)" % state.history_archive.size())]
+	for entry in _tail(state.history_archive, DEV_LIST_LIMIT):
+		lines.append("[color=#8d989d]%s[/color]" % str(entry))
+	lines.append("")
+	lines.append(_dev_heading("KNOWLEDGE EVENTS  (%d)" % state.knowledge_events.size()))
+	for entry: Dictionary in _tail(state.knowledge_events, DEV_LIST_LIMIT):
+		lines.append("[color=#8d989d]  y%-4d %-18s %-22s %s conf %s[/color]" % [
+			int(entry.get("year", 0)), str(entry.get("type", "")),
+			str(entry.get("knowledge_id", "")), str(entry.get("entity_id", "")),
+			str(entry.get("confidence", ""))
+		])
+	lines.append("")
+	lines.append(_dev_heading("LAST YEAR"))
+	lines.append(_dev_field("last_event_knowledge", state.last_event_knowledge.size()))
+	lines.append(_dev_field("last_knowledge_shares", state.last_knowledge_shares.size()))
+	lines.append(_dev_field("last_relationship_changes", state.last_relationship_changes.size()))
+	for change: Dictionary in state.last_relationship_changes:
+		lines.append("[color=#8d989d]  %s -> %s  %s[/color]" % [
+			str(change.get("source_id", "")), str(change.get("target_id", "")),
+			str(change.get("changes", {}))
+		])
+	lines.append(_dev_field("last_decisions", state.last_decisions.size()))
+	for decision: Dictionary in state.last_decisions:
+		lines.append("[color=#8d989d]  %s  %s -> %s  score %d[/color]" % [
+			str(decision.get("actor_id", "")), str(decision.get("decision_type", "")),
+			_or_none(str(decision.get("target_id", ""))), int(decision.get("score", 0))
+		])
+	return lines
+
+
+func _dev_dictionary(source: Dictionary) -> Array[String]:
+	var lines: Array[String] = []
+	var keys: Array = source.keys()
+	keys.sort()
+	for key_value in keys:
+		lines.append(_dev_field(str(key_value), source[key_value]))
+	return lines
+
+
+func _tail(source: Array, limit: int) -> Array:
+	if source.size() <= limit:
+		return source.duplicate()
+	return source.slice(source.size() - limit)
+
+
+func _or_none(value: String) -> String:
+	return "(none)" if value.strip_edges().is_empty() else value

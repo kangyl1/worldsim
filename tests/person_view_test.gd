@@ -38,7 +38,7 @@ func _process(_delta: float) -> bool:
 	_test_changing_settlement_closes_the_person()
 	_test_unknown_person_is_ignored()
 	_test_divine_actions_still_work_during_inspection()
-	_test_debug_panel_is_hidden_but_available()
+	_test_normal_view_has_no_developer_fields()
 
 	if completed != EXPECTED_TESTS:
 		push_error("Person view suite incomplete: %d of %d." % [completed, EXPECTED_TESTS])
@@ -216,14 +216,17 @@ func _test_divine_actions_still_work_during_inspection() -> void:
 	print("  ACTIONS: resolving and advancing still work with a person open.")
 
 
-func _test_debug_panel_is_hidden_but_available() -> void:
-	assert(not main.notable_panel.visible, "raw telemetry is not part of the normal layout")
-	main.notable_panel.visible = true
-	main._render_notable_people()
-	assert(main.notable_text.text.contains("Mara"), "the debug view still renders when asked")
-	main.notable_panel.visible = false
+func _test_normal_view_has_no_developer_fields() -> void:
+	# Developer Mode is the only route to raw telemetry, and it starts closed.
+	assert(not main.developer_mode_enabled, "the player UI opens without Developer Mode")
+	assert(not main.developer_overlay.visible)
+	main._on_location_clicked("aster")
+	main._on_person_clicked("person:mara")
+	var view := _view_text().to_lower()
+	for field: String in FORBIDDEN_IN_PERSON_VIEW:
+		assert(not view.contains(field), "'%s' must never reach the player panel" % field)
 	completed += 1
-	print("  DEBUG: panel hidden by default, still renders when toggled on.")
+	print("  SEPARATION: the person panel stays clean with Developer Mode closed.")
 
 
 func _advance_years(count: int) -> void:

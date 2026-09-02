@@ -265,6 +265,15 @@ theme_override_colors/font_color = Color(0.46, 0.78, 0.83, 1)
 theme_override_font_sizes/font_size = 13
 text = "AWAITING CHOICE"
 
+[node name="DevButton" type="Button" parent="Margin/MainColumn/TopBar/TopRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(86, 26)
+layout_mode = 2
+size_flags_vertical = 4
+focus_mode = 0
+theme_override_font_sizes/font_size = 11
+text = "DEV"
+
 [node name="UpperRow" type="HBoxContainer" parent="Margin/MainColumn"]
 layout_mode = 2
 size_flags_vertical = 3
@@ -500,36 +509,6 @@ bbcode_enabled = true
 text = "(None)"
 scroll_active = true
 
-[node name="NotablePanel" type="PanelContainer" parent="Margin/MainColumn/LowerRow"]
-unique_name_in_owner = true
-visible = false
-custom_minimum_size = Vector2(300, 146)
-layout_mode = 2
-size_flags_horizontal = 3
-stretch_ratio = 0.85
-
-[node name="NotableColumn" type="VBoxContainer" parent="Margin/MainColumn/LowerRow/NotablePanel"]
-layout_mode = 2
-theme_override_constants/separation = 7
-
-[node name="PanelLabel" type="Label" parent="Margin/MainColumn/LowerRow/NotablePanel/NotableColumn"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.42, 0.49, 0.5, 1)
-theme_override_font_sizes/font_size = 11
-text = "NOTABLE PEOPLE  /  DEBUG  (F1)"
-
-[node name="Rule" type="HSeparator" parent="Margin/MainColumn/LowerRow/NotablePanel/NotableColumn"]
-layout_mode = 2
-
-[node name="NotableText" type="RichTextLabel" parent="Margin/MainColumn/LowerRow/NotablePanel/NotableColumn"]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_vertical = 3
-theme_override_font_sizes/normal_font_size = 10
-bbcode_enabled = true
-text = "(No notable people.)"
-scroll_active = true
-
 [node name="Footer" type="PanelContainer" parent="Margin/MainColumn"]
 custom_minimum_size = Vector2(0, 46)
 layout_mode = 2
@@ -552,3 +531,48 @@ layout_mode = 2
 focus_mode = 0
 disabled = true
 text = "ADVANCE YEAR  [ENTER / SPACE]"
+
+[node name="DeveloperOverlay" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 18.0
+offset_top = -376.0
+offset_right = -18.0
+offset_bottom = -74.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="DeveloperColumn" type="VBoxContainer" parent="DeveloperOverlay"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="DeveloperLabel" type="Label" parent="DeveloperOverlay/DeveloperColumn"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.84, 0.42, 0.37, 1)
+theme_override_font_sizes/font_size = 11
+text = "DEVELOPER MODE  ·  READ ONLY  ·  EXACT SIMULATION VALUES"
+
+[node name="DeveloperTabs" type="RichTextLabel" parent="DeveloperOverlay/DeveloperColumn"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+theme_override_font_sizes/normal_font_size = 11
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+
+[node name="Rule" type="HSeparator" parent="DeveloperOverlay/DeveloperColumn"]
+layout_mode = 2
+
+[node name="DeveloperText" type="RichTextLabel" parent="DeveloperOverlay/DeveloperColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/normal_font_size = 11
+bbcode_enabled = true
+scroll_active = true

@@ -3,12 +3,18 @@ extends Control
 const ACTION_KEYS := ["send_rain", "bless_harvest", "speak_mortal", "do_nothing"]
 # Events that read as an active crisis on the map.
 const CRISIS_EVENTS := ["drought", "unrest"]
+# Monospaced rows: name on the left, power cost right-aligned to this width.
+const ACTION_ROW_WIDTH := 34
+const PERSON_META_PREFIX := "person:"
 
 var simulation := WorldSimulation.new()
 var action_buttons: Array[Button] = []
 # Selection is interface state. It deliberately does not live in WorldState,
 # so looking at a place can never change what is true about the world.
 var selected_location_id: String = "aster"
+var hovered_action_index: int = -1
+var hovered_person_id: String = ""
+var selected_person_id: String = ""
 
 @onready var year_value: Label = %YearValue
 @onready var power_value: Label = %PowerValue
@@ -19,6 +25,7 @@ var selected_location_id: String = "aster"
 @onready var event_title: Label = %EventTitle
 @onready var event_description: Label = %EventDescription
 @onready var result_text: RichTextLabel = %ResultText
+@onready var action_hint: Label = %ActionHint
 @onready var world_map: WorldMapView = %WorldMap
 @onready var location_text: RichTextLabel = %LocationText
 @onready var history_text: RichTextLabel = %HistoryText
@@ -31,13 +38,19 @@ func _ready() -> void:
 	action_buttons = [%Action1, %Action2, %Action3, %Action4]
 	for index in action_buttons.size():
 		action_buttons[index].pressed.connect(_on_action_pressed.bind(index))
+		action_buttons[index].mouse_entered.connect(_on_action_hovered.bind(index))
+		action_buttons[index].mouse_exited.connect(_on_action_unhovered.bind(index))
 	advance_button.pressed.connect(_on_advance_pressed)
 	simulation.state_changed.connect(_render)
-	var location_names := {}
+	var map_locations := {}
 	for location_id: String in simulation.state.get_location_ids():
-		location_names[location_id] = str(simulation.state.get_location(location_id)["name"])
-	world_map.set_locations(location_names)
+		var location := simulation.state.get_location(location_id)
+		map_locations[location_id] = {"name": str(location["name"]), "kind": str(location["kind"])}
+	world_map.set_locations(map_locations)
 	world_map.location_clicked.connect(_on_location_clicked)
+	location_text.meta_clicked.connect(_on_person_clicked)
+	location_text.meta_hover_started.connect(_on_person_hover_started)
+	location_text.meta_hover_ended.connect(_on_person_hover_ended)
 	_render()
 
 
@@ -93,8 +106,9 @@ func _render() -> void:
 		result_text.text = "[color=#9ca5a4]%s[/color]" % state.last_result
 	else:
 		result_text.text = (
-			"[color=#9ca5a4]%s[/color]\n" % state.last_result
-			+ "[color=#b38bc4]INTERPRETATION:[/color] [color=#d7c8dc]\"%s\"[/color]" % state.last_interpretation
+			"[color=#9ca5a4]%s[/color]\n\n" % state.last_result
+			+ "[color=#b38bc4]INTERPRETATION[/color]\n"
+			+ "[color=#d7c8dc]\"%s\"[/color]" % state.last_interpretation
 		)
 
 	_render_actions()
@@ -112,10 +126,66 @@ func _render_actions() -> void:
 		var action_id: String = ACTION_KEYS[index]
 		var action := simulation.get_action(action_id)
 		var cost := int(action["cost"])
-		action_buttons[index].text = "%d.  %s\n     Cost: %d Power  ·  %s" % [
-			index + 1, action["title"], cost, action["hint"]
-		]
+		var label := "%d.  %s" % [index + 1, action["title"]]
+		var cost_label := "%d Power" % cost
+		# The interface font is monospaced, so padding keeps the costs aligned.
+		var padding := maxi(ACTION_ROW_WIDTH - label.length() - cost_label.length(), 1)
+		action_buttons[index].text = label + " ".repeat(padding) + cost_label
 		action_buttons[index].disabled = state.action_taken or state.divine_power < cost
+	_render_action_hint()
+
+
+func _render_action_hint() -> void:
+	var state := simulation.state
+	if hovered_action_index >= 0 and hovered_action_index < ACTION_KEYS.size():
+		var action := simulation.get_action(ACTION_KEYS[hovered_action_index])
+		var cost := int(action["cost"])
+		if state.action_taken:
+			action_hint.text = "%s  ·  already answered this year" % str(action["hint"])
+		elif state.divine_power < cost:
+			action_hint.text = "%s  ·  needs %d power, you hold %d" % [
+				str(action["hint"]), cost, state.divine_power
+			]
+		else:
+			action_hint.text = str(action["hint"])
+		return
+	action_hint.text = "The year awaits your answer." if not state.action_taken \
+		else "Advance the year to see what the world makes of it."
+
+
+func _on_action_hovered(index: int) -> void:
+	hovered_action_index = index
+	_render_action_hint()
+
+
+func _on_action_unhovered(index: int) -> void:
+	if hovered_action_index == index:
+		hovered_action_index = -1
+		_render_action_hint()
+
+
+func _on_person_clicked(meta) -> void:
+	var entity_id := _person_id_from_meta(str(meta))
+	if entity_id.is_empty():
+		return
+	selected_person_id = "" if selected_person_id == entity_id else entity_id
+	_render_location()
+
+
+func _on_person_hover_started(meta) -> void:
+	hovered_person_id = _person_id_from_meta(str(meta))
+	_render_location()
+
+
+func _on_person_hover_ended(_meta) -> void:
+	hovered_person_id = ""
+	_render_location()
+
+
+func _person_id_from_meta(meta: String) -> String:
+	if not meta.begins_with(PERSON_META_PREFIX):
+		return ""
+	return meta.substr(PERSON_META_PREFIX.length())
 
 
 func _on_location_clicked(location_id: String) -> void:
@@ -201,9 +271,31 @@ func _simulated_location_lines() -> Array[String]:
 	if entity_ids.is_empty():
 		lines.append("[color=#68757c](none)[/color]")
 	for entity_id: String in entity_ids:
-		var entity := state.get_notable_entity(entity_id)
-		lines.append("[color=#9ca5a4]  %s[/color]" % str(entity.get("name", entity_id)))
+		lines.append(_person_row(entity_id))
 	return lines
+
+
+func _person_row(entity_id: String) -> String:
+	# Rows are already selectable so the next pass can open a person view.
+	var entity := simulation.state.get_notable_entity(entity_id)
+	var name_text := str(entity.get("name", entity_id))
+	var colour := "#8d989d"
+	var marker := " "
+	if entity_id == selected_person_id:
+		colour = "#e8be63"
+		marker = ">"
+	elif entity_id == hovered_person_id:
+		colour = "#e5e1d8"
+		marker = ">"
+	var detail := ""
+	if entity_id == selected_person_id:
+		var traits: Array = entity.get("traits", [])
+		detail = "\n     [color=#68757c]%s[/color]" % (
+			", ".join(traits) if not traits.is_empty() else "no traits recorded"
+		)
+	return "[url=%s%s][color=%s]%s  %s[/color][/url]%s" % [
+		PERSON_META_PREFIX, entity_id, colour, marker, name_text, detail
+	]
 
 
 func _placeholder_location_lines(location: Dictionary) -> Array[String]:

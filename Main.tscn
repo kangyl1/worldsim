@@ -330,20 +330,20 @@ text = "ASTER"
 scroll_active = true
 
 [node name="EventPanel" type="PanelContainer" parent="Margin/MainColumn/UpperRow"]
-custom_minimum_size = Vector2(340, 320)
+custom_minimum_size = Vector2(330, 300)
 layout_mode = 2
 size_flags_horizontal = 3
-stretch_ratio = 1.5
+stretch_ratio = 1.35
 
 [node name="EventColumn" type="VBoxContainer" parent="Margin/MainColumn/UpperRow/EventPanel"]
 layout_mode = 2
-theme_override_constants/separation = 5
+theme_override_constants/separation = 4
 
 [node name="PanelLabel" type="Label" parent="Margin/MainColumn/UpperRow/EventPanel/EventColumn"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.46, 0.78, 0.83, 1)
-theme_override_font_sizes/font_size = 11
-text = "CURRENT SITUATION  /  KEYS 1–4"
+theme_override_colors/font_color = Color(0.42, 0.49, 0.5, 1)
+theme_override_font_sizes/font_size = 10
+text = "CURRENT SITUATION"
 
 [node name="Rule" type="HSeparator" parent="Margin/MainColumn/UpperRow/EventPanel/EventColumn"]
 layout_mode = 2
@@ -352,54 +352,87 @@ layout_mode = 2
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.91, 0.73, 0.37, 1)
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 15
 text = "THE LONG DROUGHT"
 
 [node name="EventDescription" type="Label" parent="Margin/MainColumn/UpperRow/EventPanel/EventColumn"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 26)
+custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_colors/font_color = Color(0.73, 0.73, 0.69, 1)
+theme_override_colors/font_color = Color(0.72, 0.72, 0.68, 1)
 theme_override_font_sizes/font_size = 12
 text = "For three months, no rain has fallen."
 autowrap_mode = 2
 
+[node name="ResponseSpacer" type="Control" parent="Margin/MainColumn/UpperRow/EventPanel/EventColumn"]
+custom_minimum_size = Vector2(0, 2)
+layout_mode = 2
+
+[node name="ResponseLabel" type="Label" parent="Margin/MainColumn/UpperRow/EventPanel/EventColumn"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.46, 0.78, 0.83, 1)
+theme_override_font_sizes/font_size = 10
+text = "DIVINE RESPONSE  /  KEYS 1–4"
+
 [node name="Action1" type="Button" parent="Margin/MainColumn/UpperRow/EventPanel/EventColumn"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 40)
+custom_minimum_size = Vector2(0, 26)
 layout_mode = 2
 focus_mode = 0
-text = "1.  SEND RAIN\n     Cost: 2 Power"
+theme_override_font_sizes/font_size = 12
+text = "1.  SEND RAIN"
 alignment = 0
 
 [node name="Action2" type="Button" parent="Margin/MainColumn/UpperRow/EventPanel/EventColumn"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 40)
+custom_minimum_size = Vector2(0, 26)
 layout_mode = 2
 focus_mode = 0
-text = "2.  BLESS HARVEST\n     Cost: 1 Power"
+theme_override_font_sizes/font_size = 12
+text = "2.  BLESS HARVEST"
 alignment = 0
 
 [node name="Action3" type="Button" parent="Margin/MainColumn/UpperRow/EventPanel/EventColumn"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 40)
+custom_minimum_size = Vector2(0, 26)
 layout_mode = 2
 focus_mode = 0
-text = "3.  SPEAK THROUGH A MORTAL\n     Cost: 1 Power"
+theme_override_font_sizes/font_size = 12
+text = "3.  SPEAK THROUGH A MORTAL"
 alignment = 0
 
 [node name="Action4" type="Button" parent="Margin/MainColumn/UpperRow/EventPanel/EventColumn"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 40)
+custom_minimum_size = Vector2(0, 26)
 layout_mode = 2
 focus_mode = 0
-text = "4.  DO NOTHING\n     Cost: 0 Power"
+theme_override_font_sizes/font_size = 12
+text = "4.  DO NOTHING"
 alignment = 0
+
+[node name="ActionHint" type="Label" parent="Margin/MainColumn/UpperRow/EventPanel/EventColumn"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 16)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.45, 0.52, 0.53, 1)
+theme_override_font_sizes/font_size = 11
+text = "Hover an action to read what it means."
+autowrap_mode = 2
+
+[node name="OutcomeSpacer" type="Control" parent="Margin/MainColumn/UpperRow/EventPanel/EventColumn"]
+custom_minimum_size = Vector2(0, 2)
+layout_mode = 2
+
+[node name="OutcomeLabel" type="Label" parent="Margin/MainColumn/UpperRow/EventPanel/EventColumn"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.42, 0.49, 0.5, 1)
+theme_override_font_sizes/font_size = 10
+text = "OUTCOME"
 
 [node name="ResultText" type="RichTextLabel" parent="Margin/MainColumn/UpperRow/EventPanel/EventColumn"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 30)
+custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_font_sizes/font_size = 11
@@ -414,7 +447,7 @@ size_flags_vertical = 3
 theme_override_constants/separation = 10
 
 [node name="HistoryPanel" type="PanelContainer" parent="Margin/MainColumn/LowerRow"]
-custom_minimum_size = Vector2(0, 150)
+custom_minimum_size = Vector2(0, 146)
 layout_mode = 2
 size_flags_horizontal = 3
 stretch_ratio = 2.0
@@ -441,7 +474,7 @@ text = "Year 12 - The people prayed for help.\n\nYear 11 - The river began to re
 scroll_active = true
 
 [node name="BeliefsPanel" type="PanelContainer" parent="Margin/MainColumn/LowerRow"]
-custom_minimum_size = Vector2(330, 150)
+custom_minimum_size = Vector2(300, 146)
 layout_mode = 2
 size_flags_horizontal = 3
 
@@ -467,9 +500,10 @@ text = "(None)"
 scroll_active = true
 
 [node name="NotablePanel" type="PanelContainer" parent="Margin/MainColumn/LowerRow"]
-custom_minimum_size = Vector2(360, 150)
+custom_minimum_size = Vector2(300, 146)
 layout_mode = 2
 size_flags_horizontal = 3
+stretch_ratio = 0.85
 
 [node name="NotableColumn" type="VBoxContainer" parent="Margin/MainColumn/LowerRow/NotablePanel"]
 layout_mode = 2
@@ -479,7 +513,7 @@ theme_override_constants/separation = 7
 layout_mode = 2
 theme_override_colors/font_color = Color(0.42, 0.49, 0.5, 1)
 theme_override_font_sizes/font_size = 11
-text = "NOTABLE PEOPLE  /  SIMULATION DEBUG"
+text = "NOTABLE PEOPLE  /  DEBUG"
 
 [node name="Rule" type="HSeparator" parent="Margin/MainColumn/LowerRow/NotablePanel/NotableColumn"]
 layout_mode = 2
@@ -488,6 +522,7 @@ layout_mode = 2
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
+theme_override_font_sizes/normal_font_size = 10
 bbcode_enabled = true
 text = "(No notable people.)"
 scroll_active = true

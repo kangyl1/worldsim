@@ -10,7 +10,7 @@ const SIMULATION_STATISTICS := [
 	"prosperity", "prosperity_level", "military", "military_level",
 	"faith", "followers", "divine_power"
 ]
-const EXPECTED_TESTS := 8
+const EXPECTED_TESTS := 9
 
 var completed := 0
 
@@ -20,6 +20,7 @@ func _init() -> void:
 	_test_locations_hold_no_statistics()
 	_test_location_accessor_returns_a_copy()
 	_test_map_view_cannot_touch_simulation()
+	_test_person_rows_are_selectable()
 	_test_crisis_marker_rule()
 	_test_actions_still_resolve_once()
 	_test_advance_year_still_requires_an_action()
@@ -78,26 +79,63 @@ func _test_map_view_cannot_touch_simulation() -> void:
 	var before := _snapshot(simulation)
 
 	var map = WorldMapScript.new()
-	map.size = Vector2(420, 300)
-	var names := {}
+	map.size = Vector2(480, 320)
+	var map_locations := {}
 	for location_id: String in simulation.state.get_location_ids():
-		names[location_id] = str(simulation.state.get_location(location_id)["name"])
-	map.set_locations(names)
+		var location: Dictionary = simulation.state.get_location(location_id)
+		map_locations[location_id] = {"name": str(location["name"]), "kind": str(location["kind"])}
+	map.set_locations(map_locations)
 	map.set_markers({"aster": {"crisis": true, "divine": false}})
 	map.set_selected_location("aster")
 
-	# Hit-testing is the whole of selection, and it is pure geometry.
-	assert(map.location_at(Vector2(420 * 0.68, 300 * 0.68)) == "aster")
-	assert(map.location_at(Vector2(420 * 0.28, 300 * 0.72)) == "westfield")
-	assert(map.location_at(Vector2(420 * 0.5, 300 * 0.2)) == "frontier")
-	assert(map.location_at(Vector2(4, 4)).is_empty(), "open ground selects nothing")
+	# Hit-testing is the whole of selection, and it is pure geometry. Points are
+	# derived from the site table so repositioning cannot silently break this.
+	for location_id: String in simulation.state.get_location_ids():
+		assert(WorldMapScript.SITES.has(location_id), "every location needs a place on the map")
+		var anchor: Vector2 = WorldMapScript.SITES[location_id]["anchor"]
+		assert(anchor.x > 0.0 and anchor.x < 1.0 and anchor.y > 0.0 and anchor.y < 1.0,
+			"%s must sit inside the drawing area" % location_id)
+		var point := Vector2(map.size.x * anchor.x, map.size.y * anchor.y)
+		assert(map.location_at(point) == location_id,
+			"clicking %s should select %s" % [str(point), location_id])
+	assert(map.location_at(Vector2(3, 3)).is_empty(), "open ground selects nothing")
+
+	# Sites must stay far enough apart that a click is unambiguous.
+	var ids: Array[String] = simulation.state.get_location_ids()
+	for first_index in ids.size():
+		for second_index in range(first_index + 1, ids.size()):
+			var a: Vector2 = WorldMapScript.SITES[ids[first_index]]["anchor"]
+			var b: Vector2 = WorldMapScript.SITES[ids[second_index]]["anchor"]
+			var gap := Vector2(map.size.x * (a.x - b.x), map.size.y * (a.y - b.y)).length()
+			var reach := (
+				float(WorldMapScript.SITES[ids[first_index]]["radius"])
+				+ float(WorldMapScript.SITES[ids[second_index]]["radius"])
+				+ WorldMapScript.CLICK_PADDING * 2.0
+			)
+			assert(gap > reach, "%s and %s overlap as click targets" % [
+				ids[first_index], ids[second_index]
+			])
+
 	map.set_selected_location("frontier")
 	assert(map.selected_location_id == "frontier", "only one location is selected at a time")
 
 	assert(_snapshot(simulation) == before, "looking at the world must not change it")
 	map.free()
 	completed += 1
-	print("  READ ONLY: selecting and re-selecting changed no simulation value.")
+	print("  READ ONLY: every site hit-tests to itself, and no world value moved.")
+
+
+func _test_person_rows_are_selectable() -> void:
+	var ui = MainScript.new()
+	assert(ui._person_id_from_meta("person:mara") == "mara")
+	assert(ui._person_id_from_meta("person:aster_king") == "aster_king")
+	assert(ui._person_id_from_meta("https://example.com").is_empty(),
+		"only person links may select a person")
+	assert(ui._person_id_from_meta("").is_empty())
+	assert(ui.selected_person_id.is_empty(), "no person is selected at start")
+	ui.free()
+	completed += 1
+	print("  PEOPLE: rows carry person metadata and nothing else is selectable.")
 
 
 func _test_crisis_marker_rule() -> void:

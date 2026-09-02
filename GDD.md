@@ -1,6 +1,12 @@
 # WORLDSIM — GAME DESIGN DOCUMENT
 ## Version 0.1 — Prototype Scope
 
+Sections 1–28 describe the original prototype design and remain in force.
+
+Sections 29–43 are the **Simulation Foundation Revision**. They extend the
+document rather than replace it. Where the revision explicitly supersedes an
+earlier statement, it says so.
+
 ## 1. High Concept
 
 A text-heavy god simulation game inspired by **Warsim, WorldBox, and Black & White**.
@@ -817,7 +823,24 @@ The prototype succeeds if players naturally say things like:
 
 > “I accidentally became their god of war.”
 
+As the mortal simulation deepens, the prototype should also produce stories
+about the people themselves:
+
+> “Mara helped a village because she believed a rumor that wasn't even true.”
+
+> “The King became threatened by someone I accidentally made popular.”
+
+> “Nobody scripted this rivalry. It grew out of their decisions.”
+
+> “I can see exactly why this happened.”
+
+> “A tiny event became important because the kingdom was already unstable.”
+
 Those stories are the product.
+
+The last two matter as much as the rest. A world that produces surprising
+history the player cannot explain has failed differently from one that
+produces no history at all.
 
 ---
 
@@ -853,3 +876,713 @@ Everything else comes later.
 **The world should try to understand the player.**
 
 That is the identity of the game.
+
+---
+
+# PART II — SIMULATION FOUNDATION REVISION
+
+Sections 29–43 revise how mortals behave. They do not change what the game is.
+
+Section 3 remains the core pillar, and Section 28 remains the identity of the
+game. Everything below exists to give divine intervention a world worth
+intervening in.
+
+---
+
+## 29. Why The Mortal Model Is Being Revised
+
+The prototype currently reasons in a short chain:
+
+Knowledge
+→ a specific action-like Decision
+
+That chain is too tight. It jumps from what a person knows straight to a named
+behaviour, which leaves no room for ordinary life, cooperation, politics,
+religion, curiosity, fear, resource pressure, or the slow build toward conflict.
+
+**Decision Engine v1 remains implemented and valid.** It is a working prototype
+foundation: deterministic, explainable, and correct in its architecture.
+
+What is expected to change is its **vocabulary**. The current decision types:
+
+- `investigate`
+- `warn_ally`
+- `send_aid`
+- `exploit_weakness`
+
+are useful prototype behaviours, but they are action-specific. They describe
+what someone does, not what someone wants. The long-term system needs the
+broader layer described in Section 30.
+
+This vocabulary is expected to evolve **before** Mortal Actions are implemented.
+
+---
+
+## 30. The Mortal Simulation Chain
+
+The full causal chain a mortal passes through:
+
+```
+World State
+  ↓
+Pressures / Needs
+  ↓
+Event or Observation
+  ↓
+Perception
+  ↓
+Knowledge / Belief
+  ↓
+Interpretation
+  ↓
+Goal
+  ↓
+Broad Intent
+  ↓
+Action Selection
+  ↓
+Action Attempt
+  ↓
+Immediate Consequence
+  ↓
+Possible Ripple
+  ↓
+Memory / Knowledge
+  ↓
+Relationships / World State
+  ↓
+History
+```
+
+### World State
+
+The objective conditions that currently exist.
+
+Examples:
+
+- low food
+- unstable settlement
+- dangerous border
+- popular ruler
+- religious tension
+
+### Pressures / Needs
+
+Conditions create motivation. They do not cause outcomes.
+
+Low food may create pressure to:
+
+- acquire food
+- conserve food
+- share food
+- hoard
+- trade
+- steal
+- migrate
+- ask for help
+
+The simulation must never hardcode:
+
+Low Food → Theft
+
+The state creates possibilities. Which possibility a person reaches for is
+decided further down the chain.
+
+### Event or Observation
+
+Something happens, or something is noticed.
+
+### Perception
+
+Characters react only to information they can perceive or receive.
+
+They do not automatically know global truth. A famine three settlements away
+does not exist for someone until word of it arrives.
+
+### Knowledge / Belief
+
+Characters reason from what they believe, which includes:
+
+- correct information
+- incomplete information
+- false rumors
+- outdated knowledge
+- distorted knowledge
+
+### Interpretation
+
+Characters attach meaning to what they know, based on:
+
+- traits
+- relationships
+- existing beliefs
+- roles
+- previous experiences
+
+Two people can hold the same fact and reach opposite meanings.
+
+### Goal
+
+A broader desired outcome.
+
+Examples:
+
+- reduce suffering
+- become safer
+- preserve status
+- understand what happened
+- protect someone
+- improve livelihood
+
+### Broad Intent
+
+The character chooses a direction, **not yet a concrete action**.
+
+Examples:
+
+- Help
+- Seek Safety
+- Gain Influence
+- Protect Influence
+- Learn
+- Share Knowledge
+- Build Relationship
+- Distance
+- Resolve Conflict
+- Acquire Resources
+- Protect Resources
+- Seek Justice
+- Seek Recognition
+- Fulfil Duty
+- Preserve Belief
+- Question Belief
+- Wait / Observe
+
+These are examples, not a final locked list. The list is expected to change
+during design of the Broad Intent Model.
+
+### Action Selection
+
+The character chooses an execution, based on:
+
+- available opportunities
+- resources
+- relationships
+- traits
+- knowledge
+- role
+- location
+- risk
+
+Example:
+
+Intent:
+
+Help Westfield
+
+Possible actions:
+
+- personally deliver food
+- ask the ruler for aid
+- persuade merchants
+- organise local relief
+- teach better farming
+- pray
+- spread awareness
+- do nothing, if unable to act
+
+An intent with no available action is a valid outcome. Wanting something and
+being unable to attempt it is part of the simulation, not a failure of it.
+
+### Action Attempt
+
+The character tries. Attempts may fail.
+
+### Immediate Consequence
+
+Actions change the world locally first.
+
+Consequences may affect:
+
+- settlement state
+- relationships
+- knowledge
+- reputation
+- resources
+- future opportunities
+
+### Possible Ripple
+
+A consequence expands only if another existing condition gives it somewhere
+meaningful to propagate. See Section 35.
+
+### Memory / Knowledge
+
+Only meaningful results persist. See Section 36.
+
+### Relationships / World State
+
+Changes feed back into the conditions the next chain reads.
+
+### History
+
+Important causal chains become historical records.
+
+---
+
+## 31. Intent Is Not Action
+
+**This is a design law.**
+
+An Intent answers:
+
+> What does this person want to accomplish?
+
+An Action answers:
+
+> What do they actually attempt?
+
+Example:
+
+Situation:
+
+Westfield is starving.
+
+Mara:
+
+Goal:
+
+Reduce suffering.
+
+Intent:
+
+Help Westfield.
+
+Possible actions:
+
+- donate food
+- ask the King for grain
+- organise relief
+- persuade merchants
+- travel there
+- pray for divine help
+
+This distinction must be preserved in all future architecture.
+
+**Do not allow the Intent system to become a list of pre-selected executions.**
+
+If the intent vocabulary starts reading like a list of things people do rather
+than things people want, the layer has collapsed and needs to be split again.
+
+---
+
+## 32. Same Intent, Different Execution
+
+Traits influence **how** an intention is pursued. They do not assign people
+predetermined actions.
+
+Intent:
+
+Help Westfield
+
+| Character | Execution |
+|---|---|
+| Compassionate villager | Gives resources directly |
+| Ambitious ruler | Provides aid publicly, and takes credit |
+| Cautious merchant | Offers a low-risk grain loan |
+| Cruel noble | Provides food in exchange for harsh labour |
+
+Same intent. Different execution.
+
+Traits weight behaviour. They must not become rigid character scripts.
+
+This mirrors the rule already established for Decision Engine v1: traits weight
+scores and never hard-gate a choice unless a specific gate is explicitly
+approved.
+
+---
+
+## 33. False Beliefs Create Real Consequences
+
+Mortals act according to **believed** reality, not objective reality.
+
+Example:
+
+Reality:
+
+Westfield has enough food.
+
+Mara falsely believes:
+
+Westfield is starving.
+
+Mara may still form the intent:
+
+Help Westfield.
+
+She may send unnecessary supplies. That may create a real shortage somewhere
+else.
+
+Therefore:
+
+> **False information may produce objectively real history.**
+
+This is one of Worldsim's core emergent-story principles. The simulation must
+never quietly correct a character because the engine knows better.
+
+The player, as a god, may see the truth. The character may not. That gap is
+where the best stories come from.
+
+---
+
+## 34. Needs Create Possibilities, Not Automatic Penalties
+
+A need or shortage should create:
+
+- choices
+- opportunities
+- leverage
+- cooperation
+- work
+- crime
+- migration
+- conflict
+- religious behaviour
+
+rather than only modifying a statistic.
+
+Example:
+
+A food shortage should not only mean:
+
+Population −5
+
+It should create reasons for mortals to act, and reasons for a god to be asked
+for help.
+
+A pressure that produces no behaviour is a number, not a simulation.
+
+---
+
+## 35. Consequences Are Local Until Something Amplifies Them
+
+**The bounded ripple rule.**
+
+A small event should normally have a small effect.
+
+Example:
+
+Mara insults the King.
+
+Normal outcome:
+
+- the King's hostility toward Mara increases slightly
+
+**Stop there.**
+
+However, if:
+
+- Mara is already extremely popular
+- the King is insecure
+- Westfield is already angry
+- political stability is low
+
+then the same insult connects to those conditions and escalates:
+
+```
+Insult
+  ↓
+King retaliates
+  ↓
+Westfield sees persecution
+  ↓
+existing unrest increases
+  ↓
+political crisis
+```
+
+Rule:
+
+> **A consequence continues only when another meaningful world condition gives
+> the chain somewhere to go.**
+
+This keeps emergent history understandable and keeps simulation cost bounded.
+It also means dramatic outcomes are readable in hindsight: the conditions that
+carried the chain were already visible before it started.
+
+---
+
+## 36. Remember What Can Change Future Behaviour
+
+**The selective memory rule.**
+
+Do not preserve every mundane action forever.
+
+Usually do not store:
+
+- ate bread
+- walked home
+- saw normal rain
+
+unless context makes them meaningful.
+
+Store things such as:
+
+- a ruler refused aid during famine
+- Mara saved Westfield
+- a priest accused someone publicly
+- a character witnessed a divine miracle
+- betrayal
+- a major debt
+- an important promise
+
+Rule:
+
+> **Long-term memory should justify its existence by being capable of affecting
+> future behaviour, belief, relationships, or history.**
+
+This extends Section 16 rather than contradicting it: Section 16 already stores
+*important* events. This states the test for importance.
+
+---
+
+## 37. Understandable Normality + Meaningful Variation
+
+Worldsim should not make every year dramatic.
+
+Most simulated behaviour should be ordinary and understandable:
+
+- working
+- sharing
+- trading
+- maintaining relationships
+- seeking food
+- learning
+- helping
+- waiting
+- travelling
+- arguing
+- praying
+
+Major behaviour should emerge when pressures and circumstances align:
+
+- betrayal
+- rebellion
+- religious schism
+- assassination
+- migration
+- war
+
+These matter **because** they are comparatively rare. A world where someone is
+betrayed every year contains no betrayals worth remembering.
+
+This is a design philosophy, not a literal probability roll. No fixed ratio is
+locked here.
+
+---
+
+## 38. Opportunities, Not Objectives
+
+World situations create opportunities. They do not issue instructions.
+
+Example:
+
+Westfield is starving.
+
+This does **not** mean:
+
+OBJECTIVE: SAVE WESTFIELD
+
+The player may:
+
+- help
+- ignore
+- exploit
+- worsen
+- study
+- manipulate
+- influence indirectly
+
+Mortals are likewise not forced into one predetermined response to a condition.
+
+This applies to interface as much as simulation. The game should show that
+something is happening, not tell the player what to do about it.
+
+---
+
+## 39. The Player Relevance Filter
+
+Every simulation system must answer three questions:
+
+1. What can the player **notice** because this exists?
+2. What can the player **understand** because this exists?
+3. What can the player **do** because this exists?
+
+Avoid complexity that exists only because it is realistic.
+
+Bad justification:
+
+> NPC hunger is realistic.
+
+Better:
+
+> Hunger produces readable pressures, mortal behaviour, prayers, migration,
+> conflict, and opportunities for divine intervention.
+
+This protects Worldsim from becoming more interesting to watch than to play.
+
+A system that fails all three questions should be cut, no matter how correct it
+is.
+
+---
+
+## 40. Meaning First, Numbers Underneath
+
+The simulation may use exact numbers internally. The normal player interface
+should primarily show:
+
+- qualitative states
+- readable consequences
+- intentions
+- beliefs
+- trends, when reliable
+
+Exact values remain visible where they genuinely improve decisions:
+
+- Divine Power
+- Population
+- Followers
+
+Developer Mode may expose:
+
+- raw values
+- exact relationships
+- confidence numbers
+- objective truth
+- decision scores
+- internal records
+
+Rule:
+
+> **The simulation can be numerical without making the player's experience a
+> spreadsheet.**
+
+Developer Mode is also where the mortal-perspective rule is deliberately
+broken. The player panel shows what a character believes; Developer Mode shows
+what is true. Those two views must never be merged.
+
+---
+
+## 41. System Dependency Order
+
+The current dependency order. This is not an immutable schedule.
+
+| # | System | Status |
+|---|---|---|
+| 1 | Traits | **Built** |
+| 2 | Relationships | **Built** |
+| 3 | Knowledge / Rumors | **Built** |
+| 4 | Decision Engine v1 | **Built** — prototype intent vocabulary |
+| 5 | Broad Intent Model | **Next design foundation** |
+| 6 | Mortal Action Selection / Execution | |
+| 7 | Consequence Engine | |
+| 8 | Minimal Settlement State | |
+| 9 | Event → Perception → Knowledge pipeline | |
+| 10 | Autonomous Feedback Loop | |
+| 11 | Divine Actions integrated into the same causal pipeline | |
+| 12 | History / Chronicle generated from causal events | |
+| 13 | Deeper religion / interpretation | |
+| 14 | Factions / politics | |
+| 15 | Multiple kingdoms | |
+| 16 | World generation | |
+| 17 | Additional races / Create Life | |
+
+Item 11 matters more than its position suggests. Divine actions should
+eventually run through the same causal pipeline as mortal actions, rather than
+existing as a separate special case. The god should be an actor in the world's
+causality, not an exception to it.
+
+---
+
+## 42. Foundation Milestone — The Autonomous Story Test
+
+Before major scope expansion, the simulation must pass one test.
+
+Without player intervention, advance the world for several decades.
+
+The simulation succeeds when:
+
+- mortals perceive changing conditions
+- they form understandable goals and intents
+- they attempt actions
+- actions create bounded consequences
+- relationships and knowledge change
+- those changes affect later behaviour
+- important events become history
+- the resulting story is understandable
+- Developer Mode can explain why important outcomes occurred
+
+The exact number of years is not a mechanical requirement.
+
+The point is:
+
+> **The world should be capable of producing a coherent causal story without
+> requiring scripted player intervention.**
+
+The final condition is the strict one. A world that produces events nobody can
+explain has not passed; it has only produced noise.
+
+Only after this loop works do the following become priorities:
+
+- multiple kingdoms
+- detailed politics
+- large world generation
+- new races
+- Create Life
+
+---
+
+## 43. The God Remains The Game
+
+This revision must not turn Worldsim into an NPC life simulator with a
+spectator attached.
+
+The core pillar stands unchanged:
+
+## Action → Interpretation → Belief → Behaviour → History
+
+**The mortal simulation exists to make divine intervention more meaningful.**
+
+A richer causal chain gives the player more places to interfere, and makes each
+interference more legible in hindsight.
+
+Example:
+
+```
+Famine
+  ↓
+Mara decides to help
+  ↓
+King blocks her
+  ↓
+resentment rises
+```
+
+At any point in that chain, the god may:
+
+- bless Westfield
+- reveal the King's refusal
+- send Mara a dream
+- support the King
+- remain silent
+
+Every one of those produces a different history, and silence is a real choice
+with real consequences.
+
+The player remains the god, interacting with an autonomous world.
+
+Section 28 still has the last word:
+
+**The world should not simply react to the player's powers.**
+
+**The world should try to understand the player.**

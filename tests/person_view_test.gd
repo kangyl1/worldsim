@@ -3,7 +3,7 @@ extends SceneTree
 # Scene-level tests: person navigation lives in the interface, so it is
 # exercised through a real Main.tscn instance rather than in isolation.
 
-const EXPECTED_TESTS := 11
+const EXPECTED_TESTS := 12
 # Fields that belong to the simulation's bookkeeping, never to a mortal's view.
 const FORBIDDEN_IN_PERSON_VIEW := [
 	"objective", "truth_state", "distorted", "transmission",
@@ -32,6 +32,7 @@ func _process(_delta: float) -> bool:
 	_test_selection_is_interface_only()
 	_test_person_detail_uses_existing_entity_data()
 	_test_relationships_stay_directional()
+	_test_view_shows_meaning_not_numbers()
 	_test_intention_is_the_latest_record()
 	_test_knowledge_keeps_the_mortal_perspective()
 	_test_back_returns_to_the_settlement()
@@ -94,15 +95,38 @@ func _test_relationships_stay_directional() -> void:
 
 	main._on_person_clicked("person:mara")
 	var mara_view := _view_text()
-	assert(mara_view.contains(str(int(outward["trust"]))), "Mara's panel shows Mara's trust")
+	assert(mara_view.contains(PresentationRules.trust_label(int(outward["trust"]))),
+		"Mara's panel reads Mara's trust")
 	main._on_person_clicked("person:aster_king")
 	var king_view := _view_text()
-	assert(king_view.contains(str(int(inward["trust"]))), "the King's panel shows the King's trust")
+	assert(king_view.contains(PresentationRules.trust_label(int(inward["trust"]))),
+		"the King's panel reads the King's trust")
+	# All four axes are reported separately rather than collapsed into one.
+	for axis: String in WorldState.RELATIONSHIP_AXES:
+		assert(mara_view.to_lower().contains(axis), "%s must appear on its own line" % axis)
 	assert(mara_view != king_view, "the two directions must not render identically")
 	completed += 1
-	print("  DIRECTION: Mara reads %d trust toward the King, he reads %d toward her." % [
-		int(outward["trust"]), int(inward["trust"])
+	print("  DIRECTION: Mara reads '%s' toward the King, he reads '%s' toward her." % [
+		PresentationRules.trust_label(int(outward["trust"])),
+		PresentationRules.trust_label(int(inward["trust"]))
 	])
+
+
+func _test_view_shows_meaning_not_numbers() -> void:
+	# The relationship block should be pure language: no axis value may leak.
+	main._on_person_clicked("person:mara")
+	# Strip bbcode first: colour codes carry digits that the player never sees.
+	var view := _plain_text()
+	var start := view.find("RELATIONSHIPS")
+	var finish := view.find("KNOWN INFORMATION")
+	assert(start >= 0 and finish > start)
+	var block := view.substr(start, finish - start)
+	for character in block:
+		assert(not str(character).is_valid_int(),
+			"the relationship block still shows a digit:%s" % block)
+	assert(not view.contains("%"), "no percentage belongs in the player's person view")
+	completed += 1
+	print("  QUALITATIVE: relationships read as language, with no numbers.")
 
 
 func _test_intention_is_the_latest_record() -> void:
@@ -140,7 +164,9 @@ func _test_knowledge_keeps_the_mortal_perspective() -> void:
 	var view := _view_text().to_lower()
 
 	assert(view.contains("the king was chosen by god"), "her belief should be stated plainly")
-	assert(view.contains("72%"), "her own confidence is hers to know")
+	assert(view.contains(PresentationRules.confidence_label(72).to_lower()),
+		"her certainty is described, not measured")
+	assert(not view.contains("72"), "the underlying confidence stays in Developer Mode")
 	assert(view.contains("heard from"), "she knows who told her")
 	for field: String in FORBIDDEN_IN_PERSON_VIEW:
 		assert(not view.contains(field), "'%s' is bookkeeping and must not surface here" % field)
@@ -237,6 +263,22 @@ func _advance_years(count: int) -> void:
 
 func _view_text() -> String:
 	return main.location_text.text
+
+
+func _plain_text() -> String:
+	# What the player actually reads, with bbcode markup removed.
+	var out := ""
+	var depth := 0
+	var source: String = main.location_text.text
+	for index in source.length():
+		var character := source[index]
+		if character == "[":
+			depth += 1
+		elif character == "]":
+			depth -= 1
+		elif depth == 0:
+			out += character
+	return out
 
 
 func _snapshot() -> Array:

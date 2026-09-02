@@ -120,7 +120,7 @@ func _render() -> void:
 	year_value.text = str(state.year)
 	power_value.text = "%d / %d" % [state.divine_power, state.max_divine_power]
 	followers_value.text = str(state.followers)
-	faith_value.text = "%d%%" % state.faith
+	faith_value.text = PresentationRules.faith_label(state.faith).to_upper()
 	reputation_value.text = state.reputation.to_upper()
 	time_value.text = "READY TO ADVANCE" if state.action_taken else "AWAITING CHOICE"
 	time_value.modulate = Color("e8be63") if state.action_taken else Color("76c8d5")
@@ -381,12 +381,11 @@ func _person_relationship_lines() -> Array[String]:
 			continue
 		found = true
 		lines.append("[color=#9ca5a4]%s[/color]" % _display_name_for(target_id))
-		lines.append("[color=#8d989d]   Trust     %3d      Fear       %3d[/color]" % [
-			int(record["trust"]), int(record["fear"])
-		])
-		lines.append("[color=#8d989d]   Respect   %3d      Hostility  %3d[/color]" % [
-			int(record["respect"]), int(record["hostility"])
-		])
+		for axis: String in WorldState.RELATIONSHIP_AXES:
+			lines.append("[color=#68757c]   %s[/color] [color=#8d989d]%s[/color]" % [
+				axis.capitalize().rpad(11),
+				PresentationRules.relationship_label(axis, int(record[axis]))
+			])
 	if not found:
 		lines.append("[color=#73627f]No notable relationships.[/color]")
 	return lines
@@ -406,9 +405,10 @@ func _person_knowledge_lines() -> Array[String]:
 		var claim := str(record.get("claim", "")).strip_edges()
 		if claim.is_empty():
 			continue
-		var confidence := int(record["confidence"])
 		lines.append("[color=#9ca5a4]\"%s\"[/color]" % claim)
-		lines.append("[color=#68757c]   %s (%d%%)[/color]" % [_certainty_label(confidence), confidence])
+		lines.append("[color=#68757c]   %s[/color]" % PresentationRules.confidence_label(
+			int(record["confidence"])
+		))
 		var source_id := str(record.get("source_id", ""))
 		if source_id.is_empty() or source_id == selected_person_id:
 			lines.append("[color=#68757c]   Witnessed it directly.[/color]")
@@ -426,17 +426,6 @@ func _person_knowledge_lines() -> Array[String]:
 	if shown == 0:
 		lines.append("[color=#73627f]None recorded.[/color]")
 	return lines
-
-
-func _certainty_label(confidence: int) -> String:
-	# How sure the mortal feels, not how true the claim is.
-	if confidence >= 75:
-		return "Certain of it"
-	if confidence >= 50:
-		return "Fairly sure"
-	if confidence >= 25:
-		return "Unsure"
-	return "Barely credits it"
 
 
 func _display_name_for(target_id: String) -> String:

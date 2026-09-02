@@ -85,6 +85,7 @@ const EVENTS := {
 
 var state := WorldState.new()
 var interpretation_system := InterpretationSystem.new()
+var decision_rules := DecisionRules.new()
 var knowledge_rules := KnowledgeRules.new()
 var debug_logging_enabled: bool = true
 
@@ -160,6 +161,7 @@ func advance_year() -> Dictionary:
 	state.divine_power = mini(state.divine_power + 2, state.max_divine_power)
 	state.last_relationship_changes = tick_relationships()
 	state.last_knowledge_shares = tick_knowledge()
+	state.last_decisions = tick_decisions()
 	_process_population()
 	_process_world_drift()
 	_select_next_event()
@@ -270,6 +272,35 @@ func tick_knowledge() -> Array[Dictionary]:
 		var target_id := str(target_ids[target_rotation % target_ids.size()])
 		attempts.append(share_knowledge(source_id, target_id, knowledge_id))
 	return attempts
+
+
+func tick_decisions() -> Array[Dictionary]:
+	# Intentions only: this pass records what actors mean to do and changes
+	# nothing else in the world.
+	var made: Array[Dictionary] = []
+	var actor_ids: Array = state.notable_entities.keys()
+	actor_ids.sort()
+	for actor_index in actor_ids.size():
+		if made.size() >= DecisionRules.MAX_DECISIONS_PER_YEAR:
+			break
+		# At most half of the notable entities form an intention in a given year.
+		var actor_id := str(actor_ids[actor_index])
+		var actor_schedule := _stable_id_value(actor_id)
+		if (state.year + actor_schedule) % 2 != 0:
+			continue
+		var decision := decision_rules.choose_decision(state, actor_id)
+		if decision.is_empty():
+			continue
+		made.append(state.record_decision(decision))
+	return made
+
+
+func evaluate_decisions(actor_id: String) -> Array[Dictionary]:
+	return decision_rules.evaluate_decisions(state, actor_id)
+
+
+func choose_decision(actor_id: String) -> Dictionary:
+	return decision_rules.choose_decision(state, actor_id)
 
 
 func _knowledge_targets_for(source_id: String) -> Array[String]:

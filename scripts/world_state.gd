@@ -12,6 +12,7 @@ const KNOWLEDGE_TRUTH_STATES := ["true", "false", "unknown", "outdated"]
 const KNOWLEDGE_CONFIDENCE_MIN := 0
 const KNOWLEDGE_CONFIDENCE_MAX := 100
 const DEFAULT_KNOWLEDGE_FRESH_YEARS := 3
+const MAX_STORED_DECISIONS := 40
 
 var year: int = 12
 var population: int = 486
@@ -93,6 +94,9 @@ var relationships: Dictionary = {}
 var last_relationship_changes: Array[Dictionary] = []
 var last_knowledge_shares: Array[Dictionary] = []
 var knowledge_events: Array[Dictionary] = []
+var last_decisions: Array[Dictionary] = []
+var decisions: Array[Dictionary] = []
+var decision_archive: Array[Dictionary] = []
 var history_archive: Array[String] = [
 	"Year 12 - The people prayed for help.",
 	"Year 11 - The river began to recede.",
@@ -321,6 +325,34 @@ func remove_knowledge(entity_id: String, knowledge_id: String) -> bool:
 		"year": year
 	})
 	return true
+
+
+func record_decision(record: Dictionary) -> Dictionary:
+	# Decisions are intentions only. Recording one must never alter world
+	# statistics, relationships, or knowledge.
+	if record.is_empty():
+		return {}
+	var stored := record.duplicate(true)
+	decisions.append(stored)
+	decision_archive.append(stored)
+	if decisions.size() > MAX_STORED_DECISIONS:
+		decisions = decisions.slice(decisions.size() - MAX_STORED_DECISIONS)
+	return stored.duplicate(true)
+
+
+func get_decision(decision_id: String) -> Dictionary:
+	for record: Dictionary in decision_archive:
+		if str(record["id"]) == decision_id:
+			return record.duplicate(true)
+	return {}
+
+
+func get_decisions_for(actor_id: String) -> Array[Dictionary]:
+	var matches: Array[Dictionary] = []
+	for record: Dictionary in decision_archive:
+		if str(record["actor_id"]) == actor_id:
+			matches.append(record.duplicate(true))
+	return matches
 
 
 func age_knowledge() -> Array[Dictionary]:

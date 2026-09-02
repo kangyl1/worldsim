@@ -13,12 +13,13 @@ The user retains authority over game design, project direction, and GitHub publi
 3. If there is **ANY** design ambiguity, design problem, or architecture decision that could affect game behavior, scope, rules, simulation outcomes, or project direction, **STOP and ask the user before deciding**. Do not make autonomous game-design decisions.
 4. Small, purely mechanical implementation details may be handled without asking only when they cannot alter design intent. If uncertain, ask.
 5. GitHub repository `kangyl1/worldsim` is the source of truth when this document or any handoff summary conflicts with the current committed code. Inspect the repository and history when unsure.
-6. Do not implement the Decision Engine until the user explicitly asks for it.
+6. Decision Engine v1 is built. Do not extend it into Actions, Events, or Consequences until the user explicitly asks.
 
 ## Project reference
 
 - Repository: `kangyl1/worldsim`
-- Current important commit: `7b453a8655a6c4a8cea05a0ed3e0ffa2239cf515` — `Add Worldsim social and knowledge foundations`
+- Current important commit: `dcf38771bf1983e2ccbfa36eeda2aed983f93da4` — `Add Decision Engine v1`
+- Previous foundation commit: `7b453a8655a6c4a8cea05a0ed3e0ffa2239cf515` — `Add Worldsim social and knowledge foundations`
 - Local project path: `/Users/jamienfam/Documents/ChatGPT/worldsim`
 - Tested Godot version: `4.7.1`
 
@@ -35,6 +36,8 @@ The current foundation includes:
 - Knowledge and Rumors with confidence, truth, source, aging, distortion, and transmission
 - bounded yearly rumor spreading
 - trait and relationship effects
+- mortal interpretation of divine actions, feeding beliefs and reputation
+- Decision Engine v1: deterministic argmax intentions with full explainability records
 - deterministic tests
 - a 72-turn regression suite
 
@@ -43,8 +46,11 @@ Current core source and test files:
 - `scripts/world_state.gd`
 - `scripts/world_sim.gd`
 - `scripts/knowledge_rules.gd`
+- `scripts/interpretation_system.gd`
+- `scripts/decision_rules.gd`
 - `tests/smoke_test.gd`
 - `tests/knowledge_test.gd`
+- `tests/decision_test.gd`
 
 Do not assume this summary is exhaustive or newer than the code. Inspect the repository first, and use GitHub as the source of truth if anything conflicts.
 
@@ -52,7 +58,18 @@ Do not assume this summary is exhaustive or newer than the code. Inspect the rep
 
 `Traits -> Relationships -> Knowledge/Rumors -> Decisions -> Actions/Events -> Consequences -> feedback into world state/relationships/knowledge`
 
-Decision Engine v1 is the next planned system, but it **MUST NOT be implemented until the user explicitly asks**.
+Decision Engine v1 is complete: it produces recorded intentions only and executes nothing.
+
+Actions/Events execution is the next planned system, and it **MUST NOT be implemented until the user explicitly asks**.
+
+Decision Engine v1 constraints, settled with the user and to be preserved:
+
+- decision types are `investigate`, `warn_ally`, `send_aid`, `exploit_weakness`, with `wait_and_observe` as the fallback
+- selection is deterministic argmax; no randomness
+- traits weight decision scores and must never hard-gate a decision unless the user explicitly approves a specific gate
+- decisions read believed knowledge and never consult `objective_truth_state`
+- outdated or distorted beliefs lose weight but never disappear
+- decisions are intentions only and must not change world state, relationships, or knowledge
 
 ## Design rules
 

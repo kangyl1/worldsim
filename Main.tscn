@@ -461,6 +461,32 @@ bbcode_enabled = true
 text = "(None)"
 scroll_active = true
 
+[node name="NotablePanel" type="PanelContainer" parent="Margin/MainColumn/LowerRow"]
+custom_minimum_size = Vector2(360, 150)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="NotableColumn" type="VBoxContainer" parent="Margin/MainColumn/LowerRow/NotablePanel"]
+layout_mode = 2
+theme_override_constants/separation = 7
+
+[node name="PanelLabel" type="Label" parent="Margin/MainColumn/LowerRow/NotablePanel/NotableColumn"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.42, 0.49, 0.5, 1)
+theme_override_font_sizes/font_size = 11
+text = "NOTABLE PEOPLE  /  SIMULATION DEBUG"
+
+[node name="Rule" type="HSeparator" parent="Margin/MainColumn/LowerRow/NotablePanel/NotableColumn"]
+layout_mode = 2
+
+[node name="NotableText" type="RichTextLabel" parent="Margin/MainColumn/LowerRow/NotablePanel/NotableColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+text = "(No notable people.)"
+scroll_active = true
+
 [node name="Footer" type="PanelContainer" parent="Margin/MainColumn"]
 custom_minimum_size = Vector2(0, 46)
 layout_mode = 2

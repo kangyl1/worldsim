@@ -18,6 +18,7 @@ var action_buttons: Array[Button] = []
 @onready var status_text: RichTextLabel = %StatusText
 @onready var history_text: RichTextLabel = %HistoryText
 @onready var beliefs_text: RichTextLabel = %BeliefsText
+@onready var notable_text: RichTextLabel = %NotableText
 @onready var advance_button: Button = %AdvanceButton
 
 
@@ -91,6 +92,7 @@ func _render() -> void:
 	_render_status()
 	_render_history()
 	_render_beliefs()
+	_render_notable_people()
 	advance_button.disabled = not state.action_taken
 
 
@@ -139,3 +141,90 @@ func _render_beliefs() -> void:
 	for belief in simulation.state.beliefs:
 		lines.append("[color=#b38bc4]◆  %s[/color]" % belief)
 	beliefs_text.text = "\n\n".join(lines)
+
+
+# Debug inspection only: this panel reads simulation data and never changes it.
+func _render_notable_people() -> void:
+	var state := simulation.state
+	var entity_ids := _sorted_entity_ids()
+	if entity_ids.is_empty():
+		notable_text.text = "[color=#68757c](No notable people.)[/color]"
+		return
+	var blocks: Array[String] = []
+	for entity_id: String in entity_ids:
+		blocks.append(_notable_entity_block(entity_id, entity_ids))
+	notable_text.text = "\n\n".join(blocks)
+
+
+func _sorted_entity_ids() -> Array[String]:
+	# Sorted by display name, then id, so the panel never reorders itself.
+	var entries: Array[Dictionary] = []
+	for entity_id_value in simulation.state.notable_entities.keys():
+		var entity_id := str(entity_id_value)
+		var entity := simulation.state.get_notable_entity(entity_id)
+		if entity.is_empty():
+			continue
+		entries.append({"id": entity_id, "name": str(entity.get("name", entity_id))})
+	entries.sort_custom(func(a, b):
+		if str(a["name"]) == str(b["name"]):
+			return str(a["id"]) < str(b["id"])
+		return str(a["name"]) < str(b["name"])
+	)
+	var sorted_ids: Array[String] = []
+	for entry: Dictionary in entries:
+		sorted_ids.append(str(entry["id"]))
+	return sorted_ids
+
+
+func _notable_entity_block(entity_id: String, entity_ids: Array[String]) -> String:
+	var state := simulation.state
+	var entity := state.get_notable_entity(entity_id)
+	var traits: Array = entity.get("traits", [])
+	var traits_text := ", ".join(traits) if not traits.is_empty() else "(none)"
+	var lines: Array[String] = [
+		"[color=#e5e1d8]%s[/color]  [color=#68757c](%s)[/color]" % [
+			str(entity.get("name", entity_id)).to_upper(), str(entity.get("kind", "unknown"))
+		],
+		"[color=#68757c]Traits:[/color]  [color=#9ca5a4]%s[/color]" % traits_text,
+		"[color=#68757c]Relationships:[/color]"
+	]
+	lines.append_array(_relationship_lines(entity_id, entity_ids))
+	lines.append("[color=#68757c]Knowledge:[/color]  [color=#9ca5a4]%d[/color]" % state.get_all_knowledge(entity_id).size())
+	lines.append("[color=#68757c]Decision:[/color]  %s" % _latest_decision_text(entity_id))
+	return "\n".join(lines)
+
+
+func _relationship_lines(entity_id: String, entity_ids: Array[String]) -> Array[String]:
+	# Directed: this entity's view of others only. King -> Mara is not Mara -> King.
+	var lines: Array[String] = []
+	for target_id: String in entity_ids:
+		if target_id == entity_id:
+			continue
+		var record := simulation.state.get_relationship(entity_id, target_id)
+		if record.is_empty():
+			continue
+		var target := simulation.state.get_notable_entity(target_id)
+		lines.append("    [color=#9ca5a4]-> %s[/color]" % str(target.get("name", target_id)))
+		lines.append(
+			"       [color=#8d989d]Trust %d / Fear %d / Respect %d / Hostility %d[/color]" % [
+				int(record["trust"]), int(record["fear"]), int(record["respect"]), int(record["hostility"])
+			]
+		)
+	if lines.is_empty():
+		lines.append("    [color=#68757c](none)[/color]")
+	return lines
+
+
+func _latest_decision_text(entity_id: String) -> String:
+	var records: Array[Dictionary] = simulation.state.get_decisions_for(entity_id)
+	if records.is_empty():
+		return "[color=#68757c]-[/color]"
+	# The archive appends chronologically, so the last record is the newest.
+	var latest: Dictionary = records.back()
+	var target_id := str(latest["target_id"])
+	return "[color=#e8be63]%s[/color]  [color=#8d989d]· target %s · score %d · year %d[/color]" % [
+		str(latest["decision_type"]),
+		"none" if target_id.is_empty() else target_id,
+		int(latest["score"]),
+		int(latest["year"])
+	]

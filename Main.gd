@@ -6,6 +6,15 @@ const CRISIS_EVENTS := ["drought", "unrest"]
 # Monospaced rows: name on the left, power cost right-aligned to this width.
 const ACTION_ROW_WIDTH := 34
 const PERSON_META_PREFIX := "person:"
+const BACK_META := "back"
+# Player-readable names for the intentions the decision engine records.
+const DECISION_LABELS := {
+	"send_aid": "Send aid",
+	"warn_ally": "Warn an ally",
+	"exploit_weakness": "Exploit a weakness",
+	"investigate": "Look into it",
+	"wait_and_observe": "Wait and watch"
+}
 
 var simulation := WorldSimulation.new()
 var action_buttons: Array[Button] = []
@@ -31,6 +40,7 @@ var selected_person_id: String = ""
 @onready var history_text: RichTextLabel = %HistoryText
 @onready var beliefs_text: RichTextLabel = %BeliefsText
 @onready var notable_text: RichTextLabel = %NotableText
+@onready var notable_panel: PanelContainer = %NotablePanel
 @onready var advance_button: Button = %AdvanceButton
 
 
@@ -62,6 +72,12 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 	elif event.keycode in [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE]:
 		advance_year()
+		get_viewport().set_input_as_handled()
+	elif event.keycode == KEY_F1:
+		# Development access to raw simulation telemetry, hidden by default.
+		notable_panel.visible = not notable_panel.visible
+		if notable_panel.visible:
+			_render_notable_people()
 		get_viewport().set_input_as_handled()
 
 
@@ -116,7 +132,8 @@ func _render() -> void:
 	_render_location()
 	_render_history()
 	_render_beliefs()
-	_render_notable_people()
+	if notable_panel.visible:
+		_render_notable_people()
 	advance_button.disabled = not state.action_taken
 
 
@@ -165,10 +182,16 @@ func _on_action_unhovered(index: int) -> void:
 
 
 func _on_person_clicked(meta) -> void:
-	var entity_id := _person_id_from_meta(str(meta))
-	if entity_id.is_empty():
+	# Inspection only: this never resolves an action or advances time.
+	if str(meta) == BACK_META:
+		selected_person_id = ""
+		hovered_person_id = ""
+		_render_location()
 		return
-	selected_person_id = "" if selected_person_id == entity_id else entity_id
+	var entity_id := _person_id_from_meta(str(meta))
+	if entity_id.is_empty() or simulation.state.get_notable_entity(entity_id).is_empty():
+		return
+	selected_person_id = entity_id
 	_render_location()
 
 
@@ -192,6 +215,9 @@ func _on_location_clicked(location_id: String) -> void:
 	if simulation.state.get_location(location_id).is_empty():
 		return
 	selected_location_id = location_id
+	# Looking somewhere else closes whoever was open.
+	selected_person_id = ""
+	hovered_person_id = ""
 	_render()
 
 
@@ -221,6 +247,9 @@ func _location_is_holy(location_id: String) -> bool:
 
 
 func _render_location() -> void:
+	if not selected_person_id.is_empty():
+		_render_person()
+		return
 	var state := simulation.state
 	var location := state.get_location(selected_location_id)
 	if location.is_empty():
@@ -273,6 +302,143 @@ func _simulated_location_lines() -> Array[String]:
 	for entity_id: String in entity_ids:
 		lines.append(_person_row(entity_id))
 	return lines
+
+
+# The person view shows what this mortal believes and intends. It deliberately
+# never reads objective_truth_state, distortion, or transmission counts: the
+# player is a god, but this panel is not the god's omniscient readout.
+func _render_person() -> void:
+	var state := simulation.state
+	var entity := state.get_notable_entity(selected_person_id)
+	if entity.is_empty():
+		selected_person_id = ""
+		_render_location()
+		return
+	var traits: Array = entity.get("traits", [])
+	var trait_names: Array[String] = []
+	for trait_value in traits:
+		trait_names.append(str(trait_value).capitalize())
+	var lines: Array[String] = [
+		"[color=#e5e1d8]%s[/color]" % str(entity.get("name", selected_person_id)).to_upper(),
+		"[color=#68757c]%s[/color]" % str(entity.get("kind", "person")).capitalize(),
+		"[color=#9ca5a4]%s[/color]\n" % (
+			" · ".join(trait_names) if not trait_names.is_empty() else "No recorded traits"
+		)
+	]
+	lines.append_array(_person_intention_lines())
+	lines.append("")
+	lines.append_array(_person_relationship_lines())
+	lines.append("")
+	lines.append_array(_person_knowledge_lines())
+	lines.append("")
+	var location := state.get_location(selected_location_id)
+	lines.append("[url=%s][color=#76c8d5]<-  BACK TO %s[/color][/url]" % [
+		BACK_META, str(location.get("name", "the map")).to_upper()
+	])
+	location_text.text = "\n".join(lines)
+
+
+func _person_intention_lines() -> Array[String]:
+	var lines: Array[String] = ["[color=#68757c]CURRENT INTENTION[/color]"]
+	var records: Array[Dictionary] = simulation.state.get_decisions_for(selected_person_id)
+	if records.is_empty():
+		lines.append("[color=#73627f]None recorded.[/color]")
+		return lines
+	# The archive appends chronologically, so the last record is the newest.
+	var latest: Dictionary = records.back()
+	var decision_type := str(latest["decision_type"])
+	lines.append("[color=#e8be63]%s[/color]" % str(
+		DECISION_LABELS.get(decision_type, decision_type.capitalize())
+	))
+	var target_name := _display_name_for(str(latest["target_id"]))
+	if not target_name.is_empty():
+		lines.append("[color=#68757c]Toward:[/color] [color=#9ca5a4]%s[/color]" % target_name)
+	lines.append("[color=#68757c]Formed in year %d.[/color]" % int(latest["year"]))
+	return lines
+
+
+func _person_relationship_lines() -> Array[String]:
+	# Directed: this person's view of others. Mara -> the King is not the same
+	# record as the King -> Mara, and the two are never merged here.
+	var state := simulation.state
+	var lines: Array[String] = ["[color=#68757c]RELATIONSHIPS[/color]"]
+	var found := false
+	for target_id: String in _sorted_entity_ids():
+		if target_id == selected_person_id:
+			continue
+		var record := state.get_relationship(selected_person_id, target_id)
+		if record.is_empty():
+			continue
+		found = true
+		lines.append("[color=#9ca5a4]%s[/color]" % _display_name_for(target_id))
+		lines.append("[color=#8d989d]   Trust     %3d      Fear       %3d[/color]" % [
+			int(record["trust"]), int(record["fear"])
+		])
+		lines.append("[color=#8d989d]   Respect   %3d      Hostility  %3d[/color]" % [
+			int(record["respect"]), int(record["hostility"])
+		])
+	if not found:
+		lines.append("[color=#73627f]No notable relationships.[/color]")
+	return lines
+
+
+func _person_knowledge_lines() -> Array[String]:
+	var state := simulation.state
+	var lines: Array[String] = ["[color=#68757c]KNOWN INFORMATION[/color]"]
+	var stored := state.get_all_knowledge(selected_person_id)
+	var knowledge_ids: Array = stored.keys()
+	knowledge_ids.sort()
+	var shown := 0
+	for knowledge_id_value in knowledge_ids:
+		var record: Dictionary = stored[str(knowledge_id_value)]
+		if bool(record.get("invalidated", false)):
+			continue
+		var claim := str(record.get("claim", "")).strip_edges()
+		if claim.is_empty():
+			continue
+		var confidence := int(record["confidence"])
+		lines.append("[color=#9ca5a4]\"%s\"[/color]" % claim)
+		lines.append("[color=#68757c]   %s (%d%%)[/color]" % [_certainty_label(confidence), confidence])
+		var source_id := str(record.get("source_id", ""))
+		if source_id.is_empty() or source_id == selected_person_id:
+			lines.append("[color=#68757c]   Witnessed it directly.[/color]")
+		else:
+			lines.append("[color=#68757c]   Heard from %s.[/color]" % _display_name_for(source_id))
+		# Staleness from the mortal's side: when they last had word of it.
+		var age := maxi(state.year - int(record.get("last_updated_year", state.year)), 0)
+		if age == 0:
+			lines.append("[color=#68757c]   Word of it came this year.[/color]")
+		else:
+			lines.append("[color=#68757c]   Last word of it %d year%s ago.[/color]" % [
+				age, "" if age == 1 else "s"
+			])
+		shown += 1
+	if shown == 0:
+		lines.append("[color=#73627f]None recorded.[/color]")
+	return lines
+
+
+func _certainty_label(confidence: int) -> String:
+	# How sure the mortal feels, not how true the claim is.
+	if confidence >= 75:
+		return "Certain of it"
+	if confidence >= 50:
+		return "Fairly sure"
+	if confidence >= 25:
+		return "Unsure"
+	return "Barely credits it"
+
+
+func _display_name_for(target_id: String) -> String:
+	if target_id.is_empty():
+		return ""
+	var entity := simulation.state.get_notable_entity(target_id)
+	if not entity.is_empty():
+		return str(entity.get("name", target_id))
+	var location := simulation.state.get_location(target_id)
+	if not location.is_empty():
+		return str(location.get("name", target_id))
+	return target_id
 
 
 func _person_row(entity_id: String) -> String:

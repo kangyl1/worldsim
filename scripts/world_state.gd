@@ -13,6 +13,7 @@ const KNOWLEDGE_CONFIDENCE_MIN := 0
 const KNOWLEDGE_CONFIDENCE_MAX := 100
 const DEFAULT_KNOWLEDGE_FRESH_YEARS := 3
 const MAX_STORED_INTENTS := 40
+const MAX_STORED_ACTIONS := 40
 # Version 0.1 keeps one region and three settlements, per the GDD prototype
 # scope. Locations carry identity only: no statistics are stored here, because
 # the simulation still tracks kingdom-wide values. Per-settlement state can be
@@ -104,6 +105,9 @@ var last_event_knowledge: Array[Dictionary] = []
 var last_intents: Array[Dictionary] = []
 var intents: Array[Dictionary] = []
 var intent_archive: Array[Dictionary] = []
+var last_actions: Array[Dictionary] = []
+var selected_actions: Array[Dictionary] = []
+var action_archive: Array[Dictionary] = []
 var history_archive: Array[String] = [
 	"Year 12 - The people prayed for help.",
 	"Year 11 - The river began to recede.",
@@ -403,6 +407,42 @@ func get_intents_for(actor_id: String) -> Array[Dictionary]:
 		if str(record["actor_id"]) == actor_id:
 			matches.append(record.duplicate(true))
 	return matches
+
+
+func record_action(record: Dictionary) -> Dictionary:
+	# Selected actions are attempts nobody has made yet. Recording one must
+	# never alter world statistics, relationships, or knowledge: choosing to ask
+	# the King for help is not the King answering. Execution is a later system.
+	if record.is_empty():
+		return {}
+	var stored := record.duplicate(true)
+	selected_actions.append(stored)
+	action_archive.append(stored)
+	if selected_actions.size() > MAX_STORED_ACTIONS:
+		selected_actions = selected_actions.slice(selected_actions.size() - MAX_STORED_ACTIONS)
+	return stored.duplicate(true)
+
+
+func get_action_record(action_id: String) -> Dictionary:
+	for record: Dictionary in action_archive:
+		if str(record["id"]) == action_id:
+			return record.duplicate(true)
+	return {}
+
+
+func get_actions_for(actor_id: String) -> Array[Dictionary]:
+	var matches: Array[Dictionary] = []
+	for record: Dictionary in action_archive:
+		if str(record["actor_id"]) == actor_id:
+			matches.append(record.duplicate(true))
+	return matches
+
+
+func get_action_for_intent(intent_id: String) -> Dictionary:
+	for record: Dictionary in action_archive:
+		if str(record["intent_id"]) == intent_id:
+			return record.duplicate(true)
+	return {}
 
 
 func age_knowledge() -> Array[Dictionary]:

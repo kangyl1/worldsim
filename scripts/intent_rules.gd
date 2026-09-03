@@ -389,7 +389,7 @@ func _evaluate_candidate(
 			candidate["rejection_reason"] = "self_target"
 			return candidate
 
-	var effective_confidence := 0
+	var weighed_confidence := 0
 	if needs_belief:
 		if belief.is_empty():
 			candidate["rejection_reason"] = "no_matching_belief"
@@ -406,8 +406,8 @@ func _evaluate_candidate(
 		if bool(template.get("requires_doubt", false)) and not _is_doubtful(belief):
 			candidate["rejection_reason"] = "belief_not_in_doubt"
 			return candidate
-		effective_confidence = _effective_confidence(belief)
-		if effective_confidence < int(template["min_confidence"]):
+		weighed_confidence = effective_confidence(belief)
+		if weighed_confidence < int(template["min_confidence"]):
 			candidate["rejection_reason"] = "confidence_too_low"
 			return candidate
 
@@ -415,19 +415,19 @@ func _evaluate_candidate(
 	var relationship := state.get_relationship(actor_id, target_id)
 
 	if not belief.is_empty() and float(template["confidence_weight"]) != 0.0:
-		var basis := effective_confidence
+		var basis := weighed_confidence
 		if str(template["confidence_mode"]) == "inverse":
-			basis = 100 - effective_confidence
+			basis = 100 - weighed_confidence
 		var knowledge_delta := int(round(basis * float(template["confidence_weight"])))
 		score += knowledge_delta
-		knowledge_used.append(_knowledge_factor(belief, effective_confidence, knowledge_delta))
+		knowledge_used.append(_knowledge_factor(belief, weighed_confidence, knowledge_delta))
 		if str(template["confidence_mode"]) == "inverse":
 			reasons.append("doubts \"%s\" (confidence %d, weighed as %d)" % [
-				str(belief.get("claim", belief["id"])), int(belief["confidence"]), effective_confidence
+				str(belief.get("claim", belief["id"])), int(belief["confidence"]), weighed_confidence
 			])
 		else:
 			reasons.append("believes \"%s\" (confidence %d, weighed as %d)" % [
-				str(belief.get("claim", belief["id"])), int(belief["confidence"]), effective_confidence
+				str(belief.get("claim", belief["id"])), int(belief["confidence"]), weighed_confidence
 			])
 		if bool(belief.get("is_outdated", false)):
 			reasons.append("that belief is outdated and counts for less")
@@ -448,7 +448,7 @@ func _evaluate_candidate(
 			gained += doubt_delta
 			score += doubt_delta
 			knowledge_used.append(_knowledge_factor(
-				held, _effective_confidence(held), doubt_delta
+				held, effective_confidence(held), doubt_delta
 			))
 			reasons.append("is unsure of \"%s\"" % str(held.get("claim", held["id"])))
 
@@ -562,14 +562,14 @@ func _build_record(
 	}
 
 
-func _knowledge_factor(belief: Dictionary, effective_confidence: int, delta: int) -> Dictionary:
+func _knowledge_factor(belief: Dictionary, weighed_confidence: int, delta: int) -> Dictionary:
 	return {
 		"knowledge_id": str(belief["id"]),
 		"subject_id": str(belief.get("subject_id", "")),
 		"topic": str(belief.get("topic", "")),
 		"claim": str(belief.get("claim", "")),
 		"confidence": int(belief["confidence"]),
-		"effective_confidence": effective_confidence,
+		"effective_confidence": weighed_confidence,
 		"freshness": int(belief.get("freshness", 100)),
 		"is_outdated": bool(belief.get("is_outdated", false)),
 		"distorted": bool(belief.get("distorted", false)),
@@ -624,7 +624,8 @@ func _relationship_targets_for(state: WorldState, actor_id: String) -> Array[Str
 	return targets
 
 
-func _effective_confidence(belief: Dictionary) -> int:
+# Public: Action Selection weighs the same beliefs with the same discounts.
+func effective_confidence(belief: Dictionary) -> int:
 	var confidence := float(int(belief.get("confidence", 0)))
 	var freshness := float(int(belief.get("freshness", 100))) / 100.0
 	var value := confidence * maxf(freshness, MIN_FRESHNESS_FACTOR)

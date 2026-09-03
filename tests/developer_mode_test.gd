@@ -3,7 +3,7 @@ extends SceneTree
 # Developer Mode is an inspection tool. These tests hold it to two promises:
 # it shows the machine underneath, and it never touches the machine.
 
-const EXPECTED_TESTS := 13
+const EXPECTED_TESTS := 14
 const FALSE_BELIEF := {
 	"id": "king_divine_claim",
 	"subject_id": "aster_king",
@@ -49,6 +49,7 @@ func _process(_delta: float) -> bool:
 	_test_knowledge_section_exposes_objective_truth()
 	_test_normal_person_view_still_hides_truth()
 	_test_intent_section_renders_stored_record()
+	_test_action_section_is_kept_separate()
 	_test_actions_still_work_with_developer_mode_open()
 	_test_sections_all_render()
 
@@ -214,6 +215,26 @@ func _test_intent_section_renders_stored_record() -> void:
 	print("  DECISIONS: stored explanation rendered, %d candidates listed." % latest["considered"].size())
 
 
+func _test_action_section_is_kept_separate() -> void:
+	# Why someone wanted something and why they chose that way of pursuing it
+	# are two questions. Merging the records would make neither answerable.
+	var records: Array[Dictionary] = main.simulation.state.get_actions_for("mara")
+	assert(not records.is_empty(), "the fixture needs a selected action")
+	var latest: Dictionary = records.back()
+
+	var view := _section_text("actions")
+	assert(view.contains(str(latest["id"])))
+	assert(view.contains(str(latest["action_type"])))
+	assert(view.contains(str(latest["selection"])), "the record must say how it was chosen")
+	assert(view.contains(str(latest["intent_id"])), "an attempt must point at the want it serves")
+	assert(view.contains("considered"), "the roads not taken belong in the inspection")
+
+	var intent_view := _section_text("intents")
+	assert(not intent_view.contains(str(latest["id"])), "the two records must not be merged")
+	assert(intent_view != view)
+	completed += 1
+
+
 func _test_actions_still_work_with_developer_mode_open() -> void:
 	if not main.developer_mode_enabled:
 		main.toggle_developer_mode()
@@ -269,6 +290,6 @@ func _snapshot() -> Array:
 		state.previous_action_id, state.reputation,
 		str(state.relationships), str(state.notable_entities), str(state.beliefs),
 		str(state.belief_pressure), str(state.world_flags),
-		state.history_archive.size(), state.intent_archive.size(),
+		state.history_archive.size(), state.intent_archive.size(), state.action_archive.size(),
 		state.knowledge_events.size()
 	]

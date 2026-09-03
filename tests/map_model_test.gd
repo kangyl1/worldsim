@@ -199,9 +199,10 @@ func _test_yearly_ticks_still_execute() -> void:
 		"relationship tick must still run")
 	assert(simulation.state.get_all_knowledge("mara").size() > 0, "knowledge tick must still run")
 	assert(not simulation.state.intent_archive.is_empty(), "intent tick must still run")
+	assert(not simulation.state.action_archive.is_empty(), "action selection must still run")
 	assert(simulation.state.history.size() > 0, "history must still be written")
 	completed += 1
-	print("  TICKS: relationships, knowledge, intents, and history all still advance.")
+	print("  TICKS: relationships, knowledge, intents, actions, and history all still advance.")
 
 
 func _snapshot(simulation) -> Array:
@@ -220,7 +221,8 @@ func _snapshot(simulation) -> Array:
 		str(simulation.state.relationships),
 		str(simulation.state.notable_entities),
 		simulation.state.history.size(),
-		simulation.state.intent_archive.size()
+		simulation.state.intent_archive.size(),
+		simulation.state.action_archive.size()
 	]
 
 

@@ -123,6 +123,7 @@ const EVENT_KNOWLEDGE := {
 var state := WorldState.new()
 var interpretation_system := InterpretationSystem.new()
 var intent_rules := IntentRules.new()
+var action_rules := ActionRules.new()
 var knowledge_rules := KnowledgeRules.new()
 var debug_logging_enabled: bool = true
 
@@ -199,6 +200,7 @@ func advance_year() -> Dictionary:
 	state.last_relationship_changes = tick_relationships()
 	state.last_knowledge_shares = tick_knowledge()
 	state.last_intents = tick_intents()
+	state.last_actions = tick_action_selection()
 	_process_population()
 	_process_world_drift()
 	_select_next_event()
@@ -421,6 +423,27 @@ func _log_event_knowledge(learned: Array[Dictionary]) -> void:
 		"refreshed_for" if bool(first["refreshed"]) else "learned_by",
 		", ".join(names)
 	])
+
+
+func tick_action_selection() -> Array[Dictionary]:
+	# One attempt per want formed this year, and nothing is attempted. This pass
+	# records what each actor is about to try; whether it works, and what it
+	# changes, belong to Action Execution, which does not exist yet.
+	var selected: Array[Dictionary] = []
+	for intent: Dictionary in state.last_intents:
+		var action := action_rules.choose_action(state, intent)
+		if action.is_empty():
+			continue
+		selected.append(state.record_action(action))
+	return selected
+
+
+func evaluate_mortal_actions(intent: Dictionary) -> Array[Dictionary]:
+	return action_rules.evaluate_actions(state, intent)
+
+
+func choose_mortal_action(intent: Dictionary) -> Dictionary:
+	return action_rules.choose_action(state, intent)
 
 
 func evaluate_intents(actor_id: String) -> Array[Dictionary]:

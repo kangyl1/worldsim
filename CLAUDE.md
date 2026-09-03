@@ -13,7 +13,7 @@ The user retains authority over game design, project direction, and GitHub publi
 3. If there is **ANY** design ambiguity, design problem, or architecture decision that could affect game behavior, scope, rules, simulation outcomes, or project direction, **STOP and ask the user before deciding**. Do not make autonomous game-design decisions.
 4. Small, purely mechanical implementation details may be handled without asking only when they cannot alter design intent. If uncertain, ask.
 5. GitHub repository `kangyl1/worldsim` is the source of truth when this document or any handoff summary conflicts with the current committed code. Inspect the repository and history when unsure.
-6. Broad Intent Model v1 is built. Do not extend it into Actions, Events, or Consequences until the user explicitly asks.
+6. Broad Intent Model v1 and Mortal Action Selection v1 are built. Nothing is executed. Do not build Action Execution, Events, or Consequences until the user explicitly asks.
 7. The player-facing interface shows a mortal's perspective; Developer Mode shows the machine. Never merge the two. See "Interface rules".
 
 ## Project reference
@@ -42,12 +42,13 @@ The current foundation includes:
 - trait and relationship effects
 - mortal interpretation of divine actions, feeding beliefs and reputation
 - Broad Intent Model v1: ten wants, deterministic argmax, full explainability records
+- Mortal Action Selection v1: seven parameterised verbs, capability-gated, selection only
 - knowledge generation from existing events, outcome-aware and refreshing stable ids
 - a world map interface with clickable settlements and crisis markers
 - world -> settlement -> person navigation in one reusable panel
 - in-game Developer Mode (DEV button, F1 secondary) exposing raw simulation values, read-only
 - a centralised presentation layer turning numbers into qualitative labels
-- deterministic tests across eight suites
+- deterministic tests across nine suites
 - a 72-turn regression suite
 
 Current core source files:
@@ -59,6 +60,7 @@ Current core source files:
 | `scripts/knowledge_rules.gd` | rumor transfer scoring and trait effects on information |
 | `scripts/interpretation_system.gd` | how mortals interpret divine actions |
 | `scripts/intent_rules.gd` | Broad Intent Model v1 scoring and explainability records |
+| `scripts/action_rules.gd` | Mortal Action Selection v1: intent -> viable attempt, never executed |
 | `scripts/world_map.gd` | map presentation and click hit-testing; reads nothing from the simulation |
 | `scripts/presentation_rules.gd` | number -> label bands for the player-facing interface |
 | `Main.gd` / `Main.tscn` | interface and player interaction only |
@@ -70,6 +72,7 @@ Test suites, all deterministic:
 | `tests/smoke_test.gd` | boot, traits, relationships, 72-turn regression |
 | `tests/knowledge_test.gd` | direct knowledge, rumors, traits, falsehood, aging |
 | `tests/intent_test.gd` | Broad Intent v1 vocabulary, gating law, direction, intentions-only |
+| `tests/action_test.gd` | action vocabulary, capability gates, no-viable-action, selection-only |
 | `tests/event_knowledge_test.gd` | events teaching entities, refresh-not-duplicate, reaching intents |
 | `tests/map_model_test.gd` | location model, map hit-testing, simulation boundary |
 | `tests/person_view_test.gd` | person navigation and the mortal-perspective filter |
@@ -89,8 +92,8 @@ wider chain: world state -> pressures -> perception -> belief -> interpretation
 -> goal -> **broad intent** -> action selection -> consequence -> memory ->
 history. Read Part II before designing anything in this area.
 
-The next system is **Mortal Action Selection**, and it must not begin until the
-user explicitly asks.
+The next system is **Mortal Action Execution**, and it must not begin until the
+user explicitly asks. Selection is built; nothing attempts anything.
 
 **Goal is a conceptual layer only.** GDD Part II lists Goal between
 interpretation and intent. v1 deliberately does not implement it: a goal field
@@ -98,7 +101,8 @@ would be derived one-to-one from the intent type and would duplicate what
 `knowledge_used` already records. Build it only if a later system needs one
 goal to produce several different intents.
 
-Actions/Events execution **MUST NOT be implemented until the user explicitly asks**.
+Action execution, events, and consequences **MUST NOT be implemented until the
+user explicitly asks**.
 
 Broad Intent Model v1 constraints, settled with the user and to be preserved:
 
@@ -114,6 +118,24 @@ Broad Intent Model v1 constraints, settled with the user and to be preserved:
 - outdated or distorted beliefs lose weight but never disappear
 - `wait` can be chosen on merit as well as reached as the fallback, and the record's `selection` field must keep the two distinguishable
 - intents are intentions only and must not change world state, relationships, or knowledge
+
+Mortal Action Selection v1 constraints, settled with the user and to be preserved
+(the verb list is provisional; everything else is durable):
+
+- actions are `give`, `ask`, `tell`, `support`, `oppose`, `observe`, `wait`
+- actions are parameterised: a verb plus target, subject, topic and resource, never one type per behaviour
+- a new verb is justified only when parameters cannot express it; "warn", "preach", "beg", "teach" and "donate" are not actions
+- capability is a hard gate HERE, and only here; a refused action must leave the intent exactly as it was
+- an intent with no viable action is a valid outcome, recorded as `wait` with `selection: "fallback_no_viable_action"`
+- three roads to `wait` stay distinguishable: `intended_wait`, `fallback_no_viable_action`, and an ordinary `argmax` win
+- `go` is deferred: entities have no location, and movement must not be faked
+- `give` is generated and refused every time, because nothing models a resource a mortal controls; it goes live when settlement or personal resources exist
+- role weighting is deferred: entities carry only `kind`, which is `person` for everyone
+- `tell` requires a believed, still-held topic and a target who does not already know it better
+- actions read believed knowledge and never consult `objective_truth_state`
+- selection is deterministic argmax; no randomness
+- selection records an attempt and executes nothing: no resource moves, no relationship changes, no knowledge spreads, no event fires
+- intent and action records stay separate, in storage and in Developer Mode; why someone wanted something and why they chose that way of pursuing it are two questions
 
 ## Design rules
 

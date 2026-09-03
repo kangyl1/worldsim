@@ -1106,6 +1106,36 @@ Possible actions:
 An intent with no available action is a valid outcome. Wanting something and
 being unable to attempt it is part of the simulation, not a failure of it.
 
+Mortal Action Selection v1 keeps the vocabulary small and parameterised, so
+that the list above is expressed by combining a verb with a target, a topic and
+a resource rather than by naming each behaviour separately:
+
+| Action | What the character attempts |
+|---|---|
+| Give | Hand over something they control |
+| Ask | Request help, resources, or an answer from someone |
+| Tell | Pass on something they believe |
+| Support | Lend effort, standing, or presence to someone |
+| Oppose | Object, refuse support, obstruct — never violence |
+| Observe | Look harder without intervening |
+| Wait | Attempt nothing this cycle |
+
+**This vocabulary is provisional.** A new verb earns its place only when it
+cannot be expressed by combining an existing one with parameters. "Warn",
+"preach", "beg", "teach" and "donate" are not actions; they are Tell, Tell,
+Ask, Tell and Give wearing different manners, and manner is a later layer.
+
+Two are held back deliberately, because the world has no data to support them
+honestly. **Go** needs entities to have locations, and they do not; movement
+would have to be invented rather than simulated. **Give** is generated and then
+refused every time, because nothing yet models a resource a mortal controls —
+kingdom food belongs to the realm, not to any person. Its refusal is the
+clearest demonstration in the system that capability filters an action without
+touching the want.
+
+Selection is not execution. Choosing to ask the King for grain is not the King
+answering, and nothing in the world moves because an attempt was written down.
+
 ### Action Attempt
 
 The character tries. Attempts may fail.
@@ -1219,7 +1249,9 @@ If a future condition is hard to classify, the test is simple:
 
 > Does this describe what the person **wants**, or whether they **could**?
 
-Only the first belongs here.
+Only the first belongs here. The second belongs one layer down: at Action
+Selection capability becomes a hard gate, and an action refused there leaves
+the want standing exactly as it was.
 
 ---
 
@@ -1531,20 +1563,21 @@ The current dependency order. This is not an immutable schedule.
 | 3 | Knowledge / Rumors | **Built** |
 | 4 | Decision Engine v1 | **Built**, then superseded in vocabulary by 5 |
 | 5 | Broad Intent Model | **Built** — ten directions, intentions only |
-| 6 | Mortal Action Selection / Execution | **Next** |
-| 7 | Consequence Engine | |
-| 8 | Minimal Settlement State | |
-| 9 | Event → Perception → Knowledge pipeline | |
-| 10 | Autonomous Feedback Loop | |
-| 11 | Divine Actions integrated into the same causal pipeline | |
-| 12 | History / Chronicle generated from causal events | |
-| 13 | Deeper religion / interpretation | |
-| 14 | Factions / politics | |
-| 15 | Multiple kingdoms | |
-| 16 | World generation | |
-| 17 | Additional races / Create Life | |
+| 6 | Mortal Action Selection | **Built** — seven verbs, selection only |
+| 7 | Mortal Action Execution | **Next** — nothing is attempted yet |
+| 8 | Consequence Engine | |
+| 9 | Minimal Settlement State | |
+| 10 | Event → Perception → Knowledge pipeline | |
+| 11 | Autonomous Feedback Loop | |
+| 12 | Divine Actions integrated into the same causal pipeline | |
+| 13 | History / Chronicle generated from causal events | |
+| 14 | Deeper religion / interpretation | |
+| 15 | Factions / politics | |
+| 16 | Multiple kingdoms | |
+| 17 | World generation | |
+| 18 | Additional races / Create Life | |
 
-Item 11 matters more than its position suggests. Divine actions should
+Item 12 matters more than its position suggests. Divine actions should
 eventually run through the same causal pipeline as mortal actions, rather than
 existing as a separate special case. The god should be an actor in the world's
 causality, not an exception to it.

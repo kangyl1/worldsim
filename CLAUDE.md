@@ -19,11 +19,16 @@ The user retains authority over game design, project direction, and GitHub publi
 ## Project reference
 
 - Repository: `kangyl1/worldsim`
-- Current important commit: `0bf0141c1d51e0fd3e692e327f59162ecad55ebe` — `Add Mortal Action Selection v1`
-- Broad Intent commit: `f8aaf05c27c3e5c9047625cc6309fcae1217e55f` — `Add Broad Intent Model v1`
-- Design revision commit: `9b1ad6ed3102906b35b4adbf590a68d8dbce0568` — `Record the simulation foundation revision in the GDD`
-- Decision engine commit: `dcf38771bf1983e2ccbfa36eeda2aed983f93da4` — `Add Decision Engine v1`, superseded in vocabulary by Broad Intent v1
-- Original foundation commit: `7b453a8655a6c4a8cea05a0ed3e0ffa2239cf515` — `Add Worldsim social and knowledge foundations`
+- Current important commit: `36cddb3a5a642c41f7e41e7e83f397ad1cf2327a` — `Add Mortal Action Execution v1`
+
+The mortal causal chain, one commit per layer, oldest first:
+
+- `7b453a8655a6c4a8cea05a0ed3e0ffa2239cf515` — `Add Worldsim social and knowledge foundations`
+- `dcf38771bf1983e2ccbfa36eeda2aed983f93da4` — `Add Decision Engine v1`, superseded in vocabulary by Broad Intent v1
+- `9b1ad6ed3102906b35b4adbf590a68d8dbce0568` — `Record the simulation foundation revision in the GDD`, which is where Part II came from
+- `f8aaf05c27c3e5c9047625cc6309fcae1217e55f` — `Add Broad Intent Model v1` (what mortals want)
+- `0bf0141c1d51e0fd3e692e327f59162ecad55ebe` — `Add Mortal Action Selection v1` (what they try)
+- `36cddb3a5a642c41f7e41e7e83f397ad1cf2327a` — `Add Mortal Action Execution v1` (what came of it)
 - Local project path: `/Users/jamienfam/Documents/ChatGPT/worldsim`
 - Tested Godot version: `4.7.1`
 - Godot is **not on `PATH`**. Use the full binary path: `/Users/jamienfam/Downloads/Godot.app/Contents/MacOS/Godot`

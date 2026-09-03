@@ -19,7 +19,7 @@ The user retains authority over game design, project direction, and GitHub publi
 ## Project reference
 
 - Repository: `kangyl1/worldsim`
-- Current important commit: `36cddb3a5a642c41f7e41e7e83f397ad1cf2327a` — `Add Mortal Action Execution v1`
+- Current important commit: `ddbde279d7140e7e4f3f2ce0107c0c8045485893` — `Add Selective Perception v1`
 
 The mortal causal chain, one commit per layer, oldest first:
 
@@ -29,6 +29,7 @@ The mortal causal chain, one commit per layer, oldest first:
 - `f8aaf05c27c3e5c9047625cc6309fcae1217e55f` — `Add Broad Intent Model v1` (what mortals want)
 - `0bf0141c1d51e0fd3e692e327f59162ecad55ebe` — `Add Mortal Action Selection v1` (what they try)
 - `36cddb3a5a642c41f7e41e7e83f397ad1cf2327a` — `Add Mortal Action Execution v1` (what came of it)
+- `ddbde279d7140e7e4f3f2ce0107c0c8045485893` — `Add Selective Perception v1` (who could know any of it in the first place)
 - Local project path: `/Users/jamienfam/Documents/ChatGPT/worldsim`
 - Tested Godot version: `4.7.1`
 - Godot is **not on `PATH`**. Use the full binary path: `/Users/jamienfam/Downloads/Godot.app/Contents/MacOS/Godot`

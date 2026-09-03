@@ -13,10 +13,10 @@ func _init() -> void:
 	_test_absorbed_event_teaches_nothing()
 	_test_repeat_refreshes_same_record()
 	_test_generated_fact_spreads_as_rumor()
-	_test_unrest_unlocks_warn_ally()
-	_test_shortage_unlocks_send_aid()
+	_test_unrest_unlocks_protect()
+	_test_shortage_unlocks_help()
 	_test_surplus_requires_real_surplus()
-	_test_end_to_end_event_to_decision()
+	_test_end_to_end_event_to_intent()
 	if completed != EXPECTED_TESTS:
 		push_error("Event knowledge suite incomplete: %d of %d tests finished." % [
 			completed, EXPECTED_TESTS
@@ -24,7 +24,7 @@ func _init() -> void:
 		print("EVENT KNOWLEDGE TEST FAILED: %d of %d tests finished." % [completed, EXPECTED_TESTS])
 		quit(1)
 		return
-	print("EVENT KNOWLEDGE TEST PASSED: events teach, repeats refresh, beliefs reach decisions.")
+	print("EVENT KNOWLEDGE TEST PASSED: events teach, repeats refresh, beliefs reach intents.")
 	quit(0)
 
 
@@ -126,33 +126,37 @@ func _test_generated_fact_spreads_as_rumor() -> void:
 	completed += 1
 
 
-func _test_unrest_unlocks_warn_ally() -> void:
+func _test_unrest_unlocks_protect() -> void:
 	var simulation = _new_simulation()
 	simulation.state.stability_level = 0
 	simulation.state.current_event_id = "unrest"
-	assert(simulation.choose_decision("mara")["decision_type"] == "wait_and_observe",
-		"nothing is known before the event")
+	var before: Dictionary = simulation.choose_intent("mara")
+	assert(str(before["intent_type"]) != "protect",
+		"nothing is known before the event, so nothing is being protected from")
 
 	simulation.tick_event_knowledge()
-	var decision: Dictionary = simulation.choose_decision("mara")
-	assert(decision["decision_type"] == "warn_ally", "a loyal witness should warn her ally")
-	assert(str(decision["target_id"]) == "aster_king")
-	assert(str(decision["knowledge_used"][0]["knowledge_id"]) == "aster_unrest")
-	print("  UNREST: Mara moves from wait_and_observe to warn_ally at score %d." % int(decision["score"]))
+	var intent: Dictionary = simulation.choose_intent("mara")
+	assert(str(intent["intent_type"]) == "protect", "a loyal witness wants the danger kept off people")
+	assert(str(intent["target_id"]) == "aster")
+	assert(str(intent["target_kind"]) == "settlement")
+	assert(str(intent["knowledge_used"][0]["knowledge_id"]) == "aster_unrest")
+	print("  UNREST: witnessing it moves Mara from %s to protect at score %d." % [
+		str(before["intent_type"]), int(intent["score"])
+	])
 	completed += 1
 
 
-func _test_shortage_unlocks_send_aid() -> void:
+func _test_shortage_unlocks_help() -> void:
 	var simulation = _new_simulation()
 	simulation.state.food_level = 0
 	simulation.state.current_event_id = "drought"
 	simulation.tick_event_knowledge()
 
-	var decision: Dictionary = simulation.choose_decision("mara")
-	assert(decision["decision_type"] == "send_aid")
-	assert(str(decision["target_id"]) == "aster")
-	assert(str(decision["knowledge_used"][0]["knowledge_id"]) == "aster_food_shortage")
-	print("  SHORTAGE: Mara intends send_aid toward aster at score %d." % int(decision["score"]))
+	var intent: Dictionary = simulation.choose_intent("mara")
+	assert(str(intent["intent_type"]) == "help")
+	assert(str(intent["target_id"]) == "aster")
+	assert(str(intent["knowledge_used"][0]["knowledge_id"]) == "aster_food_shortage")
+	print("  SHORTAGE: Mara wants to help aster at score %d." % int(intent["score"]))
 	completed += 1
 
 
@@ -172,24 +176,30 @@ func _test_surplus_requires_real_surplus() -> void:
 	completed += 1
 
 
-func _test_end_to_end_event_to_decision() -> void:
+func _test_end_to_end_event_to_intent() -> void:
 	# The full loop with no hand-placed knowledge: events must seed everything.
 	var simulation = _new_simulation()
 	var actions := ["send_rain", "bless_harvest", "speak_mortal", "do_nothing"]
 	var facts_generated := 0
-	var real_decisions: Array[String] = []
+	var chosen_intents: Array[String] = []
+	var knowledge_driven := 0
 	for turn in 16:
 		simulation.resolve_action(actions[turn % actions.size()])
 		simulation.advance_year()
 		facts_generated += simulation.state.last_event_knowledge.size()
-		for decision: Dictionary in simulation.state.last_decisions:
-			if str(decision["decision_type"]) != "wait_and_observe":
-				real_decisions.append("%s:%s" % [decision["actor_id"], decision["decision_type"]])
+		for intent: Dictionary in simulation.state.last_intents:
+			if str(intent["selection"]) != "argmax":
+				continue
+			chosen_intents.append("%s:%s" % [intent["actor_id"], intent["intent_type"]])
+			if not intent["knowledge_used"].is_empty():
+				knowledge_driven += 1
 	assert(facts_generated > 0, "the running world must generate knowledge on its own")
-	assert(not real_decisions.is_empty(), "generated knowledge must reach a real decision")
+	assert(not chosen_intents.is_empty(), "the world must produce wants without a fallback")
+	assert(knowledge_driven > 0, "generated knowledge must reach a real intent")
 	assert(simulation.state.get_all_knowledge("mara").size() > 0)
-	print("  END TO END: %d facts generated, %d non-fallback decisions (%s)." % [
-		facts_generated, real_decisions.size(), ", ".join(real_decisions.slice(0, 3))
+	print("  END TO END: %d facts generated, %d chosen intents, %d of them belief-driven (%s)." % [
+		facts_generated, chosen_intents.size(), knowledge_driven,
+		", ".join(chosen_intents.slice(0, 3))
 	])
 	completed += 1
 

@@ -8,7 +8,7 @@ const EXPECTED_TESTS := 12
 const FORBIDDEN_IN_PERSON_VIEW := [
 	"objective", "truth_state", "distorted", "transmission",
 	"invalidated", "is_outdated", "freshness", "source_type",
-	"decision_", "knowledge_id", "subject_id"
+	"intent_", "knowledge_id", "subject_id"
 ]
 
 var main
@@ -130,15 +130,18 @@ func _test_view_shows_meaning_not_numbers() -> void:
 
 
 func _test_intention_is_the_latest_record() -> void:
-	var records: Array[Dictionary] = main.simulation.state.get_decisions_for("mara")
-	assert(not records.is_empty(), "the fixture needs a recorded decision")
+	var records: Array[Dictionary] = main.simulation.state.get_intents_for("mara")
+	assert(not records.is_empty(), "the fixture needs a recorded intent")
 	var latest: Dictionary = records.back()
 	main._on_person_clicked("person:mara")
 	var view := _view_text()
-	var label := str(main.DECISION_LABELS.get(str(latest["decision_type"]), ""))
-	assert(not label.is_empty(), "every decision type needs a readable label")
+	var label := str(main.INTENT_LABELS.get(str(latest["intent_type"]), ""))
+	assert(not label.is_empty(), "every intent type needs a readable label")
 	assert(view.contains(label), "the newest intention should be the one shown")
-	assert(not view.contains(str(latest["decision_type"])), "raw decision ids must not leak")
+	assert(not view.contains(str(latest["id"])), "raw intent ids must not leak")
+	# The player panel names a direction a mortal wants, never an execution.
+	for intent_type: String in IntentRules.INTENT_ORDER:
+		assert(main.INTENT_LABELS.has(intent_type), "%s has no readable label" % intent_type)
 	assert(view.contains("year %d" % int(latest["year"])))
 	completed += 1
 	print("  INTENTION: showing '%s', the most recent record." % label)
@@ -288,5 +291,5 @@ func _snapshot() -> Array:
 		state.prosperity_level, state.military_level, state.faith, state.followers,
 		state.divine_power, state.current_event_id, state.action_taken,
 		str(state.relationships), str(state.notable_entities),
-		state.history.size(), state.decision_archive.size(), str(state.beliefs)
+		state.history.size(), state.intent_archive.size(), str(state.beliefs)
 	]

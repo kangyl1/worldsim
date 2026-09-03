@@ -48,7 +48,7 @@ func _process(_delta: float) -> bool:
 	_test_people_section_shows_exact_directed_values()
 	_test_knowledge_section_exposes_objective_truth()
 	_test_normal_person_view_still_hides_truth()
-	_test_decision_section_renders_stored_record()
+	_test_intent_section_renders_stored_record()
 	_test_actions_still_work_with_developer_mode_open()
 	_test_sections_all_render()
 
@@ -194,15 +194,16 @@ func _test_normal_person_view_still_hides_truth() -> void:
 	print("  ISOLATION: the same belief stays truth-free in the player panel.")
 
 
-func _test_decision_section_renders_stored_record() -> void:
-	var records: Array[Dictionary] = main.simulation.state.get_decisions_for("mara")
-	assert(not records.is_empty(), "the fixture needs a decision")
+func _test_intent_section_renders_stored_record() -> void:
+	var records: Array[Dictionary] = main.simulation.state.get_intents_for("mara")
+	assert(not records.is_empty(), "the fixture needs an intent")
 	var latest: Dictionary = records.back()
 	main.developer_person_id = "mara"
-	var view := _section_text("decisions")
+	var view := _section_text("intents")
 	# Rendered from the stored explanation, never recomputed.
 	assert(view.contains(str(latest["id"])))
-	assert(view.contains(str(latest["decision_type"])))
+	assert(view.contains(str(latest["intent_type"])))
+	assert(view.contains(str(latest["selection"])), "the record must say how it was chosen")
 	assert(view.contains(str(int(latest["score"]))))
 	assert(view.contains("considered"), "the rejected candidates are part of the record")
 	for candidate: Dictionary in latest["considered"]:
@@ -268,6 +269,6 @@ func _snapshot() -> Array:
 		state.previous_action_id, state.reputation,
 		str(state.relationships), str(state.notable_entities), str(state.beliefs),
 		str(state.belief_pressure), str(state.world_flags),
-		state.history_archive.size(), state.decision_archive.size(),
+		state.history_archive.size(), state.intent_archive.size(),
 		state.knowledge_events.size()
 	]

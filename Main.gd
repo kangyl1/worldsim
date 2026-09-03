@@ -8,16 +8,23 @@ const ACTION_ROW_WIDTH := 34
 const PERSON_META_PREFIX := "person:"
 const DEV_TAB_META := "dev_tab:"
 const DEV_PERSON_META := "dev_person:"
-const DEV_SECTIONS := ["world", "locations", "people", "knowledge", "decisions", "belief", "history"]
+const DEV_SECTIONS := ["world", "locations", "people", "knowledge", "intents", "belief", "history"]
 const DEV_LIST_LIMIT := 24
 const BACK_META := "back"
-# Player-readable names for the intentions the decision engine records.
-const DECISION_LABELS := {
-	"send_aid": "Send aid",
-	"warn_ally": "Warn an ally",
-	"exploit_weakness": "Exploit a weakness",
-	"investigate": "Look into it",
-	"wait_and_observe": "Wait and watch"
+# Player-readable names for the broad intents the engine records. These name a
+# direction a mortal wants to go, never an action they attempt: "Help" is what
+# Mara wants, and how she would go about it is not decided yet.
+const INTENT_LABELS := {
+	"help": "Help",
+	"protect": "Protect",
+	"acquire": "Seek what is needed",
+	"learn": "Understand",
+	"influence": "Sway",
+	"connect": "Grow closer",
+	"distance": "Keep away",
+	"resolve": "Settle a quarrel",
+	"preserve": "Hold to what is",
+	"wait": "Wait and watch"
 }
 
 var simulation := WorldSimulation.new()
@@ -350,17 +357,20 @@ func _render_person() -> void:
 
 func _person_intention_lines() -> Array[String]:
 	var lines: Array[String] = ["[color=#68757c]CURRENT INTENTION[/color]"]
-	var records: Array[Dictionary] = simulation.state.get_decisions_for(selected_person_id)
+	var records: Array[Dictionary] = simulation.state.get_intents_for(selected_person_id)
 	if records.is_empty():
 		lines.append("[color=#73627f]None recorded.[/color]")
 		return lines
 	# The archive appends chronologically, so the last record is the newest.
 	var latest: Dictionary = records.back()
-	var decision_type := str(latest["decision_type"])
+	var intent_type := str(latest["intent_type"])
 	lines.append("[color=#e8be63]%s[/color]" % str(
-		DECISION_LABELS.get(decision_type, decision_type.capitalize())
+		INTENT_LABELS.get(intent_type, intent_type.capitalize())
 	))
-	var target_name := _display_name_for(str(latest["target_id"]))
+	# A self-directed want has no "toward" to show: holding to your own position
+	# is not aimed at anyone.
+	var target_name := "" if str(latest["target_kind"]) in ["self", "none"] \
+		else _display_name_for(str(latest["target_id"]))
 	if not target_name.is_empty():
 		lines.append("[color=#68757c]Toward:[/color] [color=#9ca5a4]%s[/color]" % target_name)
 	lines.append("[color=#68757c]Formed in year %d.[/color]" % int(latest["year"]))
@@ -565,8 +575,8 @@ func _render_developer() -> void:
 			developer_text.text = "\n".join(_developer_people_lines())
 		"knowledge":
 			developer_text.text = "\n".join(_developer_knowledge_lines())
-		"decisions":
-			developer_text.text = "\n".join(_developer_decision_lines())
+		"intents":
+			developer_text.text = "\n".join(_developer_intent_lines())
 		"belief":
 			developer_text.text = "\n".join(_developer_belief_lines())
 		"history":
@@ -688,21 +698,22 @@ func _developer_knowledge_lines() -> Array[String]:
 	return lines
 
 
-func _developer_decision_lines() -> Array[String]:
+func _developer_intent_lines() -> Array[String]:
 	var state := simulation.state
-	var lines: Array[String] = [_dev_heading("DECISIONS  ·  %s" % _or_none(developer_person_id))]
+	var lines: Array[String] = [_dev_heading("INTENTS  ·  %s" % _or_none(developer_person_id))]
 	if developer_person_id.is_empty():
 		lines.append("[color=#73627f]Select an entity in PEOPLE.[/color]")
 		return lines
-	var records: Array[Dictionary] = state.get_decisions_for(developer_person_id)
+	var records: Array[Dictionary] = state.get_intents_for(developer_person_id)
 	if records.is_empty():
-		lines.append("[color=#73627f]No decisions recorded.[/color]")
+		lines.append("[color=#73627f]No intents recorded.[/color]")
 		return lines
 	var latest: Dictionary = records.back()
-	lines.append(_dev_field("decision_id", latest["id"]))
-	lines.append(_dev_field("decision_type", latest["decision_type"]))
+	lines.append(_dev_field("intent_id", latest["id"]))
+	lines.append(_dev_field("intent_type", latest["intent_type"]))
 	lines.append(_dev_field("target_id", _or_none(str(latest["target_id"]))))
 	lines.append(_dev_field("target_kind", latest["target_kind"]))
+	lines.append(_dev_field("selection", latest["selection"]))
 	lines.append(_dev_field("base_priority", latest["base_priority"]))
 	lines.append(_dev_field("score", latest["score"]))
 	lines.append(_dev_field("priority", latest["priority"]))
@@ -727,11 +738,11 @@ func _developer_decision_lines() -> Array[String]:
 	lines.append("[color=#76c8d5]considered[/color]")
 	for candidate: Dictionary in latest.get("considered", []):
 		lines.append("[color=#8d989d]  %-18s %-12s score %-5d %s[/color]" % [
-			str(candidate["decision_type"]), _or_none(str(candidate["target_id"])),
+			str(candidate["intent_type"]), _or_none(str(candidate["target_id"])),
 			int(candidate["score"]), str(candidate["reason"])
 		])
 	lines.append("")
-	lines.append(_dev_field("decisions recorded", records.size()))
+	lines.append(_dev_field("intents recorded", records.size()))
 	return lines
 
 
@@ -786,11 +797,11 @@ func _developer_history_lines() -> Array[String]:
 			str(change.get("source_id", "")), str(change.get("target_id", "")),
 			str(change.get("changes", {}))
 		])
-	lines.append(_dev_field("last_decisions", state.last_decisions.size()))
-	for decision: Dictionary in state.last_decisions:
+	lines.append(_dev_field("last_intents", state.last_intents.size()))
+	for intent: Dictionary in state.last_intents:
 		lines.append("[color=#8d989d]  %s  %s -> %s  score %d[/color]" % [
-			str(decision.get("actor_id", "")), str(decision.get("decision_type", "")),
-			_or_none(str(decision.get("target_id", ""))), int(decision.get("score", 0))
+			str(intent.get("actor_id", "")), str(intent.get("intent_type", "")),
+			_or_none(str(intent.get("target_id", ""))), int(intent.get("score", 0))
 		])
 	return lines
 

@@ -12,7 +12,7 @@ const KNOWLEDGE_TRUTH_STATES := ["true", "false", "unknown", "outdated"]
 const KNOWLEDGE_CONFIDENCE_MIN := 0
 const KNOWLEDGE_CONFIDENCE_MAX := 100
 const DEFAULT_KNOWLEDGE_FRESH_YEARS := 3
-const MAX_STORED_DECISIONS := 40
+const MAX_STORED_INTENTS := 40
 # Version 0.1 keeps one region and three settlements, per the GDD prototype
 # scope. Locations carry identity only: no statistics are stored here, because
 # the simulation still tracks kingdom-wide values. Per-settlement state can be
@@ -101,9 +101,9 @@ var last_relationship_changes: Array[Dictionary] = []
 var last_knowledge_shares: Array[Dictionary] = []
 var knowledge_events: Array[Dictionary] = []
 var last_event_knowledge: Array[Dictionary] = []
-var last_decisions: Array[Dictionary] = []
-var decisions: Array[Dictionary] = []
-var decision_archive: Array[Dictionary] = []
+var last_intents: Array[Dictionary] = []
+var intents: Array[Dictionary] = []
+var intent_archive: Array[Dictionary] = []
 var history_archive: Array[String] = [
 	"Year 12 - The people prayed for help.",
 	"Year 11 - The river began to recede.",
@@ -376,29 +376,30 @@ func remove_knowledge(entity_id: String, knowledge_id: String) -> bool:
 	return true
 
 
-func record_decision(record: Dictionary) -> Dictionary:
-	# Decisions are intentions only. Recording one must never alter world
-	# statistics, relationships, or knowledge.
+func record_intent(record: Dictionary) -> Dictionary:
+	# Broad Intents are intentions only. Recording one must never alter world
+	# statistics, relationships, or knowledge. What a mortal wants and what a
+	# mortal attempts are separate layers; the second does not exist yet.
 	if record.is_empty():
 		return {}
 	var stored := record.duplicate(true)
-	decisions.append(stored)
-	decision_archive.append(stored)
-	if decisions.size() > MAX_STORED_DECISIONS:
-		decisions = decisions.slice(decisions.size() - MAX_STORED_DECISIONS)
+	intents.append(stored)
+	intent_archive.append(stored)
+	if intents.size() > MAX_STORED_INTENTS:
+		intents = intents.slice(intents.size() - MAX_STORED_INTENTS)
 	return stored.duplicate(true)
 
 
-func get_decision(decision_id: String) -> Dictionary:
-	for record: Dictionary in decision_archive:
-		if str(record["id"]) == decision_id:
+func get_intent(intent_id: String) -> Dictionary:
+	for record: Dictionary in intent_archive:
+		if str(record["id"]) == intent_id:
 			return record.duplicate(true)
 	return {}
 
 
-func get_decisions_for(actor_id: String) -> Array[Dictionary]:
+func get_intents_for(actor_id: String) -> Array[Dictionary]:
 	var matches: Array[Dictionary] = []
-	for record: Dictionary in decision_archive:
+	for record: Dictionary in intent_archive:
 		if str(record["actor_id"]) == actor_id:
 			matches.append(record.duplicate(true))
 	return matches

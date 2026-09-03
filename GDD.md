@@ -916,6 +916,13 @@ broader layer described in Section 30.
 
 This vocabulary is expected to evolve **before** Mortal Actions are implemented.
 
+**Resolved.** Broad Intent Model v1 replaced that vocabulary with the ten
+directions listed in Section 30. The engine's architecture — deterministic
+argmax, believed knowledge only, trait and relationship weighting, full
+explainability records, bounded yearly work — was preserved intact and moved to
+`scripts/intent_rules.gd`. See Section 31 for the gating law that keeps the
+layers apart.
+
 ---
 
 ## 30. The Mortal Simulation Chain
@@ -1038,28 +1045,33 @@ Examples:
 
 The character chooses a direction, **not yet a concrete action**.
 
-Examples:
+Broad Intent Model v1 settles the vocabulary at ten directions:
 
-- Help
-- Seek Safety
-- Gain Influence
-- Protect Influence
-- Learn
-- Share Knowledge
-- Build Relationship
-- Distance
-- Resolve Conflict
-- Acquire Resources
-- Protect Resources
-- Seek Justice
-- Seek Recognition
-- Fulfil Duty
-- Preserve Belief
-- Question Belief
-- Wait / Observe
+| Intent | What the character wants |
+|---|---|
+| Help | Improve another's condition, where harm is already present |
+| Protect | Prevent harm from an identified threat |
+| Acquire | Gain something materially or positionally lacking |
+| Learn | Reduce uncertainty or improve understanding |
+| Influence | Change another's behaviour, belief, support, or decision |
+| Connect | Strengthen or create a social bond |
+| Distance | Reduce exposure, obligation, or involvement |
+| Resolve | End an active quarrel, dispute, or tension |
+| Preserve | Hold to an existing condition, role, belief, or order |
+| Wait | Choose not to intervene yet |
 
-These are examples, not a final locked list. The list is expected to change
-during design of the Broad Intent Model.
+Two boundaries inside that list carry design weight:
+
+- **Acquire does not cover information.** Wanting to understand is Learn.
+- **Protect answers a threat; Preserve answers erosion.** Defending a shrine
+  from a mob and maintaining a religious practice are different wants, and the
+  presence of an identified threat is what separates them.
+
+**No intent in this list is antagonistic.** There is deliberately no "attack",
+"exploit" or "punish" direction. Hostility reaches the world through Acquire,
+Influence, Preserve and Distance, and the aggression appears at Action
+Selection as an execution style. War is an execution, never a want. This is
+what keeps the model from being war-shaped.
 
 ### Action Selection
 
@@ -1173,6 +1185,41 @@ This distinction must be preserved in all future architecture.
 
 If the intent vocabulary starts reading like a list of things people do rather
 than things people want, the layer has collapsed and needs to be split again.
+
+### The Gating Law
+
+Settled during Broad Intent Model v1. Three kinds of condition can touch an
+intent, and each may act only in one way:
+
+> **Gate on relevance of the evidence.**
+> **Weight on disposition.**
+> **Never gate on capability.**
+
+**Relevance** is the only hard gate the intent layer permits. A belief about a
+surplus cannot produce Help, because the evidence is not about suffering. This
+is what stops every intent being evaluated against every fact.
+
+**Disposition** — traits, and directed relationships — changes how strongly a
+want is held. It never forbids one. A cruel noble can still want to help; it
+simply costs him against a rival want. This restates Section 32 at the level of
+scoring.
+
+**Capability** must not reach the intent layer at all. Having no food, no army,
+no influence and no way to travel does not stop Mara wanting to help Westfield.
+Whether she can do anything about it is Action Selection's question, and
+Section 30 already establishes that an intent with no available action is a
+valid outcome rather than a failure.
+
+Decision Engine v1 mixed the third kind into the first: `send_aid` required
+food in the granary, and `exploit_weakness` required an army. Those were checks
+on whether an action could succeed, wearing the shape of a want. Removing them
+is what let the intent layer separate from the action layer cleanly.
+
+If a future condition is hard to classify, the test is simple:
+
+> Does this describe what the person **wants**, or whether they **could**?
+
+Only the first belongs here.
 
 ---
 
@@ -1482,9 +1529,9 @@ The current dependency order. This is not an immutable schedule.
 | 1 | Traits | **Built** |
 | 2 | Relationships | **Built** |
 | 3 | Knowledge / Rumors | **Built** |
-| 4 | Decision Engine v1 | **Built** — prototype intent vocabulary |
-| 5 | Broad Intent Model | **Next design foundation** |
-| 6 | Mortal Action Selection / Execution | |
+| 4 | Decision Engine v1 | **Built**, then superseded in vocabulary by 5 |
+| 5 | Broad Intent Model | **Built** — ten directions, intentions only |
+| 6 | Mortal Action Selection / Execution | **Next** |
 | 7 | Consequence Engine | |
 | 8 | Minimal Settlement State | |
 | 9 | Event → Perception → Knowledge pipeline | |

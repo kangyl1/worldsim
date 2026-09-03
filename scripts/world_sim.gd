@@ -86,7 +86,7 @@ const EVENTS := {
 # Canonical facts that existing events can make publicly observable. Conditions
 # are checked against world state AFTER the event handler and clamping have run,
 # so an event the world absorbed teaches nothing. Every notable entity witnesses
-# these directly; nothing here creates decisions, relationships, or statistics.
+# these directly; nothing here creates intents, relationships, or statistics.
 const EVENT_KNOWLEDGE := {
 	"drought": {
 		"id": "aster_food_shortage",
@@ -122,7 +122,7 @@ const EVENT_KNOWLEDGE := {
 
 var state := WorldState.new()
 var interpretation_system := InterpretationSystem.new()
-var decision_rules := DecisionRules.new()
+var intent_rules := IntentRules.new()
 var knowledge_rules := KnowledgeRules.new()
 var debug_logging_enabled: bool = true
 
@@ -198,7 +198,7 @@ func advance_year() -> Dictionary:
 	state.divine_power = mini(state.divine_power + 2, state.max_divine_power)
 	state.last_relationship_changes = tick_relationships()
 	state.last_knowledge_shares = tick_knowledge()
-	state.last_decisions = tick_decisions()
+	state.last_intents = tick_intents()
 	_process_population()
 	_process_world_drift()
 	_select_next_event()
@@ -312,24 +312,24 @@ func tick_knowledge() -> Array[Dictionary]:
 	return attempts
 
 
-func tick_decisions() -> Array[Dictionary]:
-	# Intentions only: this pass records what actors mean to do and changes
-	# nothing else in the world.
+func tick_intents() -> Array[Dictionary]:
+	# Intentions only: this pass records what actors want, and changes nothing
+	# else in the world. Nobody attempts anything here.
 	var made: Array[Dictionary] = []
 	var actor_ids: Array = state.notable_entities.keys()
 	actor_ids.sort()
 	for actor_index in actor_ids.size():
-		if made.size() >= DecisionRules.MAX_DECISIONS_PER_YEAR:
+		if made.size() >= IntentRules.MAX_INTENTS_PER_YEAR:
 			break
 		# At most half of the notable entities form an intention in a given year.
 		var actor_id := str(actor_ids[actor_index])
 		var actor_schedule := _stable_id_value(actor_id)
 		if (state.year + actor_schedule) % 2 != 0:
 			continue
-		var decision := decision_rules.choose_decision(state, actor_id)
-		if decision.is_empty():
+		var intent := intent_rules.choose_intent(state, actor_id)
+		if intent.is_empty():
 			continue
-		made.append(state.record_decision(decision))
+		made.append(state.record_intent(intent))
 	return made
 
 
@@ -423,12 +423,12 @@ func _log_event_knowledge(learned: Array[Dictionary]) -> void:
 	])
 
 
-func evaluate_decisions(actor_id: String) -> Array[Dictionary]:
-	return decision_rules.evaluate_decisions(state, actor_id)
+func evaluate_intents(actor_id: String) -> Array[Dictionary]:
+	return intent_rules.evaluate_intents(state, actor_id)
 
 
-func choose_decision(actor_id: String) -> Dictionary:
-	return decision_rules.choose_decision(state, actor_id)
+func choose_intent(actor_id: String) -> Dictionary:
+	return intent_rules.choose_intent(state, actor_id)
 
 
 func _knowledge_targets_for(source_id: String) -> Array[String]:

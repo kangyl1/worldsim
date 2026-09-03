@@ -603,7 +603,9 @@ func _observer_simulation():
 	var simulation = _new_simulation()
 	simulation.state.food_level = 0
 	simulation.state.current_event_id = "drought"
-	simulation.state.add_notable_entity("merchant", "The Merchant", "person", ["cautious"])
+	# Observing is not travelling: a merchant can only look at what they are
+	# placed to see.
+	simulation.state.add_notable_entity("merchant", "The Merchant", "person", ["cautious"], {}, "aster")
 	simulation.state.set_relationship("merchant", "mara", {
 		"trust": 40, "fear": 0, "respect": 20, "hostility": 0
 	})

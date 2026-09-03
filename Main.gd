@@ -8,7 +8,7 @@ const ACTION_ROW_WIDTH := 34
 const PERSON_META_PREFIX := "person:"
 const DEV_TAB_META := "dev_tab:"
 const DEV_PERSON_META := "dev_person:"
-const DEV_SECTIONS := ["world", "locations", "people", "knowledge", "intents", "actions", "executions", "belief", "history"]
+const DEV_SECTIONS := ["world", "locations", "people", "perceptions", "knowledge", "intents", "actions", "executions", "belief", "history"]
 const DEV_LIST_LIMIT := 24
 const BACK_META := "back"
 # Player-readable names for the broad intents the engine records. These name a
@@ -659,6 +659,8 @@ func _render_developer() -> void:
 			developer_text.text = "\n".join(_developer_location_lines())
 		"people":
 			developer_text.text = "\n".join(_developer_people_lines())
+		"perceptions":
+			developer_text.text = "\n".join(_developer_perception_lines())
 		"knowledge":
 			developer_text.text = "\n".join(_developer_knowledge_lines())
 		"intents":
@@ -749,6 +751,57 @@ func _developer_people_lines() -> Array[String]:
 				int(record["trust"]), int(record["fear"]),
 				int(record["respect"]), int(record["hostility"])
 			])
+	return lines
+
+
+func _developer_perception_lines() -> Array[String]:
+	# Who noticed, and who did not. Kept apart from KNOWLEDGE on purpose: what
+	# happened, who had a chance to see it, and what they came to believe are
+	# three questions, and the middle one is the new one.
+	var state := simulation.state
+	var lines: Array[String] = [_dev_heading("PERCEPTIONS  ·  THIS YEAR")]
+	var event: Dictionary = simulation.get_current_event()
+	lines.append(_dev_field("current_event_id", state.current_event_id))
+	lines.append(_dev_field("event_title", str(event.get("title", ""))))
+	var fact: Dictionary = simulation.observable_fact()
+	if fact.is_empty():
+		lines.append(_dev_field("observable_fact", "(none — the world absorbed it)"))
+	else:
+		lines.append(_dev_field("observable_fact", fact["id"]))
+		lines.append(_dev_field("observability", fact["observability"]))
+		lines.append(_dev_field("subject_id", fact["subject_id"]))
+		lines.append(_dev_field("template_confidence", fact["confidence"]))
+	lines.append("")
+	lines.append("[color=#76c8d5]who had a chance[/color]")
+	if state.last_perceptions.is_empty():
+		lines.append("[color=#73627f]  (nothing to notice this year)[/color]")
+	for opportunity: Dictionary in state.last_perceptions:
+		var mark := "SAW " if bool(opportunity["perceived"]) else "MISSED"
+		var colour := "#8d989d" if bool(opportunity["perceived"]) else "#73627f"
+		lines.append("[color=%s]  %-6s %-14s home %-11s conf %-4d %s[/color]" % [
+			colour, mark, str(opportunity["observer_id"]),
+			_or_none(state.get_home_location(str(opportunity["observer_id"]))),
+			int(opportunity["confidence"]), str(opportunity["reason"])
+		])
+	lines.append("")
+	lines.append("[color=#76c8d5]latest for %s[/color]" % _or_none(developer_person_id))
+	if developer_person_id.is_empty():
+		lines.append("[color=#73627f]  Select an entity in PEOPLE.[/color]")
+		return lines
+	var records: Array[Dictionary] = state.get_perceptions_for(developer_person_id)
+	if records.is_empty():
+		lines.append("[color=#73627f]  Has never perceived anything.[/color]")
+		return lines
+	var latest: Dictionary = records.back()
+	for field: String in ["event_id", "topic_id", "observability", "confidence", "knowledge_id"]:
+		lines.append(_dev_field("  %s" % field, latest[field]))
+	for factor: Dictionary in latest.get("factors", []):
+		lines.append("[color=#8d989d]  %+d   %s[/color]" % [
+			int(factor.get("delta", 0)), str(factor.get("detail", ""))
+		])
+	for reason in latest.get("reasons", []):
+		lines.append("[color=#8d989d]  %s[/color]" % str(reason))
+	lines.append(_dev_field("  perceptions recorded", records.size()))
 	return lines
 
 
@@ -988,7 +1041,7 @@ func _developer_history_lines() -> Array[String]:
 		])
 	lines.append("")
 	lines.append(_dev_heading("LAST YEAR"))
-	lines.append(_dev_field("last_event_knowledge", state.last_event_knowledge.size()))
+	lines.append(_dev_field("last_perceptions", state.last_perceptions.size()))
 	lines.append(_dev_field("last_knowledge_shares", state.last_knowledge_shares.size()))
 	lines.append(_dev_field("last_relationship_changes", state.last_relationship_changes.size()))
 	for change: Dictionary in state.last_relationship_changes:

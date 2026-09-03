@@ -15,6 +15,7 @@ const DEFAULT_KNOWLEDGE_FRESH_YEARS := 3
 const MAX_STORED_INTENTS := 40
 const MAX_STORED_ACTIONS := 40
 const MAX_STORED_EXECUTIONS := 40
+const MAX_STORED_PERCEPTIONS := 40
 # Version 0.1 keeps one region and three settlements, per the GDD prototype
 # scope. Locations carry identity only: no statistics are stored here, because
 # the simulation still tracks kingdom-wide values. Per-settlement state can be
@@ -102,7 +103,6 @@ var relationships: Dictionary = {}
 var last_relationship_changes: Array[Dictionary] = []
 var last_knowledge_shares: Array[Dictionary] = []
 var knowledge_events: Array[Dictionary] = []
-var last_event_knowledge: Array[Dictionary] = []
 var last_intents: Array[Dictionary] = []
 var intents: Array[Dictionary] = []
 var intent_archive: Array[Dictionary] = []
@@ -112,6 +112,12 @@ var action_archive: Array[Dictionary] = []
 var last_executions: Array[Dictionary] = []
 var executions: Array[Dictionary] = []
 var execution_archive: Array[Dictionary] = []
+# Every chance to notice this year, taken or missed. Missed ones are kept only
+# for the current year: who failed to notice something is worth inspecting now,
+# not worth remembering forever.
+var last_perceptions: Array[Dictionary] = []
+var perceptions: Array[Dictionary] = []
+var perception_archive: Array[Dictionary] = []
 var history_archive: Array[String] = [
 	"Year 12 - The people prayed for help.",
 	"Year 11 - The river began to recede.",
@@ -125,8 +131,8 @@ func _init() -> void:
 	add_location("westfield", "Westfield", "farming_village", "Agriculture", false)
 	add_location("frontier", "Frontier", "frontier_settlement", "Border watch", false)
 	# These IDs are stable handles for later knowledge, rumor, and consequence data.
-	add_notable_entity("aster_king", "The King", "person", ["ambitious"])
-	add_notable_entity("mara", "Mara", "person", ["compassionate", "loyal"])
+	add_notable_entity("aster_king", "The King", "person", ["ambitious"], {}, "aster")
+	add_notable_entity("mara", "Mara", "person", ["compassionate", "loyal"], {}, "westfield")
 	set_relationship("aster_king", "mara", {
 		"trust": 35,
 		"fear": 0,
@@ -165,12 +171,17 @@ func add_history(text: String) -> void:
 		history.resize(18)
 
 
+# home_location_id is an association, not a position: it answers "what
+# settlement is this mortal normally part of?" and nothing else. There is no
+# travel, no coordinates and no schedule behind it. An entity with no home
+# perceives no local events, which is honest rather than silently generous.
 func add_notable_entity(
 	entity_id: String,
 	display_name: String,
 	entity_kind: String,
 	traits: Array = [],
-	data: Dictionary = {}
+	data: Dictionary = {},
+	home_location_id: String = ""
 ) -> bool:
 	if entity_id.is_empty() or notable_entities.has(entity_id):
 		return false
@@ -184,10 +195,34 @@ func add_notable_entity(
 		"name": display_name,
 		"kind": entity_kind,
 		"traits": unique_traits,
+		"home_location_id": home_location_id if locations.has(home_location_id) else "",
 		"data": data.duplicate(true),
 		"knowledge": {}
 	}
 	return true
+
+
+func set_home_location(entity_id: String, location_id: String) -> bool:
+	if not notable_entities.has(entity_id):
+		return false
+	if not location_id.is_empty() and not locations.has(location_id):
+		return false
+	notable_entities[entity_id]["home_location_id"] = location_id
+	return true
+
+
+func get_home_location(entity_id: String) -> String:
+	return str(notable_entities.get(entity_id, {}).get("home_location_id", ""))
+
+
+func residents_of(location_id: String) -> Array[String]:
+	var residents: Array[String] = []
+	for entity_id_value in notable_entities:
+		var entity_id := str(entity_id_value)
+		if str(notable_entities[entity_id].get("home_location_id", "")) == location_id:
+			residents.append(entity_id)
+	residents.sort()
+	return residents
 
 
 func add_location(
@@ -484,6 +519,28 @@ func get_execution_for_action(action_id: String) -> Dictionary:
 		if str(record["action_id"]) == action_id:
 			return record.duplicate(true)
 	return {}
+
+
+func record_perception(record: Dictionary) -> Dictionary:
+	# Only perceptions that actually happened are kept. A record of everyone who
+	# failed to notice something would grow without limit and teach nothing
+	# after the year it belonged to.
+	if record.is_empty() or not bool(record.get("perceived", false)):
+		return {}
+	var stored := record.duplicate(true)
+	perceptions.append(stored)
+	perception_archive.append(stored)
+	if perceptions.size() > MAX_STORED_PERCEPTIONS:
+		perceptions = perceptions.slice(perceptions.size() - MAX_STORED_PERCEPTIONS)
+	return stored.duplicate(true)
+
+
+func get_perceptions_for(observer_id: String) -> Array[Dictionary]:
+	var matches: Array[Dictionary] = []
+	for record: Dictionary in perception_archive:
+		if str(record["observer_id"]) == observer_id:
+			matches.append(record.duplicate(true))
+	return matches
 
 
 func age_knowledge() -> Array[Dictionary]:

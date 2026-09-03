@@ -70,6 +70,7 @@ const ASK_TARGET_TRAIT_RULES := {
 
 
 var knowledge_rules := KnowledgeRules.new()
+var perception_rules := PerceptionRules.new()
 
 
 # Phase one. Decides an outcome by reading the world; changes nothing. The
@@ -103,7 +104,7 @@ func plan(state: WorldState, action: Dictionary, observable: Dictionary = {}) ->
 		"oppose":
 			verdict = _plan_expression(state, action, context, "opposition_expressed")
 		"observe":
-			verdict = _plan_observe(action, context, observable)
+			verdict = _plan_observe(state, action, context, observable)
 		"wait":
 			verdict = _plan_wait(action, context)
 		_:
@@ -329,6 +330,7 @@ func _plan_expression(
 
 
 func _plan_observe(
+	state: WorldState,
 	action: Dictionary,
 	context: Dictionary,
 	observable: Dictionary
@@ -343,10 +345,17 @@ func _plan_observe(
 	if observable.is_empty() or str(observable.get("subject_id", "")) != subject_id:
 		reasons.append("there was nothing about %s to be seen this year" % _or_subject(subject_id))
 		return {"outcome": OUTCOME_FAILURE, "result_type": "nothing_to_see"}
+	# Looking on purpose does not put you somewhere you are not. An observer who
+	# could not have perceived this passively cannot perceive it deliberately
+	# either, until travel exists.
+	var opportunity := perception_rules.evaluate(state, observable, actor_id)
+	if not bool(opportunity["perceived"]):
+		reasons.append("they were not placed to see it: %s" % str(opportunity["reason"]))
+		return {"outcome": OUTCOME_FAILURE, "result_type": "nothing_to_see"}
 	context["effect"] = {
 		"type": "record_observation",
 		"actor_id": actor_id,
-		"record": observable
+		"record": perception_rules.perceived_claim(observable, opportunity)
 	}
 	reasons.append("they saw it for themselves: \"%s\"" % str(observable.get("claim", "")))
 	return {"outcome": OUTCOME_SUCCESS, "result_type": "observation_made"}

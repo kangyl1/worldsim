@@ -347,5 +347,6 @@ func _snapshot() -> Array:
 		state.divine_power, state.current_event_id, state.action_taken,
 		str(state.relationships), str(state.notable_entities),
 		state.history.size(), state.intent_archive.size(),
-		state.action_archive.size(), state.execution_archive.size(), str(state.beliefs)
+		state.action_archive.size(), state.execution_archive.size(),
+		state.perception_archive.size(), str(state.beliefs)
 	]

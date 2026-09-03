@@ -197,13 +197,16 @@ func _test_yearly_ticks_still_execute() -> void:
 	var relationship_after: Dictionary = simulation.state.get_relationship("mara", "aster_king")
 	assert(int(relationship_after["trust"]) != int(relationship_before["trust"]),
 		"relationship tick must still run")
-	assert(simulation.state.get_all_knowledge("mara").size() > 0, "knowledge tick must still run")
+	# Perception is selective now, so who knows what is no longer a given. What
+	# must still hold is that the knowledge tick ran at all and reached someone.
+	assert(not simulation.state.knowledge_events.is_empty(), "knowledge tick must still run")
+	assert(not simulation.state.perception_archive.is_empty(), "perception tick must still run")
 	assert(not simulation.state.intent_archive.is_empty(), "intent tick must still run")
 	assert(not simulation.state.action_archive.is_empty(), "action selection must still run")
 	assert(not simulation.state.execution_archive.is_empty(), "action execution must still run")
 	assert(simulation.state.history.size() > 0, "history must still be written")
 	completed += 1
-	print("  TICKS: relationships, knowledge, intents, actions, executions, and history all advance.")
+	print("  TICKS: relationships, perception, knowledge, intents, actions, executions, history.")
 
 
 func _snapshot(simulation) -> Array:

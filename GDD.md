@@ -1006,6 +1006,41 @@ Characters react only to information they can perceive or receive.
 They do not automatically know global truth. A famine three settlements away
 does not exist for someone until word of it arrives.
 
+Selective Perception v1 makes this real. An event happening and a mortal
+knowing it happened are separate things, and three layers stay apart:
+
+> **Events** are objective world occurrences.
+> **Perception** determines who could notice them.
+> **Knowledge** stores what a mortal believes they learned.
+> **Interpretation** determines what that knowledge means to them.
+
+Each event says how widely it can be noticed:
+
+| Observability | Who is eligible |
+|---|---|
+| Direct | Only those who took part |
+| Local | Those who live where it happened |
+| Public | Everyone in the kingdom |
+| Hidden | Nobody, unless they took part |
+
+Eligibility is not certainty. Being in a thing carries it at full clarity;
+seeing it locally costs a little; a merely visible event costs more. The event
+template is the ceiling on what can be known from it — a mortal may learn that
+a settlement lacks food, and never the number underneath.
+
+Mortals carry a `home_location_id`: the settlement they are normally part of.
+That is an association and not a position. There is no travel, no distance and
+no schedule behind it, and someone with no home notices no local event at all.
+
+**No global distribution of event knowledge remains.** Nothing teaches every
+notable entity a fact merely because the fact became true. What a mortal did
+not see, they can still come to hear — through rumor, or because somebody
+chose to tell them. That gap is where deliberate speech gets its purpose.
+
+Perception produces observations, never meaning. "I saw rain fall after the
+prayer" is perception; "the god answered us" is interpretation, and Section 12
+owns it. Nothing in the perception layer may reach into theology.
+
 ### Knowledge / Belief
 
 Characters reason from what they believe, which includes:
@@ -1597,7 +1632,7 @@ The current dependency order. This is not an immutable schedule.
 | 7 | Mortal Action Execution | **Built** — immediate results, no consequences |
 | 8 | Consequence Engine | **Next** — results change nothing yet |
 | 9 | Minimal Settlement State | |
-| 10 | Event → Perception → Knowledge pipeline | |
+| 10 | Event → Perception → Knowledge pipeline | **Built** — selective, no global teaching |
 | 11 | Autonomous Feedback Loop | |
 | 12 | Divine Actions integrated into the same causal pipeline | |
 | 13 | History / Chronicle generated from causal events | |

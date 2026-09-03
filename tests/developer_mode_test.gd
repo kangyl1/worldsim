@@ -3,7 +3,7 @@ extends SceneTree
 # Developer Mode is an inspection tool. These tests hold it to two promises:
 # it shows the machine underneath, and it never touches the machine.
 
-const EXPECTED_TESTS := 15
+const EXPECTED_TESTS := 16
 const FALSE_BELIEF := {
 	"id": "king_divine_claim",
 	"subject_id": "aster_king",
@@ -51,6 +51,7 @@ func _process(_delta: float) -> bool:
 	_test_intent_section_renders_stored_record()
 	_test_action_section_is_kept_separate()
 	_test_execution_section_shows_what_happened()
+	_test_perception_section_shows_who_noticed()
 	_test_actions_still_work_with_developer_mode_open()
 	_test_sections_all_render()
 
@@ -259,6 +260,23 @@ func _test_execution_section_shows_what_happened() -> void:
 	completed += 1
 
 
+func _test_perception_section_shows_who_noticed() -> void:
+	# The value of selective perception is being able to see who missed what,
+	# and why. That has to be inspectable or the system is invisible.
+	var state = main.simulation.state
+	var view := _section_text("perceptions")
+	assert(view.contains(state.current_event_id))
+	assert(view.contains("who had a chance"))
+	for entity_id in ["aster_king", "mara"]:
+		assert(view.contains(str(entity_id)), "every entity's chance should be listed")
+	assert(view.contains("SAW") or view.contains("MISSED"))
+	# Homes are what decide it, so they belong in the same view.
+	assert(view.contains(state.get_home_location("aster_king")))
+	# Kept apart from what they ended up believing.
+	assert(view != _section_text("knowledge"))
+	completed += 1
+
+
 func _test_actions_still_work_with_developer_mode_open() -> void:
 	if not main.developer_mode_enabled:
 		main.toggle_developer_mode()
@@ -315,6 +333,6 @@ func _snapshot() -> Array:
 		str(state.relationships), str(state.notable_entities), str(state.beliefs),
 		str(state.belief_pressure), str(state.world_flags),
 		state.history_archive.size(), state.intent_archive.size(), state.action_archive.size(),
-		state.execution_archive.size(),
+		state.execution_archive.size(), state.perception_archive.size(),
 		state.knowledge_events.size()
 	]

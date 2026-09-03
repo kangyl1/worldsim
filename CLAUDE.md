@@ -13,7 +13,7 @@ The user retains authority over game design, project direction, and GitHub publi
 3. If there is **ANY** design ambiguity, design problem, or architecture decision that could affect game behavior, scope, rules, simulation outcomes, or project direction, **STOP and ask the user before deciding**. Do not make autonomous game-design decisions.
 4. Small, purely mechanical implementation details may be handled without asking only when they cannot alter design intent. If uncertain, ask.
 5. GitHub repository `kangyl1/worldsim` is the source of truth when this document or any handoff summary conflicts with the current committed code. Inspect the repository and history when unsure.
-6. Broad Intent v1, Action Selection v1 and Action Execution v1 are built. Attempts have immediate results and no consequences. Do not build the Consequence Engine until the user explicitly asks.
+6. Selective Perception v1, Broad Intent v1, Action Selection v1 and Action Execution v1 are built. Mortals notice different things, want things, try things, and attempts have immediate results. Nothing yet changes the world because of a result. Do not build the Consequence Engine until the user explicitly asks.
 7. The player-facing interface shows a mortal's perspective; Developer Mode shows the machine. Never merge the two. See "Interface rules".
 
 ## Project reference
@@ -50,12 +50,13 @@ The current foundation includes:
 - Broad Intent Model v1: ten wants, deterministic argmax, full explainability records
 - Mortal Action Selection v1: seven parameterised verbs, capability-gated, selection only
 - Mortal Action Execution v1: success/failure/blocked, two-phase ticks, immediate results only
+- Selective Perception v1: events offer claims, only eligible mortals notice, no global teaching
 - knowledge generation from existing events, outcome-aware and refreshing stable ids
 - a world map interface with clickable settlements and crisis markers
 - world -> settlement -> person navigation in one reusable panel
 - in-game Developer Mode (DEV button, F1 secondary) exposing raw simulation values, read-only
 - a centralised presentation layer turning numbers into qualitative labels
-- deterministic tests across ten suites
+- deterministic tests across eleven suites
 - a 72-turn regression suite
 
 Current core source files:
@@ -69,6 +70,7 @@ Current core source files:
 | `scripts/intent_rules.gd` | Broad Intent Model v1 scoring and explainability records |
 | `scripts/action_rules.gd` | Mortal Action Selection v1: intent -> viable attempt, never executed |
 | `scripts/execution_rules.gd` | Mortal Action Execution v1: attempt -> immediate result, no consequences |
+| `scripts/perception_rules.gd` | Selective Perception v1: who could notice an event, and how clearly |
 | `scripts/world_map.gd` | map presentation and click hit-testing; reads nothing from the simulation |
 | `scripts/presentation_rules.gd` | number -> label bands for the player-facing interface |
 | `Main.gd` / `Main.tscn` | interface and player interaction only |
@@ -82,7 +84,8 @@ Test suites, all deterministic:
 | `tests/intent_test.gd` | Broad Intent v1 vocabulary, gating law, direction, intentions-only |
 | `tests/action_test.gd` | action vocabulary, capability gates, no-viable-action, selection-only |
 | `tests/execution_test.gd` | outcome kinds, TELL through knowledge, ASK direction, effect boundary |
-| `tests/event_knowledge_test.gd` | events teaching entities, refresh-not-duplicate, reaching intents |
+| `tests/perception_test.gd` | observability modes, eligibility, pathway clarity, no global teaching |
+| `tests/event_knowledge_test.gd` | what events make perceivable, conditions, refresh-not-duplicate |
 | `tests/map_model_test.gd` | location model, map hit-testing, simulation boundary |
 | `tests/person_view_test.gd` | person navigation and the mortal-perspective filter |
 | `tests/developer_mode_test.gd` | Developer Mode toggle, raw exposure, read-only guarantee |
@@ -92,9 +95,9 @@ Do not assume this summary is exhaustive or newer than the code. Inspect the rep
 
 ## Planned system order
 
-`Traits -> Relationships -> Knowledge/Rumors -> Broad Intents -> Actions/Events -> Consequences -> feedback into world state/relationships/knowledge`
+`Traits -> Relationships -> Perception -> Knowledge/Rumors -> Broad Intents -> Action Selection -> Action Execution -> Consequences -> feedback into world state/relationships/knowledge`
 
-Broad Intent Model v1 is complete: it produces recorded intentions only and executes nothing.
+Everything up to and including Action Execution is built. Consequences are not.
 
 `GDD.md` Part II (sections 29-43) revises this. Mortals should pass through a
 wider chain: world state -> pressures -> perception -> belief -> interpretation
@@ -104,6 +107,16 @@ history. Read Part II before designing anything in this area.
 The next system is the **Consequence Engine**, and it must not begin until the
 user explicitly asks. Attempts now have immediate results; nothing yet reads
 those results and changes the world because of them.
+
+**Known issue, not yet addressed.** Ambient rumor spreading runs before intents
+form, so it usually carries a fact before anyone deliberately chooses to tell
+it: roughly 18 rumor deliveries to 1 deliberate telling across 40 autonomous
+years. Deliberate speech works and is reachable, but it is rarely the route by
+which anything travels. Fixing it means reordering or rate-limiting
+`tick_knowledge()`, which changes an existing system's semantics and needs its
+own design pass. A second candidate before Consequences is **minimal settlement
+state**, so places other than Aster can generate events at all; today Aster is
+the only source, so mortals elsewhere perceive nothing first-hand.
 
 **Goal is a conceptual layer only.** GDD Part II lists Goal between
 interpretation and intent. v1 deliberately does not implement it: a goal field
@@ -164,6 +177,24 @@ Mortal Action Execution v1 constraints, settled with the user and to be preserve
 - `support` and `oppose` succeed as expression and apply nothing; opposing is objecting or refusing, never violence
 - three roads to a WAIT result stay distinguishable: `deliberately_waited`, `unable_to_act`, and the selection modes behind them
 - intent, action and execution records stay separate in storage and in Developer Mode; why someone wanted something, why they chose that way, and what came of it are three questions
+
+Selective Perception v1 constraints, settled with the user and to be preserved:
+
+- an event happening is NOT a mortal knowing it happened; events, perception, knowledge and interpretation are four layers
+- observability is `direct`, `local`, `public` or `hidden`; keep the vocabulary this small
+- **no global event-knowledge distribution remains.** Nothing may teach every notable entity a fact because the fact became true
+- `home_location_id` is an association, not a position: no travel, distance, coordinates or schedules may be built on it without a design pass
+- an entity with no home perceives no local event, and that is the honest answer rather than defaulting them into the capital
+- taking part in something beats being near it: a participant perceives whatever they were party to, at any observability
+- the event template is the ceiling on what can be known; world statistics the event did not expose must never leak into a claim
+- clarity follows the pathway: direct 1.0, local 0.9, public 0.7, and the pathway may only reduce, never raise
+- perception supplies the observation; the knowledge system still owns storage, ageing, distortion and transmission
+- seeing something (`source_type: "direct"`) and being told it (`"rumor"`) must stay distinguishable
+- perception must never produce meaning; "I saw rain after the prayer" is perception, "the god answered" is interpretation (GDD 12 and 26)
+- observers are judged against one world snapshot, then knowledge is applied; one observer learning must never change whether another could see it
+- missed chances are kept for the current year only (`last_perceptions`); the archive keeps only perceptions that happened
+- seeded homes: the King is in Aster, Mara is in Westfield. That divergence is what makes their informational worlds differ
+- no hallucination or misperception yet; false beliefs still arise through rumor distortion
 
 ## Design rules
 

@@ -1140,7 +1140,37 @@ answering, and nothing in the world moves because an attempt was written down.
 
 The character tries. Attempts may fail.
 
+Mortal Action Execution v1 resolves every attempt into one of three outcomes,
+and the difference between the last two matters:
+
+| Outcome | Meaning |
+|---|---|
+| Success | It happened and reached its immediate goal |
+| Failure | It happened and fell short |
+| Blocked | It could not honestly be attempted at all |
+
+Mara asking the King and being refused is a **failure**: she tried. Mara having
+nothing to hand over is **blocked**: there was nothing to try with. Collapsing
+the two would hide the difference between a world that says no and a world that
+offers no opening.
+
+An attempt is re-checked against the world before it runs, because selection
+was made against an older snapshot. A belief that has gone since blocks the
+telling that depended on it, and the intent and the selected action both remain
+exactly as they were.
+
+Execution is deliberately near-inert. Only two attempts change anything at all,
+and both go through the knowledge system rather than around it: **Tell**
+delivers a claim, and **Observe** records something the world is currently
+making observable. Everything else — an accepted request, expressed support,
+expressed opposition — produces a result and moves nothing. What those results
+go on to change is the next section's problem, and the engine that owns it does
+not exist yet.
+
 ### Immediate Consequence
+
+**Not built.** Action Execution stops at the immediate result; nothing yet
+reads those results and changes the world because of them.
 
 Actions change the world locally first.
 
@@ -1564,8 +1594,8 @@ The current dependency order. This is not an immutable schedule.
 | 4 | Decision Engine v1 | **Built**, then superseded in vocabulary by 5 |
 | 5 | Broad Intent Model | **Built** — ten directions, intentions only |
 | 6 | Mortal Action Selection | **Built** — seven verbs, selection only |
-| 7 | Mortal Action Execution | **Next** — nothing is attempted yet |
-| 8 | Consequence Engine | |
+| 7 | Mortal Action Execution | **Built** — immediate results, no consequences |
+| 8 | Consequence Engine | **Next** — results change nothing yet |
 | 9 | Minimal Settlement State | |
 | 10 | Event → Perception → Knowledge pipeline | |
 | 11 | Autonomous Feedback Loop | |

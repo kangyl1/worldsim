@@ -3,12 +3,12 @@ extends SceneTree
 # Scene-level tests: person navigation lives in the interface, so it is
 # exercised through a real Main.tscn instance rather than in isolation.
 
-const EXPECTED_TESTS := 13
+const EXPECTED_TESTS := 14
 # Fields that belong to the simulation's bookkeeping, never to a mortal's view.
 const FORBIDDEN_IN_PERSON_VIEW := [
 	"objective", "truth_state", "distorted", "transmission",
 	"invalidated", "is_outdated", "freshness", "source_type",
-	"intent_", "action_", "knowledge_id", "subject_id"
+	"intent_", "action_", "execution_", "knowledge_id", "subject_id"
 ]
 
 var main
@@ -35,6 +35,7 @@ func _process(_delta: float) -> bool:
 	_test_view_shows_meaning_not_numbers()
 	_test_intention_is_the_latest_record()
 	_test_planned_action_reads_as_an_attempt()
+	_test_result_reads_as_plain_language()
 	_test_knowledge_keeps_the_mortal_perspective()
 	_test_back_returns_to_the_settlement()
 	_test_changing_settlement_closes_the_person()
@@ -167,6 +168,38 @@ func _test_planned_action_reads_as_an_attempt() -> void:
 	for action_type: String in ActionRules.ACTION_ORDER:
 		assert(main.ACTION_LABELS.has(action_type), "%s has no readable label" % action_type)
 	completed += 1
+
+
+func _test_result_reads_as_plain_language() -> void:
+	var intents: Array[Dictionary] = main.simulation.state.get_intents_for("mara")
+	assert(not intents.is_empty(), "the fixture needs a recorded intent")
+	var action: Dictionary = main.simulation.state.get_action_for_intent(str(intents.back()["id"]))
+	assert(not action.is_empty())
+	var execution: Dictionary = main.simulation.state.get_execution_for_action(str(action["id"]))
+	assert(not execution.is_empty(), "every attempt should have a result beside it")
+
+	main._on_person_clicked("person:mara")
+	var view: String = main.location_text.text
+	assert(view.contains("RESULT"))
+	assert(view.contains(main._result_phrase(execution)))
+	assert(not view.contains(str(execution["outcome"])), "outcome words are a developer field")
+	assert(not view.contains(str(execution["result_type"])), "raw result types must not leak")
+	assert(not view.contains(str(execution["id"])))
+	# Every result a mortal can meet needs words a mortal would use.
+	for result_type: String in _all_result_types():
+		assert(main.RESULT_LABELS.has(result_type), "%s has no readable label" % result_type)
+	completed += 1
+
+
+func _all_result_types() -> Array[String]:
+	return [
+		"request_accepted", "request_refused", "no_standing_with_target",
+		"claim_delivered", "claim_not_believed", "target_already_knew",
+		"too_unsure_to_speak", "missing_required_belief", "support_expressed",
+		"opposition_expressed", "observation_made", "nothing_to_see",
+		"deliberately_waited", "unable_to_act", "no_controlled_resource",
+		"target_gone", "claim_not_delivered", "delivery_failed", "unknown_action"
+	]
 
 
 func _test_knowledge_keeps_the_mortal_perspective() -> void:
@@ -314,5 +347,5 @@ func _snapshot() -> Array:
 		state.divine_power, state.current_event_id, state.action_taken,
 		str(state.relationships), str(state.notable_entities),
 		state.history.size(), state.intent_archive.size(),
-		state.action_archive.size(), str(state.beliefs)
+		state.action_archive.size(), state.execution_archive.size(), str(state.beliefs)
 	]

@@ -124,6 +124,7 @@ var state := WorldState.new()
 var interpretation_system := InterpretationSystem.new()
 var intent_rules := IntentRules.new()
 var action_rules := ActionRules.new()
+var execution_rules := ExecutionRules.new()
 var knowledge_rules := KnowledgeRules.new()
 var debug_logging_enabled: bool = true
 
@@ -201,6 +202,7 @@ func advance_year() -> Dictionary:
 	state.last_knowledge_shares = tick_knowledge()
 	state.last_intents = tick_intents()
 	state.last_actions = tick_action_selection()
+	state.last_executions = tick_action_execution()
 	_process_population()
 	_process_world_drift()
 	_select_next_event()
@@ -240,8 +242,15 @@ func tick_relationships() -> Array[Dictionary]:
 	return tick_changes
 
 
-func evaluate_knowledge_share(source_id: String, target_id: String, knowledge_id: String) -> Dictionary:
-	return knowledge_rules.evaluate_transfer(state, source_id, target_id, knowledge_id)
+func evaluate_knowledge_share(
+	source_id: String,
+	target_id: String,
+	knowledge_id: String,
+	skip_willingness: bool = false
+) -> Dictionary:
+	return knowledge_rules.evaluate_transfer(
+		state, source_id, target_id, knowledge_id, skip_willingness
+	)
 
 
 func share_knowledge(source_id: String, target_id: String, knowledge_id: String) -> Dictionary:
@@ -335,19 +344,18 @@ func tick_intents() -> Array[Dictionary]:
 	return made
 
 
-func tick_event_knowledge() -> Array[Dictionary]:
-	# Turns the current event into one canonical fact, learned directly by every
-	# notable entity. Repeat observations refresh the same stable knowledge id.
-	var learned: Array[Dictionary] = []
+func observable_fact() -> Dictionary:
+	# What the world is currently showing anyone who looks. It is a property of
+	# the world, not of the observer: the same fact, or nothing, for everyone.
+	# An event the world absorbed makes nothing observable.
 	var template: Dictionary = EVENT_KNOWLEDGE.get(state.current_event_id, {})
 	if template.is_empty():
-		return learned
+		return {}
 	for condition: Dictionary in template.get("conditions", []):
 		if not _event_condition_met(condition):
-			return learned
-	var knowledge_id := str(template["id"])
-	var fact := {
-		"id": knowledge_id,
+			return {}
+	return {
+		"id": str(template["id"]),
 		"subject_id": str(template["subject_id"]),
 		"topic": str(template["topic"]),
 		"claim": str(template["claim"]),
@@ -356,6 +364,16 @@ func tick_event_knowledge() -> Array[Dictionary]:
 		"objective_truth_state": str(template["truth_state"]),
 		"fresh_for_years": int(template["fresh_for_years"])
 	}
+
+
+func tick_event_knowledge() -> Array[Dictionary]:
+	# Turns the current event into one canonical fact, learned directly by every
+	# notable entity. Repeat observations refresh the same stable knowledge id.
+	var learned: Array[Dictionary] = []
+	var fact := observable_fact()
+	if fact.is_empty():
+		return learned
+	var knowledge_id := str(fact["id"])
 	var entity_ids: Array = state.notable_entities.keys()
 	entity_ids.sort()
 	for entity_id_value in entity_ids:
@@ -436,6 +454,37 @@ func tick_action_selection() -> Array[Dictionary]:
 			continue
 		selected.append(state.record_action(action))
 	return selected
+
+
+func tick_action_execution() -> Array[Dictionary]:
+	# Two phases, so nobody gains anything from sorting first. Every attempt is
+	# decided against the world as it stood when the year's executions began,
+	# and only then are the immediate effects applied together.
+	#
+	# Immediate effects only. No relationship moves, no statistic changes, no
+	# history is written: this pass records what came of each attempt and stops.
+	var planned: Array[Dictionary] = []
+	var observable := observable_fact()
+	for action: Dictionary in state.last_actions:
+		var record := execution_rules.plan(state, action, observable)
+		if record.is_empty():
+			continue
+		planned.append(record)
+	var results: Array[Dictionary] = []
+	for record: Dictionary in planned:
+		results.append(state.record_execution(execution_rules.apply(state, record)))
+	return results
+
+
+func execute_mortal_action(action: Dictionary) -> Dictionary:
+	var record := execution_rules.plan(state, action, observable_fact())
+	if record.is_empty():
+		return {}
+	return state.record_execution(execution_rules.apply(state, record))
+
+
+func plan_mortal_action(action: Dictionary) -> Dictionary:
+	return execution_rules.plan(state, action, observable_fact())
 
 
 func evaluate_mortal_actions(intent: Dictionary) -> Array[Dictionary]:

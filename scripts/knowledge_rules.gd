@@ -37,11 +37,17 @@ const TRAIT_RULES := {
 }
 
 
+# skip_willingness is for deliberate speech. Ambient rumor spreading has to ask
+# whether someone would bother saying a thing at all; a TELL chosen by Action
+# Selection has already settled that, and re-asking here would let this file
+# overrule a decision made a layer up. Transmission and acceptance still apply
+# in full either way.
 func evaluate_transfer(
 	state: WorldState,
 	source_id: String,
 	target_id: String,
-	knowledge_id: String
+	knowledge_id: String,
+	skip_willingness: bool = false
 ) -> Dictionary:
 	var result := {
 		"allowed": false,
@@ -56,7 +62,8 @@ func evaluate_transfer(
 		"received_confidence": 0,
 		"confidence_loss": 0,
 		"distorted": false,
-		"trait_effects": []
+		"trait_effects": [],
+		"willingness_skipped": skip_willingness
 	}
 	if source_id == target_id:
 		result["reason"] = "same_entity"
@@ -106,7 +113,8 @@ func evaluate_transfer(
 			share_score += int(rule.get("share_bonus", 0))
 	result["share_score"] = share_score
 	result["trait_effects"] = trait_effects
-	if share_score < SHARE_SCORE_REQUIRED:
+	result["willingness_skipped"] = skip_willingness
+	if not skip_willingness and share_score < SHARE_SCORE_REQUIRED:
 		result["reason"] = "source_unwilling"
 		return result
 

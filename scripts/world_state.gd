@@ -14,6 +14,7 @@ const KNOWLEDGE_CONFIDENCE_MAX := 100
 const DEFAULT_KNOWLEDGE_FRESH_YEARS := 3
 const MAX_STORED_INTENTS := 40
 const MAX_STORED_ACTIONS := 40
+const MAX_STORED_EXECUTIONS := 40
 # Version 0.1 keeps one region and three settlements, per the GDD prototype
 # scope. Locations carry identity only: no statistics are stored here, because
 # the simulation still tracks kingdom-wide values. Per-settlement state can be
@@ -108,6 +109,9 @@ var intent_archive: Array[Dictionary] = []
 var last_actions: Array[Dictionary] = []
 var selected_actions: Array[Dictionary] = []
 var action_archive: Array[Dictionary] = []
+var last_executions: Array[Dictionary] = []
+var executions: Array[Dictionary] = []
+var execution_archive: Array[Dictionary] = []
 var history_archive: Array[String] = [
 	"Year 12 - The people prayed for help.",
 	"Year 11 - The river began to recede.",
@@ -441,6 +445,43 @@ func get_actions_for(actor_id: String) -> Array[Dictionary]:
 func get_action_for_intent(intent_id: String) -> Dictionary:
 	for record: Dictionary in action_archive:
 		if str(record["intent_id"]) == intent_id:
+			return record.duplicate(true)
+	return {}
+
+
+func record_execution(record: Dictionary) -> Dictionary:
+	# An execution result is what immediately came of an attempt, and nothing
+	# more. Recording one must not cascade: what a refused request or a
+	# delivered warning goes on to change belongs to the Consequence Engine,
+	# which does not exist yet.
+	if record.is_empty():
+		return {}
+	var stored := record.duplicate(true)
+	executions.append(stored)
+	execution_archive.append(stored)
+	if executions.size() > MAX_STORED_EXECUTIONS:
+		executions = executions.slice(executions.size() - MAX_STORED_EXECUTIONS)
+	return stored.duplicate(true)
+
+
+func get_execution(execution_id: String) -> Dictionary:
+	for record: Dictionary in execution_archive:
+		if str(record["id"]) == execution_id:
+			return record.duplicate(true)
+	return {}
+
+
+func get_executions_for(actor_id: String) -> Array[Dictionary]:
+	var matches: Array[Dictionary] = []
+	for record: Dictionary in execution_archive:
+		if str(record["actor_id"]) == actor_id:
+			matches.append(record.duplicate(true))
+	return matches
+
+
+func get_execution_for_action(action_id: String) -> Dictionary:
+	for record: Dictionary in execution_archive:
+		if str(record["action_id"]) == action_id:
 			return record.duplicate(true)
 	return {}
 

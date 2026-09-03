@@ -13,7 +13,7 @@ The user retains authority over game design, project direction, and GitHub publi
 3. If there is **ANY** design ambiguity, design problem, or architecture decision that could affect game behavior, scope, rules, simulation outcomes, or project direction, **STOP and ask the user before deciding**. Do not make autonomous game-design decisions.
 4. Small, purely mechanical implementation details may be handled without asking only when they cannot alter design intent. If uncertain, ask.
 5. GitHub repository `kangyl1/worldsim` is the source of truth when this document or any handoff summary conflicts with the current committed code. Inspect the repository and history when unsure.
-6. Broad Intent Model v1 and Mortal Action Selection v1 are built. Nothing is executed. Do not build Action Execution, Events, or Consequences until the user explicitly asks.
+6. Broad Intent v1, Action Selection v1 and Action Execution v1 are built. Attempts have immediate results and no consequences. Do not build the Consequence Engine until the user explicitly asks.
 7. The player-facing interface shows a mortal's perspective; Developer Mode shows the machine. Never merge the two. See "Interface rules".
 
 ## Project reference
@@ -44,12 +44,13 @@ The current foundation includes:
 - mortal interpretation of divine actions, feeding beliefs and reputation
 - Broad Intent Model v1: ten wants, deterministic argmax, full explainability records
 - Mortal Action Selection v1: seven parameterised verbs, capability-gated, selection only
+- Mortal Action Execution v1: success/failure/blocked, two-phase ticks, immediate results only
 - knowledge generation from existing events, outcome-aware and refreshing stable ids
 - a world map interface with clickable settlements and crisis markers
 - world -> settlement -> person navigation in one reusable panel
 - in-game Developer Mode (DEV button, F1 secondary) exposing raw simulation values, read-only
 - a centralised presentation layer turning numbers into qualitative labels
-- deterministic tests across nine suites
+- deterministic tests across ten suites
 - a 72-turn regression suite
 
 Current core source files:
@@ -62,6 +63,7 @@ Current core source files:
 | `scripts/interpretation_system.gd` | how mortals interpret divine actions |
 | `scripts/intent_rules.gd` | Broad Intent Model v1 scoring and explainability records |
 | `scripts/action_rules.gd` | Mortal Action Selection v1: intent -> viable attempt, never executed |
+| `scripts/execution_rules.gd` | Mortal Action Execution v1: attempt -> immediate result, no consequences |
 | `scripts/world_map.gd` | map presentation and click hit-testing; reads nothing from the simulation |
 | `scripts/presentation_rules.gd` | number -> label bands for the player-facing interface |
 | `Main.gd` / `Main.tscn` | interface and player interaction only |
@@ -74,6 +76,7 @@ Test suites, all deterministic:
 | `tests/knowledge_test.gd` | direct knowledge, rumors, traits, falsehood, aging |
 | `tests/intent_test.gd` | Broad Intent v1 vocabulary, gating law, direction, intentions-only |
 | `tests/action_test.gd` | action vocabulary, capability gates, no-viable-action, selection-only |
+| `tests/execution_test.gd` | outcome kinds, TELL through knowledge, ASK direction, effect boundary |
 | `tests/event_knowledge_test.gd` | events teaching entities, refresh-not-duplicate, reaching intents |
 | `tests/map_model_test.gd` | location model, map hit-testing, simulation boundary |
 | `tests/person_view_test.gd` | person navigation and the mortal-perspective filter |
@@ -93,8 +96,9 @@ wider chain: world state -> pressures -> perception -> belief -> interpretation
 -> goal -> **broad intent** -> action selection -> consequence -> memory ->
 history. Read Part II before designing anything in this area.
 
-The next system is **Mortal Action Execution**, and it must not begin until the
-user explicitly asks. Selection is built; nothing attempts anything.
+The next system is the **Consequence Engine**, and it must not begin until the
+user explicitly asks. Attempts now have immediate results; nothing yet reads
+those results and changes the world because of them.
 
 **Goal is a conceptual layer only.** GDD Part II lists Goal between
 interpretation and intent. v1 deliberately does not implement it: a goal field
@@ -102,8 +106,7 @@ would be derived one-to-one from the intent type and would duplicate what
 `knowledge_used` already records. Build it only if a later system needs one
 goal to produce several different intents.
 
-Action execution, events, and consequences **MUST NOT be implemented until the
-user explicitly asks**.
+Consequences **MUST NOT be implemented until the user explicitly asks**.
 
 Broad Intent Model v1 constraints, settled with the user and to be preserved:
 
@@ -137,6 +140,25 @@ Mortal Action Selection v1 constraints, settled with the user and to be preserve
 - selection is deterministic argmax; no randomness
 - selection records an attempt and executes nothing: no resource moves, no relationship changes, no knowledge spreads, no event fires
 - intent and action records stay separate, in storage and in Developer Mode; why someone wanted something and why they chose that way of pursuing it are two questions
+
+Mortal Action Execution v1 constraints, settled with the user and to be preserved:
+
+- outcomes are `success`, `failure` and `blocked`; blocked means the attempt could not honestly be made, and is never merged with failure
+- execution re-checks only the minimum conditions, and never re-runs Action Selection
+- a blocked or failed attempt must leave the intent and action records exactly as they were
+- the tick runs in two phases: every attempt is decided against the world as it stood when the year's executions began, then effects are applied together, so nobody gains from sorting first
+- the ONLY immediate effects permitted are `knowledge_delivered` and `observation_recorded`, both through the knowledge system; anything else is a consequence
+- no relationship, statistic, flag, or history entry may change during execution
+- `ask` reads the TARGET's view of the actor (`target -> actor`), because the target is deciding; selection reads the other edge, and the two must not be confused
+- a successful `ask` records that the request was accepted and grants nothing; the execution archive is the state a Consequence Engine will read
+- an `ask` to someone with no recorded view of the actor is a FAILURE (`no_standing_with_target`), not a block: a missing edge means no relationship, not a neutral one
+- `tell` reuses the knowledge system with willingness skipped, because Action Selection already settled whether to speak; ambient rumor spreading keeps its own willingness gate
+- `tell` succeeding means the words arrived, never that the target believes them
+- `observe` may only see what `observable_fact()` is currently showing; it must never read `objective_truth_state`
+- `give` executes as BLOCKED `no_controlled_resource` until a resource model exists
+- `support` and `oppose` succeed as expression and apply nothing; opposing is objecting or refusing, never violence
+- three roads to a WAIT result stay distinguishable: `deliberately_waited`, `unable_to_act`, and the selection modes behind them
+- intent, action and execution records stay separate in storage and in Developer Mode; why someone wanted something, why they chose that way, and what came of it are three questions
 
 ## Design rules
 

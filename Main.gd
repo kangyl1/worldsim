@@ -8,7 +8,7 @@ const ACTION_ROW_WIDTH := 34
 const PERSON_META_PREFIX := "person:"
 const DEV_TAB_META := "dev_tab:"
 const DEV_PERSON_META := "dev_person:"
-const DEV_SECTIONS := ["world", "locations", "people", "knowledge", "intents", "actions", "belief", "history"]
+const DEV_SECTIONS := ["world", "locations", "people", "knowledge", "intents", "actions", "executions", "belief", "history"]
 const DEV_LIST_LIMIT := 24
 const BACK_META := "back"
 # Player-readable names for the broad intents the engine records. These name a
@@ -39,6 +39,30 @@ const ACTION_LABELS := {
 }
 const ACTION_ASK_FOR_RESOURCE := "Ask %s for food"
 const ACTION_NO_VIABLE := "Unable to act right now."
+# What came of the attempt, in a mortal's words. Keyed on result type, because
+# the outcome word alone ("failure") tells a player nothing useful. "%s" is the
+# person it was aimed at.
+const RESULT_LABELS := {
+	"request_accepted": "%s agreed to help.",
+	"request_refused": "%s refused.",
+	"no_standing_with_target": "%s had no reason to listen.",
+	"claim_delivered": "The word reached %s.",
+	"claim_not_believed": "%s did not believe it.",
+	"target_already_knew": "%s already knew.",
+	"too_unsure_to_speak": "The words would not come.",
+	"missing_required_belief": "There was nothing left to say.",
+	"support_expressed": "They stood with %s.",
+	"opposition_expressed": "They stood against %s.",
+	"observation_made": "They saw it for themselves.",
+	"nothing_to_see": "There was nothing to see.",
+	"deliberately_waited": "They held back.",
+	"unable_to_act": "Nothing could be done.",
+	"no_controlled_resource": "There was nothing to give.",
+	"target_gone": "There was no one there.",
+	"claim_not_delivered": "Nothing came of it.",
+	"delivery_failed": "Nothing came of it.",
+	"unknown_action": "Nothing came of it."
+}
 
 var simulation := WorldSimulation.new()
 var action_buttons: Array[Button] = []
@@ -400,7 +424,27 @@ func _person_action_lines(intent_id: String) -> Array[String]:
 		lines.append("[color=#73627f]None yet.[/color]")
 		return lines
 	lines.append("[color=#e8be63]%s[/color]" % _action_phrase(record))
+	lines.append_array(_person_result_lines(str(record["id"])))
 	return lines
+
+
+func _person_result_lines(action_id: String) -> Array[String]:
+	# What came of it. Immediate result only: whatever it goes on to change in
+	# the world has not been worked out yet.
+	var record: Dictionary = simulation.state.get_execution_for_action(action_id)
+	if record.is_empty():
+		return []
+	var lines: Array[String] = ["", "[color=#68757c]RESULT[/color]"]
+	lines.append("[color=#9ca5a4]%s[/color]" % _result_phrase(record))
+	return lines
+
+
+func _result_phrase(record: Dictionary) -> String:
+	var template := str(RESULT_LABELS.get(str(record["result_type"]), "Nothing came of it."))
+	if not template.contains("%s"):
+		return template
+	var target_name := _display_name_for(str(record["target_id"]))
+	return "Nothing came of it." if target_name.is_empty() else template % target_name
 
 
 func _action_phrase(record: Dictionary) -> String:
@@ -621,6 +665,8 @@ func _render_developer() -> void:
 			developer_text.text = "\n".join(_developer_intent_lines())
 		"actions":
 			developer_text.text = "\n".join(_developer_action_lines())
+		"executions":
+			developer_text.text = "\n".join(_developer_execution_lines())
 		"belief":
 			developer_text.text = "\n".join(_developer_belief_lines())
 		"history":
@@ -845,6 +891,60 @@ func _developer_action_lines() -> Array[String]:
 	return lines
 
 
+func _developer_execution_lines() -> Array[String]:
+	# The third of three questions, kept apart from the other two. Why she
+	# wanted it, why she chose that way, and what came of it are separate
+	# records, and merging any two would make neither answerable.
+	var state := simulation.state
+	var lines: Array[String] = [_dev_heading("EXECUTIONS  ·  %s" % _or_none(developer_person_id))]
+	if developer_person_id.is_empty():
+		lines.append("[color=#73627f]Select an entity in PEOPLE.[/color]")
+		return lines
+	var records: Array[Dictionary] = state.get_executions_for(developer_person_id)
+	if records.is_empty():
+		lines.append("[color=#73627f]No executions recorded.[/color]")
+		return lines
+	var latest: Dictionary = records.back()
+	lines.append(_dev_field("execution_id", latest["id"]))
+	lines.append(_dev_field("action_id", _or_none(str(latest["action_id"]))))
+	lines.append(_dev_field("intent_id", _or_none(str(latest["intent_id"]))))
+	lines.append(_dev_field("action_type", latest["action_type"]))
+	lines.append(_dev_field("outcome", latest["outcome"]))
+	lines.append(_dev_field("result_type", latest["result_type"]))
+	lines.append(_dev_field("target_id", _or_none(str(latest["target_id"]))))
+	lines.append(_dev_field("subject_id", _or_none(str(latest["subject_id"]))))
+	lines.append(_dev_field("topic_id", _or_none(str(latest["topic_id"]))))
+	lines.append(_dev_field("score", latest["score"]))
+	lines.append(_dev_field("year", latest["year"]))
+	lines.append("")
+	lines.append("[color=#76c8d5]factors[/color]")
+	var factors: Array = latest.get("factors", [])
+	if factors.is_empty():
+		lines.append("[color=#73627f]  (none)[/color]")
+	for factor: Dictionary in factors:
+		lines.append("[color=#8d989d]  %+d   %s[/color]" % [
+			int(factor.get("delta", 0)), str(factor.get("detail", ""))
+		])
+	lines.append("")
+	lines.append("[color=#76c8d5]reasons[/color]")
+	for reason in latest.get("reasons", []):
+		lines.append("[color=#8d989d]  %s[/color]" % str(reason))
+	lines.append("")
+	# Anything not listed here did not happen. Consequences are a later system.
+	lines.append("[color=#76c8d5]effects_applied[/color]")
+	var effects: Array = latest.get("effects_applied", [])
+	if effects.is_empty():
+		lines.append("[color=#73627f]  (none — nothing in the world moved)[/color]")
+	for effect: Dictionary in effects:
+		lines.append("[color=#8d989d]  %-22s %s  confidence %d[/color]" % [
+			str(effect.get("type", "")), str(effect.get("entity_id", "")),
+			int(effect.get("confidence", 0))
+		])
+	lines.append("")
+	lines.append(_dev_field("executions recorded", records.size()))
+	return lines
+
+
 func _developer_belief_lines() -> Array[String]:
 	var state := simulation.state
 	var lines: Array[String] = [_dev_heading("ACTIVE BELIEFS")]
@@ -908,6 +1008,13 @@ func _developer_history_lines() -> Array[String]:
 			str(action.get("actor_id", "")), str(action.get("action_type", "")),
 			_or_none(str(action.get("target_id", ""))), int(action.get("score", 0)),
 			str(action.get("selection", ""))
+		])
+	lines.append(_dev_field("last_executions", state.last_executions.size()))
+	for execution: Dictionary in state.last_executions:
+		lines.append("[color=#8d989d]  %s  %s  %s  %s  effects %d[/color]" % [
+			str(execution.get("actor_id", "")), str(execution.get("action_type", "")),
+			str(execution.get("outcome", "")), str(execution.get("result_type", "")),
+			execution.get("effects_applied", []).size()
 		])
 	return lines
 

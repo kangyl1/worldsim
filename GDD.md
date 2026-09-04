@@ -3384,3 +3384,299 @@ That distinction is load-bearing.
 
 This section refines Sections 18 and 19. It does not change the simulation
 roadmap in Section 41 and does not require immediate UI reconstruction.
+
+---
+
+## 98. Divine Action Economy — Attention, Precision, Prayer, and Delegation
+
+The player should feel enormously powerful without being able to resolve every
+mortal problem continuously. Divine limits should create **choice about where God
+places attention**, not make God feel like an ordinary spellcaster waiting for
+cooldowns.
+
+The long-term divine interaction model has two visible action layers:
+
+### Primary Divine Actions — persistent capabilities
+
+Primary actions are things the player can deliberately reach for regardless of a
+particular event being active. Their exact final vocabulary is not locked, but the
+category should include capabilities such as:
+
+- observe
+- speak
+- reveal
+- bless
+- curse
+- protect
+- create
+- wait / remain silent
+
+Where an action needs a target, the player should normally be allowed to choose
+one: a known person, settlement, group, location, or other supported world
+object. God should not be forced to bless a random person simply because the UI
+surfaced one.
+
+### Secondary Divine Actions — opportunities created by the world
+
+Secondary actions exist only because the current simulation makes them
+meaningful. A drought may expose **Send Rain**, a sickness may expose **Heal**,
+a war may expose **Protect Army**, and a prayer may expose a response that would
+not otherwise deserve its own permanent button.
+
+These are not quest choices. They must be derivable from current state, events,
+relationships, beliefs, requests, or targets.
+
+> **Primary actions express what God can generally do. Secondary actions expose
+> what the current world gives God a meaningful opportunity to do.**
+
+### Divine search and attention
+
+The world should not need thousands of fully simulated citizens merely so the
+player can search for one interesting person.
+
+A future **Find Person / Divine Search** interaction may let the player specify
+criteria such as location, role, age, trait, belief, or other supported qualities.
+For example:
+
+> Find an adult in Westfield with very high honesty.
+
+The engine should search already-instantiated people first. If the relevant
+population is still abstract, it may surface a generated representative whose
+attributes are valid for that population and satisfy the requested constraints.
+Once God meaningfully interacts with that person, the person may become a
+persistent tracked individual.
+
+This is not retroactive creation of the requested trait. It represents God
+placing precise attention on someone who can plausibly exist inside the abstract
+population.
+
+If no valid person can exist under the requested constraints, the game should say
+so rather than fabricate an impossible combination.
+
+### Divine Tokens — accumulated capacity for precision and great miracles
+
+**Divine Tokens are not AI credits and are not payment for freeform text.** They
+represent limited divine capacity for unusually precise, certain, large, or
+reality-breaking intervention.
+
+Tokens regenerate with game time and **unused Tokens accumulate**. They should
+not normally expire at the end of a month or turn.
+
+The exact regeneration rate, prices, and maximum reserve are deliberately not
+locked yet. A prototype example such as ten Tokens per month may be useful for
+balancing, but it is not a design constant.
+
+Ordinary divine interaction should remain accessible enough that the player does
+not become afraid to touch the world. Token cost should increasingly matter when
+an intervention adds one or more of these properties:
+
+1. **Precision** — forcing the effect onto an exact target or narrow condition.
+2. **Scale** — affecting a large population, region, army, or physical area.
+3. **Impossibility** — strongly violating the world's ordinary causal rules.
+
+Examples of actions that may deserve meaningful Token cost include:
+
+- finding a very specific kind of person through divine search
+- blessing or cursing one exact target with unusual certainty
+- deliberately killing one named person by divine action
+- stopping a major disaster outright
+- reshaping significant terrain
+- resurrecting a specific dead person
+- mass resurrection
+- creating intelligent life
+- creating a persistent supernatural servant such as an Apostle
+
+A broad natural-looking intervention may sometimes cost less than an extremely
+precise one. Causing rain over a farming region can be less demanding than making
+rain fall on one exact individual while leaving everyone beside them untouched.
+
+> **The more precise, large, or impossible the intervention, the more stored
+> divine capacity it may require.**
+
+### Accumulation enables impossible-scale miracles
+
+Saving Tokens should be a legitimate play style. A player may remain relatively
+quiet for years or decades, allowing unused divine capacity to accumulate for a
+miracle far beyond ordinary intervention.
+
+That creates a meaningful tradeoff. While the player saves:
+
+- prayers may go unanswered
+- people die
+- crises resolve without God
+- kingdoms change
+- expectations of divine intervention change
+- silence itself may acquire religious meaning under Section 58
+
+The eventual miracle can therefore be mechanically enormous **and** historically
+enormous.
+
+A mass resurrection should not resolve as merely `Population +N`. It may change
+beliefs about death, burial, war, salvation, prophecy, divine favour, political
+legitimacy, and whether later generations expect the dead to return again.
+
+> **Great miracles require stored divine capacity; their deeper cost is the
+> history they create.**
+
+This extends rather than cancels Section 56. Consequence remains the more
+interesting long-term cost of divine power. Divine Tokens provide pacing and
+scarcity; they do not replace consequence as the reason the player hesitates.
+The earlier instruction in Section 56 not to implement intervention-cost
+mechanics remains a near-term scope warning: this section records the intended
+future shape and does not move a Token economy ahead of Section 41's roadmap.
+
+### Prayer and wishes
+
+Mortals should be able to pray, ask, beg, wish, or otherwise direct requests
+toward God. **Hearing a prayer does not itself need to cost Divine Tokens.** The
+cost comes from what the player chooses to do about it.
+
+Requests may include:
+
+- heal my child
+- save our harvest
+- send rain
+- protect our village
+- punish my enemy
+- let me become ruler
+- bring someone back from the dead
+- give me a sign
+- make another person love or obey me
+
+The request states what the mortal wants. It does **not** grant the player a
+button that bypasses Worldsim's causal rules.
+
+The player may eventually respond by:
+
+- granting the request directly when the requested effect is a valid divine act
+- partially granting it
+- answering in a different way
+- communicating instead of changing reality
+- ignoring it
+- acting against the request
+
+Token cost is based on the **actual divine intervention performed**, not on the
+importance the praying mortal assigns to the wish.
+
+For example, a parent praying for a sick child may be free to hear. Accelerating
+recovery might be cheap; a certain miraculous cure might cost more; resurrecting
+the child after death may require a far larger accumulated reserve.
+
+A prayer such as:
+
+> Make me king.
+
+must not directly set the political outcome. God may bless the claimant, protect
+them, reveal information, publicly support them, strike an opponent, or remain
+silent. Whether the person becomes ruler remains a social and political result.
+
+Likewise:
+
+> Make her love me.
+
+must not directly overwrite another mind. The player can communicate, create an
+experience, bless circumstances, or refuse the request, but interpretation and
+choice remain outside direct divine authorship.
+
+### Prayer volume should become pressure, not busywork
+
+As populations grow, the number of prayers may become enormous. The normal play
+screen should therefore surface requests selectively:
+
+- urgent prayers
+- repeated or widespread prayers
+- unusual prayers
+- prayers connected to major events
+- prayers from historically relevant people
+- prayers whose consequences could be significant
+
+A deeper Divine / Prayers category may allow browsing beyond the surfaced set.
+The game should create the feeling that **many people want something from God**
+without requiring the player to clear an inbox of thousands of requests.
+
+Answered and unanswered prayer should feed history. Frequent answers may create
+expectation, ritual, dependence, political claims, or more prayer. Long silence
+may create doubt, intensified devotion, reinterpretation, or independent
+problem-solving. Section 57 and Section 58 govern those consequences.
+
+### Apostles — delegated divine agents
+
+Far in the future, the player may spend a very large accumulated Token reserve to
+**create an Apostle**: a persistent created servant capable of acting on God's
+behalf.
+
+An Apostle is **not a god**.
+
+It may be supernatural, powerful, long-lived, immortal, winged, or later called
+an angel by mortals, but it remains a created entity operating inside the world.
+It is never equal to the player and does not weaken Sections 70 and 92.
+
+The player may give an Apostle a standing directive such as:
+
+- protect this bloodline
+- watch over Westfield
+- spread this message
+- find people with a particular quality
+- protect persecuted followers
+- warn me when a specified condition appears
+
+An Apostle should then pursue that directive through actions inside the causal
+simulation. Delegation must not become a hidden cheat that guarantees the desired
+outcome.
+
+Long-term conceptual chain:
+
+```
+Player gives directive
+  ↓
+Apostle interprets current conditions
+  ↓
+Apostle forms intent / chooses action
+  ↓
+Action creates objective consequence
+  ↓
+Mortals perceive the Apostle or its actions
+  ↓
+Interpretation / belief / history
+```
+
+An Apostle can therefore act intelligently while still producing unintended
+consequences. "Protect my followers" might cause one Apostle to shelter a rebel
+movement because those rebels satisfy the directive. The player gave the higher
+purpose; the player did not manually choose every execution.
+
+Apostles need not be written as disloyal or destined to rebel. The important
+uncertainty can come from **interpretation and execution of instructions**, not
+from mandatory betrayal.
+
+The player may eventually constrain an Apostle's authority — for example which
+powers it can use, whether lethal action is permitted, where it may act, or how
+much autonomy it has. These details are future design questions, not current
+systems.
+
+Mortals remain free to interpret the created being however they like:
+
+- angel
+- God's child
+- messenger
+- prophet
+- demon
+- God in another form
+- unknown creature
+
+Those labels are social beliefs. Objectively, the Apostle remains created life
+serving the one actual God: the player.
+
+> **God may delegate action, but not authorship of meaning.**
+
+### Player-facing principle
+
+The final divine-power model should aim for this feeling:
+
+> **God can always pay attention. God can often intervene. God cannot intervene
+> everywhere with perfect precision all the time. Patience can accumulate into
+> miracles that reshape history.**
+
+This section is future direction. It does not add Divine Tokens, prayer
+aggregation, population search, Create Life, or Apostles to the current
+implementation roadmap. Section 41 remains authoritative.

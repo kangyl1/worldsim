@@ -114,13 +114,20 @@ wider chain: world state -> pressures -> perception -> belief -> interpretation
 -> goal -> **broad intent** -> action selection -> consequence -> memory ->
 history. Read Part II before designing anything in this area.
 
-`GDD.md` **Part III (sections 44-54) is long-term direction and is NOT the
-roadmap.** It records where the simulation is eventually going — pressure,
-interpretation, historical consequence, and the limits on ecological and
-planetary systems — so that near-term decisions do not foreclose it. Nothing in
-Part III is scheduled or scoped, and none of it may be implemented without an
-explicit request. Read it before designing, never as a work queue. If a Part III
-idea starts to feel urgent, that is a signal to finish the layer in progress.
+`GDD.md` **Part III (sections 44-72) is long-term direction and is NOT the
+roadmap.** It records where the simulation is eventually going — meaning,
+belief, history, divine influence, and the limits on ecological and planetary
+systems — so that near-term decisions do not foreclose it. Nothing in Part III
+is scheduled or scoped, and none of it may be implemented without an explicit
+request. Read it before designing, never as a work queue. If a Part III idea
+starts to feel urgent, that is a signal to finish the layer in progress.
+
+Part III records three deliberate tensions with what is built, rather than
+silently resolving them: where interpretation sits in the chain (section 46
+against section 30), whether Divine Power or consequence is the primary
+constraint on intervention (section 56 against section 8), and how directly
+Divine Voice creates a prophet (section 50 against section 9). None of the three
+is a defect to fix now; each is a design task for whoever builds that layer.
 
 The next system is **Interpretation of social and divine events** — what a
 mortal decides an occurrence meant, and how that changes their relationships,

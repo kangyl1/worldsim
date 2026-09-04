@@ -1098,6 +1098,11 @@ Characters attach meaning to what they know, based on:
 
 Two people can hold the same fact and reach opposite meanings.
 
+Its position in this chain is contested. Section 46 argues interpretation also
+happens *earlier*, between perception and belief, because "the god answered us"
+cannot be stored without having already been interpreted. Both moments are real;
+see Section 46 before building this layer.
+
 ### Goal
 
 A broader desired outcome.
@@ -1725,7 +1730,7 @@ existing as a separate special case. The god should be an actor in the world's
 causality, not an exception to it.
 
 **This table is the whole roadmap.** Part III records long-term direction and
-adds nothing to it: no section from 44 to 54 appears here, and none should be
+adds nothing to it: no section from 44 to 72 appears here, and none should be
 read as scheduled work. If a Part III idea starts to feel urgent, that is a
 reason to finish the layer currently in progress.
 
@@ -1817,321 +1822,709 @@ Section 28 still has the last word:
 ---
 
 # PART III — FUTURE SIMULATION DIRECTION
-## Pressure, Interpretation, and Historical Consequences
+## Meaning, Belief, History, and Divine Influence
 
 > **This part is direction, not roadmap.**
 >
-> Nothing in Sections 44–54 is current work. None of it is scheduled, none of it
+> Nothing in Sections 44–72 is current work. None of it is scheduled, none of it
 > is scoped, and none of it may be implemented without an explicit request. The
-> current milestone order in Section 41 is unchanged by anything written here.
+> milestone order in Section 41 is unchanged by anything written here.
 >
 > Part II describes how mortals behave today. Part III describes what that
 > behaviour is eventually for. It exists so that near-term decisions do not
 > quietly foreclose the long-term shape of the game — not to add work.
+>
+> Where a principle here disagrees with a Part I or Part II section, the
+> disagreement is stated rather than smoothed over. Part II governs what is
+> built; Part III governs where it is going. Three such tensions are recorded:
+> Sections 46, 56 and 50.
 
 ---
 
-## 44. The Future Causal Loop
+## 44. The Chain, and the Law Beneath It
 
 The chain Worldsim should increasingly follow:
 
 ```
-Player changes conditions
+Objective event
   ↓
-Entities perceive those changes
+Perception              who could notice it
   ↓
-Entities interpret them, using knowledge, beliefs, relationships,
-traits and their own history
+Interpretation          what they take it to mean
   ↓
-Entities decide for themselves
+Knowledge / Belief      what they now hold
   ↓
-Consequences change the world
+Sharing / Distortion    what reaches other people
   ↓
-Those consequences become knowledge, rumors, relationships,
-traditions and history
+Decision
   ↓
-The changed world creates new pressures
+Social / world consequence
+  ↓
+Recorded history
+  ↓
+Later interpretation
 ```
 
-The player's proper input to that loop is **conditions**, not outcomes.
+**The engine knows what objectively happened. Entities may not.** That gap is
+not a limitation to be engineered away; it is the material the game is made of.
+
+Two laws follow, and both are load-bearing:
+
+> **The player controls their actions and words. They do not control what
+> history says those actions and words meant.**
+
+> **The player creates conditions and possibilities. Intelligent beings create
+> institutions and meaning.**
+
+The identity that emerges from those, recorded as an internal design principle
+and **not** as finished marketing copy:
+
+> **The player changes the world. People decide what those changes mean. Those
+> meanings shape decisions. Those decisions become history.**
+
+Or shorter:
+
+> **The player creates the world. Life creates history.**
+
+This extends Section 3 rather than replacing it. Action → Interpretation →
+Belief → Behaviour → History is the same loop from the player's end; this is the
+same loop from the world's.
+
+---
+
+## 45. Conditions, Not Outcomes
+
+The player's input to the loop is conditions. Avoid direct commands that name an
+outcome:
+
+- Create Kingdom
+- Create Religion
+- Create Prophet
+- Select Culture
+- Make Civilization Peaceful
+- Make Civilization Militaristic
+
+Prefer instead: alter conditions, communicate, reveal information, provide
+knowledge, intervene, protect, withhold help, create pressure, create
+opportunity.
 
 Example:
 
-The player causes heavy rainfall.
-
-The player does **not** choose:
+The player causes heavy rainfall. The player does **not** choose:
 
 > Village becomes prosperous.
 
-Rainfall enters a world that already has a state, and what it becomes there
-depends on that state: crops, food, migration, trade, disease, belief,
-relationships, political decisions, or conflict. The same rain falling on two
-different settlements is not the same event.
+Rain enters a world that already has a state, and what it becomes there depends
+on that state: crops, food, migration, trade, disease, belief, relationships,
+political decisions, or conflict. The same rain falling on two settlements is
+not the same event.
 
-This extends Section 3 rather than replacing it. Action → Interpretation →
-Belief → Behaviour → History is the same loop seen from the player's end; this
-is the same loop seen from the world's.
-
----
-
-## 45. Disasters Do Not Overwrite Society
-
-A famine, plague, storm, migration wave or resource collapse must interact with
-the society it lands on. It must never impose one generic response.
-
-Faced with the same disaster, different entities or societies may:
-
-- cooperate
-- hoard resources
-- migrate
-- blame outsiders
-- turn toward religion
-- overthrow their leaders
-- exploit weaker groups
-- send aid
-- isolate themselves
-- spread misinformation
-- adapt successfully
-
-Which of those happens should follow from what was already there: traits,
-institutions, knowledge, relationships, needs, resources, and history.
-
-This is Section 34 at a larger scale. A pressure that produces one predetermined
-outcome is a script, not a simulation — and a disaster that produces the same
-outcome everywhere is a cutscene wearing a system's clothes.
+The existing powers in Section 9 already follow this shape — rain, harvest,
+revelation, voice, smite, silence are all conditions or communications, never
+outcomes. That is worth protecting when powers are added.
 
 ---
 
-## 46. Catastrophes Create History, Not Game Over
+## 46. Interpretation Is a Layer
 
-A large disaster should normally open a new historical era rather than end the
-simulation.
+Every important event should be capable of carrying two things at once:
 
-Possible outcomes include:
+**Objective reality** — what actually happened.
+**Interpretation** — what an observer takes it to mean.
 
-- migrations
-- population loss
-- political collapse
-- new factions
-- new settlements
-- cultural change
-- changed beliefs
-- resource redistribution
-- new alliances and rivalries
-- long-term historical memory
+Example. Objective event: the player causes rain. Possible interpretations:
 
-A catastrophe can destroy much of the existing world while creating the
-conditions for something else. The interesting question after a collapse is not
-whether the player lost, but what grew in the gap.
+- God answered our prayer.
+- The king has divine favour.
+- God is warning us.
+- This was natural weather.
+- Another group caused it.
+- We do not know why it happened.
 
-Section 23 already establishes that there is no conventional Game Over and that
-failure should generate history. This states the stronger form: the worst thing
-that can happen to a world is not that it ends, but that it stops producing
-history.
+Interpretation should eventually draw on perception, existing knowledge,
+confidence, traits, relationships, beliefs, previous experience, social
+influence, and historical precedent.
 
----
+### Recorded tension: where interpretation sits
 
-## 47. Intervention Can Create Dependence
+Section 30 places Interpretation **after** Knowledge/Belief: you hold a fact,
+then you decide what it means. This part places it **between** Perception and
+Knowledge/Belief: you cannot store "the god answered us" without having already
+interpreted the rain.
 
-Player intervention should eventually be capable of unintended long-term
-effects. Repeatedly rescuing an entity, settlement or civilization could come to
-produce:
+Both are true, because they are different moments:
 
-- dependence on divine intervention
-- stronger religious belief
-- expectation of future assistance
-- reduced willingness to solve problems locally
-- political legitimacy claimed from divine favour
-- resentment when help does not arrive
-- loyalty, or fear, toward the player
+- **Interpretation on perception** — turning something witnessed into something
+  believed. "Rain fell" and "the god answered" are different beliefs formed from
+  one observation.
+- **Interpretation on belief** — standing back and asking what the things you
+  already hold add up to. This is where doctrine, grievance and political claim
+  come from.
 
-**Do not build an "Intervention Meter."** No counter, no dependence stat, no
-hidden slider tracking how much the player has helped.
-
-This behaviour should emerge from what the world already records: history,
-knowledge, belief, relationships, and the accumulated evidence of repeated
-divine action. If it cannot emerge from those, the answer is that those systems
-are not deep enough yet — not that a meter is needed.
+Neither section is wrong and neither is being edited. Reconciling them is a
+design task for whoever builds the interpretation layer, not something to settle
+in a direction document. What must survive either way is the existing law:
+perception reports what was seen and never what it meant.
 
 ---
 
-## 48. Belief Emerges From Interpretation
+## 47. Disagreement Is Preserved
 
-Entities do not automatically understand what the player did. The same event
-reaches different minds and becomes different things.
+One event must not automatically produce one universal explanation.
 
-The player produces rain during a drought. One group may conclude:
+A flood destroys a settlement. Possible interpretations, held simultaneously by
+different people:
 
-> The god answered us.
+- God punished us.
+- Our ruler failed us.
+- Foreigners caused this.
+- It was a natural disaster.
+- The prophet warned us.
+- Nobody knows.
 
-Another:
-
-> Our ruler has divine favour.
-
-Another:
-
-> This was coincidence.
-
-Another may, in time, arrive at a natural explanation — and be right, or be
-right for the wrong reasons.
-
-This builds on Sections 11, 12 and 13, and on the Knowledge, Rumor and
-Perception systems already built. Perception says what someone saw; it must
-never say what it meant. That separation is already a law (Part II, Section 30)
-and Part III does not relax it.
-
-**The deliberate exception:** Divine Revelation and Divine Voice (Section 9) are
-powers whose whole purpose is that the god communicates directly. Those are the
-cases where meaning is transmitted rather than inferred, and they are valuable
-precisely because everything else is not.
+Those differences should go on to shape different decisions. A simulation in
+which everyone reaches the same conclusion has thrown away the reason for having
+interpretation at all.
 
 ---
 
-## 49. History Preserves Old Consequences
+## 48. Belief Accumulates From Interpretation
 
-An important event should stay relevant long after the year it happened in.
-Later generations and later entities may:
+Religions and belief systems should be neither randomly generated nor picked
+from a list by the player. A belief may form along:
 
-- remember it accurately
-- inherit an incomplete version of it
-- distort it into rumor
-- turn it into tradition
-- build political claims on it
-- interpret it religiously
-- rediscover old evidence that contradicts what everyone accepted
+```
+Event → Interpretation → Repeated belief → Sharing
+      → Followers → Tradition → Doctrine → Institution
+```
 
-A player action hundreds of simulated years earlier should be able to affect a
-later society indirectly, through the record it left rather than through a
-lingering effect.
+**Do not build a religion system yet.** The foundations come first, and most of
+them exist: knowledge, rumor, perception, interpretation, decisions, historical
+memory. A religion system built before those are deep enough would have to
+invent its own versions of all of them.
 
-This is the long-range form of Section 36. Selective memory decides what is
-worth keeping; this decides what keeping it is for. Note the tension worth
-holding onto: a world that remembers everything has no traditions, because
-tradition is what a partially forgotten fact becomes.
+Note what this makes possible: **one real god can produce many religions.** The
+same divine act may generate gratitude, fear, doubt, a rational explanation,
+political exploitation and competing theology, with no second god required
+anywhere. Disagreement about a god does not need more gods to disagree about.
 
 ---
 
-## 50. Saving Something May Change It
+## 49. Unanswered Questions Drive Culture
 
-Preservation is itself an intervention, and it should be able to alter what was
-preserved. This applies to societies and institutions, not only to populations
-or species.
+Societies may accumulate questions they cannot settle:
 
-Examples:
+- Why do we die?
+- Why does suffering exist?
+- Why does God help some people and not others?
+- What happens after death?
+- Who has the right to rule?
+- What makes someone a person?
+- Is God still present?
+- What makes an action moral?
+
+Different people may hold competing answers, and the disagreement itself may
+become the shape of a culture.
+
+**Do not build a standalone Question System.** Questions should eventually be
+represented through what already exists: knowledge topics, unresolved claims,
+belief topics, competing interpretations.
+
+---
+
+## 50. Figures Emerge, They Are Not Placed
+
+There should be no **Spawn Prophet** mechanic. Prophets, philosophers and
+founders should arise when circumstances align — surviving an important event,
+holding an unusual interpretation, curiosity, conviction, charisma, reputation,
+social position, followers, relationships, a perceived divine experience.
+
+**Their importance comes from whether other people believe and repeat them.** A
+prophet nobody listens to is a person with an unusual opinion.
+
+### Recorded tension: Divine Voice
+
+Section 9's Divine Voice lists "prophet appears" among its possible results, and
+the implementation sets a `mara_is_prophet` flag. That is the closest thing in
+the game to placing a prophet directly.
+
+It is closer to right than it looks: the same power also lists "message is
+misunderstood", so the outcome is already contingent. The direction is to make
+that contingency real rather than to remove the power — speaking through a
+mortal should create the *opportunity* for prophethood, and whether it takes
+should depend on who heard it and what they made of it.
+
+---
+
+## 51. Miracles Become Myths
+
+An important event should be able to change as it is transmitted:
+
+```
+Event → Memory → Story → Myth → Doctrine
+```
+
+Objective event: the player saves one child during a flood.
+
+- Later memory: "God saved the child."
+- Later story: "The child was chosen by God."
+- Later myth: "The child walked untouched through the flood."
+- Later doctrine: "The First Prophet was protected by God from the waters."
+
+**The engine retains the objective truth throughout.** Cultural memory drifts;
+the record of what happened does not. This builds directly on the existing
+knowledge and rumor architecture, which already carries confidence, distortion,
+transmission count and an objective truth state the mortal cannot see.
+
+---
+
+## 52. Storage Changes Persistence, Not Truth
+
+Cultural knowledge storage may eventually develop through oral memory, art and
+symbols, writing, archives, and mass copying.
+
+Better storage increases **persistence, reach and transmission reliability.** It
+does not increase truth.
+
+> **A written falsehood can outlive a true thing somebody once said.**
+
+That asymmetry is the interesting part. Writing does not make a society more
+correct; it makes it more consistent, including in its errors.
+
+---
+
+## 53. Records Preserve Perspectives
+
+Four things that may all differ, and should be able to coexist:
+
+**Objective event** — what happened.
+**Witness knowledge** — what someone perceived.
+**Recorded history** — what someone chose to preserve.
+**Cultural memory** — what later generations believe.
+
+Example. Objective: the player causes rain because crops are failing.
+
+- Religious chronicle: "God answered the king."
+- Royal record: "The king saved the nation."
+- Common oral tradition: "The heavens returned."
+- Later scholarly interpretation: "An unusual climate event occurred."
+
+None of those is the event, and the simulation should hold all of them at once.
+Note that the royal record is not a lie so much as a claim — which is what makes
+it useful to whoever inherits it.
+
+---
+
+## 54. Institutional Memory
+
+As societies grow more complex, belief and history may come to be preserved by
+institutions: priesthoods, royal archives, schools, oral keepers, temples, legal
+codes, sacred texts, philosophical traditions.
+
+**Do not build these yet.** First make information itself able to persist,
+distort, spread and change decisions. An institution is a thing that holds
+information in a particular shape; without the information behaving properly, an
+institution is a label.
+
+---
+
+## 55. What the Player Says Outlives Them
+
+A clear divine statement should eventually become durable knowledge, and then
+stop belonging to the player.
+
+> "This valley will belong to your descendants."
+
+That sentence may later affect migration, territorial claims, diplomacy, war,
+succession, religion and legitimacy — long after the circumstances that prompted
+it are gone.
+
+The system should distinguish **the original statement** from **the remembered
+version**, and let the two diverge.
+
+**Anything the player says may be reused by anyone.** "Protect the weak" can
+become:
+
+| Who | What they take it to mean |
+|---|---|
+| Priest | We must provide charity |
+| King | Subjects require our protection |
+| General | We must conquer weaker neighbours, for their own safety |
+| Rebel | The rulers are violating God's command |
+
+The same is true of prophecy. "The prophet's child shall rule" may be read as a
+literal son, direct descendants, spiritual descendants, symbolic successors, or
+a claim invented later — and opposing factions may cite the same tradition
+against each other.
+
+**The player cannot control later interpretation.** This is the long-term
+consequence of communicating at all, and it should be treated as one of the most
+significant things a god can do.
+
+---
+
+## 56. The Cost of Divine Influence Is Consequence
+
+Divine power should not primarily be balanced by an abstract resource. The
+interesting cost is what the act does to the world:
+
+- saving one region may harm another
+- feeding a population may deepen future dependence
+- preventing one disaster may create a different pressure
+- repeated protection may encourage recklessness
+- resurrection may transform what people believe about death
+- guaranteed rescue may reduce local problem-solving
+
+**The player should stay powerful. Power should not be consequence-free.**
+
+### Recorded tension: Divine Power
+
+Section 8 establishes Divine Power as a spending limit, and it is built and
+working. This section says consequence, not cost, should be the *primary*
+constraint.
+
+Resolution: Divine Power stays. It is doing a real near-term job — pacing a turn,
+forcing a choice between this year's problems, and making silence a live option
+rather than a wasted move. What changes over time is emphasis: as consequences
+become richer, the question the player weighs should shift from "can I afford
+this?" toward "what will this become?". Neither replaces the other, and removing
+Divine Power before consequences can carry that weight would leave nothing
+constraining intervention at all.
+
+**Do not implement intervention-cost mechanics.**
+
+---
+
+## 57. Repeated Help Creates Expectation
+
+Repeated intervention should be able to change what people expect: stronger
+faith, greater reliance, political claims of divine favour, reduced local
+initiative, resentment when help stops, fear of punishment, greater willingness
+to take risks.
+
+It may also weaken independent development. Repeated food miracles reduce the
+pressure that produces better farming; repeated protection reduces defensive
+adaptation; repeated answers reduce independent inquiry.
+
+**This is not a penalty.** Societies should differ. One may grow dependent;
+another may treat divine help as breathing room and use it to build something.
+Which happens should follow from traits, institutions, knowledge and history.
+
+**Do not build a Divine Dependency meter.** No counter, no hidden slider. This
+should emerge from what the world already records — historical precedent,
+belief, knowledge, relationships, decisions. If it cannot emerge from those, the
+answer is that those systems are not deep enough yet.
+
+---
+
+## 58. Silence Is an Act
+
+Not intervening should be able to become historically meaningful.
+
+**Do not build an "Age of Silence" mode.** Instead, people should eventually be
+able to compare what they remember with what they are living through:
+
+> Past: God usually intervened.
+> Now: God no longer intervenes.
+
+And reach different conclusions:
+
+- God abandoned us.
+- God is testing us.
+- God is angry.
+- God never existed.
+- The old stories were exaggerated.
+- We must solve our own problems.
+
+Doing nothing is already a choice the game supports. It should also be a choice
+the world can be *about*.
+
+---
+
+## 59. Saving Something Changes It
+
+Preservation is itself an intervention and should alter what it preserves:
 
 - a settlement repeatedly given aid becomes economically dependent
 - a ruler repeatedly protected becomes politically untouchable
 - a faction repeatedly rescued becomes reckless
-- a population isolated for its own protection develops different beliefs and
-  traditions from those it was separated from
+- a population isolated for its protection develops beliefs and traditions
+  unlike those it was separated from
 
-**Survival is not the same as preserving the previous state.** A thing that
-continues to exist because the player kept intervening is not the thing that
-would have existed without them, and the difference is a story rather than a
-failure.
+> **Survival is not the same as preserving the previous state.**
+
+What continues to exist because the player kept intervening is not what would
+have existed otherwise, and the difference is a story rather than a failure.
 
 ---
 
-## 51. Ecological and Planetary Simulation
+## 60. Legitimacy Has Many Sources
 
-Recorded as long-term possibilities **only**:
+A ruler's authority should rest on facts in the simulation rather than on a
+single legitimacy score. Possible sources: ancestry, religious approval, popular
+support, military support, legal or institutional recognition, achievements,
+resource control, prophecy, succession custom, historical claims.
 
-- climate eras
-- migration pressure
-- ecological change
-- species adaptation
-- extinction
-- behavioural adaptation
-- protected refuges
-- artificial habitats
-- planetary and environmental causality
-- deeper biological simulation
+**Do not build a bar for each.** Prefer deriving political stability from state
+that already exists — relationships, beliefs, settlement conditions, history.
 
-**None of this is on the implementation roadmap.**
+Belief should be able to work in both directions. It can legitimise:
 
-It may be explored only after the existing people, knowledge, decision and
-history simulation is proven fun. Section 42's Autonomous Story Test is the gate
-for that, and it has not been passed.
+- the ruler is divinely chosen
+- a prophet supports the ruler
+- a sacred lineage
+- a religious institution recognises a succession
+- a victory read as divine favour
+
+And it can dissolve:
+
+> "The king has violated God's law."
+
+That two-sidedness is what lets religion and politics entangle without any
+particular political model being hardcoded.
+
+---
+
+## 61. History Is a Political Resource
+
+Past events should not sit as flavour text. Actors should be able to reach for
+them to justify rule, rebellion, war, land claims, religious authority,
+succession, persecution and diplomacy.
+
+An event becomes politically useful precisely when it is remembered imperfectly:
+a fact everyone agrees on settles an argument, and a fact people remember
+differently *is* the argument.
+
+---
+
+## 62. Religions Contain Disagreement
+
+A religion should not behave as one unified object. It should be able to hold
+disputed doctrines, competing interpretations, reform movements, traditionalists,
+philosophers, and political factions using the same tradition for opposite ends.
+
+> **One historical source can support opposing ideologies.**
+
+This matters more than it sounds: a religion that cannot disagree with itself
+cannot schism, and cannot be used — which removes most of what makes belief
+interesting to a god who is watching.
+
+---
+
+## 63. Identity Comes From Remembered Events
+
+Civilizations should develop identity from what happened to them rather than
+from fixed culture tags. Surviving a flood, crossing mountains, receiving divine
+aid, surviving famine, escaping persecution, winning a defensive war, settling a
+promised homeland — any of these may become a founding story, a sacred memory, a
+political identity, a tradition, or a territorial claim.
+
+**Avoid culture selectors** such as Religious / Militaristic / Peaceful. Culture
+should be a residue of history, not an attribute chosen at creation.
+
+Migration should do more than move population. A large movement can create
+founding myths, territorial claims, new relationships, new enemies, trade routes,
+religious interpretation, cultural separation and mixed populations. Detailed
+migration simulation remains future scope; what matters near-term is that
+movement is capable of *meaning* something later.
+
+---
+
+## 64. Disasters Do Not Overwrite Society
+
+A famine, plague, storm, migration wave or resource collapse must interact with
+the society it lands on, never impose one generic response.
+
+Faced with the same disaster, different societies may cooperate, hoard, migrate,
+blame outsiders, turn toward religion, overthrow their leaders, exploit weaker
+groups, send aid, isolate themselves, spread misinformation, or adapt
+successfully.
+
+Which happens should follow from what was already there: traits, institutions,
+knowledge, relationships, needs, resources, history.
+
+Existing belief should be part of that. A flood strikes a people who believe
+their land was divinely promised to them; they may refuse to leave, read it as a
+test, reinterpret the promise, blame their leadership, migrate behind a prophecy,
+or lose faith. **The same physical pressure produces different histories.**
+
+This is Section 34 at a larger scale. A disaster with one outcome everywhere is a
+cutscene wearing a system's clothes.
+
+---
+
+## 65. Catastrophes Create History
+
+A large disaster should normally open a new historical era rather than end the
+simulation: migrations, population loss, political collapse, new factions, new
+settlements, cultural change, changed beliefs, resource redistribution, new
+alliances and rivalries, long-term memory.
+
+A catastrophe can destroy much of a world while creating the conditions for
+something else. The interesting question after a collapse is not whether the
+player lost, but what grew in the gap.
+
+Section 23 already establishes that there is no conventional Game Over and that
+failure should generate history. The stronger form:
+
+> **The worst thing that can happen to a world is not that it ends, but that it
+> stops producing history.**
+
+---
+
+## 66. Civilization Stays Inside Nature
+
+Political and cultural development must not make the environment irrelevant.
+Mature civilizations still face disease, famine, predators, drought, floods,
+resource shortage, environmental collapse and migration pressure.
+
+**Civilization changes how a problem is handled. It does not remove the
+problem.** Detailed ecology remains future scope.
+
+---
+
+## 67. Intelligence, Language, and Discovery
+
+Long-term guidance only. **Do not build a biological intelligence system.**
+
+**Intelligence and civilization are separate.** Culture must not appear because
+an intelligence value crossed a threshold. Cultural development may instead
+depend on breakthroughs: self-awareness, symbolic communication, naming, shared
+memory, abstraction, teaching, social rules, institutions, recorded knowledge.
+Biological intelligence and cultural intelligence are different things.
+
+**Language creates concepts.** Naming lets a people cut reality into shared
+pieces — home, enemy, death, god, justice, property, family, ruler, nation, law,
+soul, duty. A future knowledge system may need to hold shared *concepts* and not
+only factual claims. A society without a word for property cannot have a dispute
+about it.
+
+**Discovery should belong to the world, not the player.** As societies mature,
+agriculture, husbandry, trade, transport, law, writing, political institutions
+and military organisation should increasingly come from the people themselves.
+The player must not remain the only source of progress.
+
+**Discoveries should create chains, not bonuses.** Avoid technology as a flat
+modifier:
+
+```
+Domestication → more reliable food → population growth
+  → grazing pressure → changing land use → property matters
+  → inequality → livestock theft becomes worthwhile
+  → raiding changes → warfare changes
+```
+
+One discovery should be able to move many systems over time. Detailed economy
+and ecology simulation remains future scope.
+
+---
+
+## 68. Ecological and Planetary Simulation
+
+Recorded as long-term possibilities **only**: climate eras, migration pressure,
+ecological change, species adaptation, extinction, behavioural adaptation,
+protected refuges, artificial habitats, planetary causality, deeper biological
+simulation.
+
+**None of this is on the implementation roadmap.** It may be explored only after
+the existing people, knowledge, decision and history simulation is proven fun.
+Section 42's Autonomous Story Test is the gate, and it has not been passed.
 
 **Worldsim is not becoming an evolution simulator.** Ecology, if it ever arrives,
-arrives as a source of pressure on societies — a reason for people to move,
-argue, believe and decide — not as a subject in its own right. The moment a
-planetary system stops producing human consequences, it has failed Section 39
-and should be cut regardless of how correct it is.
+arrives as pressure on societies — a reason for people to move, argue, believe
+and decide — not as a subject in its own right. The moment a planetary system
+stops producing human consequences it has failed Section 39 and should be cut,
+however correct it is.
 
 ---
 
-## 52. No Additional Gods
+## 69. The Player Does Not See Every Belief
 
-For the foreseeable direction, **the player is the only god-level actor.**
+Future religious and ideological information need not be fully transparent. The
+player might reliably see the dominant belief, major doctrines, public rituals
+and known disputes, while some of what people actually think stays uncertain.
 
-Do not add:
+A society would then be learned partly by watching: behaviour, documents,
+rituals, conversations, political decisions.
 
-- rival gods
-- hidden creator gods
-- competing divine entities
-- ancient god characters
-- supernatural factions operating at the player's level
+**Do not implement hidden-belief UI.** Recorded as future UX direction. Note that
+this is a change from today, where player-facing belief is shown in full, and it
+does not touch Developer Mode — Developer Mode shows the machine and always will
+(Section 40).
+
+---
+
+## 70. No Additional Gods
+
+**The player is the only actual god-level actor.**
+
+Do not add rival gods, creator gods, competing divine entities, hidden deity
+characters, or player-equivalent supernatural actors.
 
 Mortals may misunderstand natural events, player actions, or each other as gods,
-spirits or divine forces, and may build entire religions on that mistake. That
-is the point of Sections 11 and 12, and nothing here restricts it.
+spirits or divine forces, and may build entire religions on that mistake. That is
+the point of Sections 11, 12 and 48, and nothing here restricts it.
 
-What must not exist is a second actual god — an entity that really does act at
-the player's level. The player's uniqueness is not a balance decision. It is
-what makes their choices legible: a world in which any unexplained event might
-have been another god's doing is a world where the player cannot be blamed,
-credited, or understood.
+What must not exist is a second *real* god. The player's uniqueness is not a
+balance decision: a world where any unexplained event might have been another
+god's doing is a world where the player cannot be credited, blamed, or
+understood.
+
+Where outside research features multiple gods, take the underlying principles —
+competing religions, conflicting origin stories, ideological division, differing
+conceptions of divinity, the political use of religion — and leave the extra gods
+behind. Every one of those effects is achievable with one god and many
+interpreters, which is Section 48.
 
 Section 17's emergent identities are interpretations mortals hold about the
 player, never separate beings.
 
 ---
 
-## 53. Development Priority Is Unchanged
+## 71. Development Priority Is Unchanged
 
 The current priority stands exactly as Section 41 describes it:
 
 ```
-Entities
-  → Relationships
-  → Knowledge and Rumors
-  → Perception
-  → Decisions
-  → Events
-  → Player Actions
-  → Consequences
+Entities → Relationships → Knowledge and Rumors → Perception
+  → Decisions → Events → Player Actions → Consequences
   → Historical memory
 ```
 
-Nothing in Part III may interrupt that order. Planetary, ecological and
-evolutionary systems in particular sit behind all of it, and behind the
-Autonomous Story Test.
+Nothing in Part III may reorder that. Interpretation is the important future
+bridge — Section 46 — but stable systems must not be restructured for it before
+the current foundation is proven.
 
-If a Part III idea seems urgent, that is a signal to finish the layer currently
-in progress, not to reorder the list.
+Planetary, ecological and evolutionary systems sit behind all of it, and behind
+the Autonomous Story Test.
+
+If a Part III idea starts to feel urgent, that is a signal to finish the layer in
+progress, not to reorder the list.
 
 ---
 
-## 54. Scope Warning
+## 72. Scope Rule
 
-> **Worldsim should simulate enough underlying reality to produce interesting
-> human and social consequences — not simulate reality for its own sake.**
+> **Worldsim should simulate enough underlying reality to produce meaningful
+> beliefs, decisions, relationships, consequences and history. It should not
+> simulate complexity for realism's own sake.**
 
-Every future system must justify itself by producing at least one of:
+Before adding a subsystem, ask whether it creates meaningful:
 
-- meaningful decisions
-- beliefs
+- decisions
+- interpretations
 - relationships
 - consequences
 - history
+- player choices
+
+If not, it does not belong in Worldsim yet.
 
 **Do not add complexity because it is realistic.** Realism is not a
-justification, and a system that models something correctly while producing
-nothing anyone would notice is worse than the same system absent: it costs
-attention, invites more of its own kind, and makes the interesting parts harder
-to see.
+justification. A system that models something correctly while producing nothing
+anyone would notice is worse than the same system absent: it costs attention,
+invites more of its own kind, and makes the interesting parts harder to see.
 
-This restates Section 39's three questions as a rule for Part III specifically.
-A proposed system that cannot answer them should be recorded here as a
-possibility and left unbuilt.
+This restates Section 39's three questions as a rule for Part III specifically. A
+proposed system that cannot answer them should be recorded here as a possibility
+and left unbuilt.

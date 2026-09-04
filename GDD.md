@@ -1730,9 +1730,9 @@ existing as a separate special case. The god should be an actor in the world's
 causality, not an exception to it.
 
 **This table is the whole roadmap.** Part III records long-term direction and
-adds nothing to it: no section from 44 to 72 appears here, and none should be
-read as scheduled work. If a Part III idea starts to feel urgent, that is a
-reason to finish the layer currently in progress.
+adds nothing to it. No Part III section appears here, and none should be read as
+scheduled work. If a Part III idea starts to feel urgent, that is a reason to
+finish the layer currently in progress.
 
 ---
 
@@ -1826,8 +1826,8 @@ Section 28 still has the last word:
 
 > **This part is direction, not roadmap.**
 >
-> Nothing in Sections 44–72 is current work. None of it is scheduled, none of it
-> is scoped, and none of it may be implemented without an explicit request. The
+> Nothing in Part III is current work. None of it is scheduled, none of it is
+> scoped, and none of it may be implemented without an explicit request. The
 > milestone order in Section 41 is unchanged by anything written here.
 >
 > Part II describes how mortals behave today. Part III describes what that
@@ -2528,3 +2528,552 @@ invites more of its own kind, and makes the interesting parts harder to see.
 This restates Section 39's three questions as a rule for Part III specifically. A
 proposed system that cannot answer them should be recorded here as a possibility
 and left unbuilt.
+
+---
+
+## 73. Morality Is Made by Societies
+
+Worldsim should not use one universal civilization-level **Good ↔ Evil** axis.
+Moral frameworks should emerge from material life, history, institutions,
+religion, hierarchy and survival pressure.
+
+A hierarchical society may call obedience, loyalty and role-fulfilment good. A
+freedom-focused society may value autonomy and resistance to coercion. A society
+under constant existential pressure may treat preservation of the group as its
+highest obligation.
+
+These are not culture presets. They are conclusions societies reach about how
+people *ought* to behave.
+
+The player is not identical with morality. A divine act has an objective effect;
+mortals supply the moral meaning. The same flood may be understood as punishment,
+a test, cruelty, necessary sacrifice, or ordinary nature.
+
+---
+
+## 74. Crisis Attribution Turns Pressure Into Politics
+
+A crisis does not only hurt. People ask **why it happened** and **who is
+responsible**.
+
+Possible attributions include a ruler, foreign group, minority, heresy,
+environmental damage, social disorder, God, natural causes, themselves, or no
+known cause.
+
+The important chain is:
+
+```
+Crisis → Interpretation / Attribution → Response
+```
+
+A plague believed to be contagious may produce isolation. The same plague
+believed to be divine punishment may produce ritual reform. Believed sabotage
+may produce persecution or war. Believed royal incompetence may produce
+rebellion.
+
+**Do not hardcode a disaster response.** Existing belief decides what the crisis
+becomes politically.
+
+---
+
+## 75. Public Claim, Private Belief, and Practice Can Diverge
+
+An individual may eventually need three distinguishable layers:
+
+- **Public claim** — what they say they believe.
+- **Private belief** — what they actually hold to be true.
+- **Practice** — what they actually do.
+
+A king may publicly support an official religion while privately doubting it
+because that religion legitimises the throne. A merchant may publicly follow a
+local faith while privately adopting a foreign one because open conversion would
+cost relationships or trade.
+
+**Do not implement this now.** It is future direction for making belief social
+rather than merely internal.
+
+Conversion should likewise have causes, not a single strength contest. Possible
+causes include witnessed events, marriage, political pressure, social advantage,
+philosophy, fear, gratitude, trauma, conquest, belonging and genuine conviction.
+
+---
+
+## 76. Intelligence Does Not Guarantee Rational Behaviour
+
+Cognitive capacity and collective rationality are different things.
+
+A highly intelligent person or advanced society can still act through fear,
+anger, loyalty, ideology, propaganda, misinformation, trauma and social
+pressure. A less technologically developed society can still reach a sensible
+conclusion from the information available to it.
+
+Never encode:
+
+> high intelligence → correct decision
+
+Reason is a capability. It does not erase motive or belief.
+
+This strengthens Section 33: false beliefs can create real history precisely
+because intelligent people can reason coherently from bad premises.
+
+---
+
+## 77. Information Propagation Creates Social Distance From Truth
+
+As societies grow, fewer people personally witness important events. They hear
+about them through travellers, rulers, priests, messengers, merchants, rumors,
+prophecies and documents.
+
+Example:
+
+```
+Actual: a strange light descends over one village.
+Village: "A divine messenger appeared."
+Town: "The messenger warned of famine."
+Capital: "God declared the king legitimate."
+```
+
+This is not a separate information engine. It is the long-term use of the
+existing Knowledge / Rumor architecture plus Section 51's distortion and Section
+52's storage rules.
+
+Distance in a social network should eventually matter because every additional
+handoff creates another opportunity for selection, omission and reinterpretation.
+
+---
+
+## 78. First Contact Is a Worldview Event
+
+When Worldsim eventually supports multiple civilizations or rational species,
+first contact should not be reduced to:
+
+> Relations: Neutral
+
+It may create biological shock, theological shock, philosophical challenge,
+economic opportunity, disease risk, political fear, language problems and
+cultural fascination at the same time.
+
+A people who believe only they possess souls may have to respond when another
+rational species appears. Possible responses include reinterpretation, denial,
+reform, heresy, conversion, violence, accommodation or syncretism.
+
+**First contact should attack assumptions as well as borders.**
+
+This remains behind the roadmap gates for multiple kingdoms and additional
+races in Section 41.
+
+---
+
+## 79. Different Origin Stories Need No Additional Gods
+
+Different peoples may possess incompatible creation stories, sacred histories
+and explanations of rational life without any of those stories being
+objectively true.
+
+A second civilization may sincerely believe another god created it. That belief
+is cultural data, **not evidence that another god exists**.
+
+The engine should preserve the difference between:
+
+- objective origin
+- remembered origin
+- religious origin story
+- political use of the origin story
+
+This gives multi-species theology depth without violating Section 70.
+
+---
+
+## 80. Historical Individuals Are Hinge Points
+
+Most citizens should remain abstract, as Section 14 already requires. But some
+individuals become historically important because circumstances place them at a
+junction where their action carries farther than normal.
+
+Possible examples:
+
+- first explorer
+- first-contact intermediary
+- prophet
+- diplomat
+- reformer
+- ruler
+- conqueror
+- scientist
+- survivor
+- poet
+- heretic
+- assassin
+
+Historical importance should be **earned by consequence**, not assigned because
+a character was spawned as a hero.
+
+The first person to meet an unknown people may bias relations for generations.
+A kind encounter can become evidence that the outsiders are trustworthy; a
+violent one can become the founding proof that they are monsters. The same two
+civilizations can therefore develop completely different histories depending on
+who met first.
+
+---
+
+## 81. Authority Comes From Competing Sources
+
+Section 60 establishes that legitimacy has many sources. The stronger political
+form is that **authority itself may be distributed**.
+
+A civilization may recognise overlapping sources such as:
+
+- royal authority
+- religious authority
+- legal authority
+- popular authority
+- military authority
+- customary authority
+- economic power
+- historical legitimacy
+
+Do not immediately turn these into eight bars. They should come from real
+relationships, offices, beliefs, control and historical claims.
+
+Religion and state can support each other or undermine each other. A priesthood
+may confirm succession, or declare a ruler illegitimate. A ruler may control an
+institution, or attempt to suppress it. A miracle believed to contradict the
+king can move obedience away from the throne without the player ever clicking
+"reduce royal authority".
+
+---
+
+## 82. Religious Claims Are Actions in Politics
+
+Mortals may claim:
+
+- God chose me.
+- God ordered this war.
+- God cursed our enemy.
+- God gave us this land.
+- God supports this ruler.
+- God demands this law.
+
+Such claims may be true, misinterpreted, fabricated, or impossible for mortals
+to verify.
+
+The player may know what they actually said or did. The population does not get
+that access for free.
+
+**Do not add a “correct religion” percentage.** Religions are mixtures of
+remembered events, interpretation, values, doctrine and political use. One may
+preserve a true event and draw a false conclusion; another may reject the event
+but reach a moral rule the player approves of. Accuracy is claim-specific, not a
+score attached to an entire religion.
+
+---
+
+## 83. Ideology Is Belief About How Society Should Work
+
+Do not begin with a giant predefined ideology catalogue.
+
+Treat ideology as the point where beliefs become normative:
+
+- All rational beings are equal.
+- Hierarchy is sacred.
+- Kings rule by divine favour.
+- Freedom is God's law.
+- Order matters more than liberty.
+
+Such ideas should grow from moral frameworks, historical experience, economy,
+institutions, crisis attribution and religion.
+
+A useful distinction:
+
+> **Belief says what is true. Ideology says what society should do about it.**
+
+Ideology belongs downstream of interpretation, not beside it as an unrelated
+system.
+
+---
+
+## 84. Narrative Is History Used to Explain Identity
+
+Do not build a standalone narrative generator first.
+
+A social narrative is a connected interpretation of historical events that
+explains who a group believes it is.
+
+Example:
+
+> "We survived because God chose us."
+
+That narrative may influence identity, diplomacy, succession, war, migration,
+religion and law.
+
+The important progression is:
+
+```
+Event → remembered event → connected story → group identity → political use
+```
+
+Section 63's founding narratives are the early form of this. The new rule is
+that narratives may be actively used against other narratives.
+
+> **People can weaponize interpretation against each other.**
+
+A genuine belief can be politically useful. A sincere prophet can be quoted by
+later rulers. A true event can still become propaganda.
+
+---
+
+## 85. Reform Changes Institutions, Not Minds Instantly
+
+A religious or ideological reform should not be:
+
+> Religion upgraded.
+
+A reform may change priesthood structure, accepted moral rules, relation to the
+state, legal norms, membership rules, treatment of outsiders or doctrine.
+Different regions and people may accept, reject, partially adopt, or combine the
+change with older practice.
+
+That naturally permits old faiths, reformed faiths, regional variants and
+sects to coexist.
+
+**Do not build a procedural reform engine yet.** First ensure belief, history and
+institutions can differ without being overwritten globally.
+
+---
+
+## 86. Succession Is a Causal Chain, Not a Replacement Operation
+
+A ruler's death should eventually ask more than who is next in a list.
+
+Relevant conditions may include inheritance custom, legal recognition,
+religious approval, army support, elite support, rival claimants, prophecy,
+bloodline, foreign interference, assassination and remembered promises.
+
+Example:
+
+```
+Prince assassinated
+  ↓
+Succession disputed
+  ↓
+Religious institution backs Claimant A
+  ↓
+Army backs Claimant B
+  ↓
+Civil war
+  ↓
+Neighbour intervenes
+  ↓
+Dynasty collapses
+```
+
+One death can reshape centuries because it connects to conditions already in the
+world. That makes succession an application of Section 35's bounded ripple rule,
+not a special scripted drama system.
+
+---
+
+## 87. Assassination Can Become a Historical Hinge
+
+An important killing may affect legitimacy, martyrdom, rebellion, succession,
+religion, foreign policy, myth and civil war.
+
+The event itself remains objective: one person killed another. Everything after
+that depends on who knew, who was blamed, what the victim represented, and what
+political conditions were already unstable.
+
+This is exactly the kind of event that deserves selective long-term memory under
+Section 36.
+
+---
+
+## 88. Civilizations Are Allowed to End
+
+A civilization is not a permanent map object that must be protected from
+collapse.
+
+Distinguish:
+
+**Species / population survival** from **civilization / state survival**.
+
+A kingdom can disappear while its people continue as successor states,
+refugees, diaspora, conquered populations, nomads, religious communities or
+regional cultures.
+
+Collapse should therefore create continuity as well as loss.
+
+This strengthens Sections 23 and 65: failure creates history.
+
+---
+
+## 89. Civilizations Have Descendants
+
+A fallen state may produce several successors, each preserving a different piece
+of the old order.
+
+Example:
+
+- Northern successor preserves the old religion.
+- Eastern successor adopts foreign customs.
+- Southern successor becomes a merchant state.
+- Royal remnant retains the original dynastic claim.
+
+All may sincerely claim:
+
+> "We are the true continuation."
+
+Those competing claims can become future diplomacy, legitimacy disputes,
+religious arguments and wars.
+
+Long-term, Worldsim should treat civilizations as historical processes that can
+rise, fragment, reform, merge, migrate, collapse and continue culturally without
+continuing politically.
+
+---
+
+## 90. Inclusion and Exclusion Are Historical Beliefs
+
+Societies may classify outsiders in ways such as chosen people, accepted equals,
+tolerated foreigners, lesser beings, dangerous others or abominations.
+
+These categories must not be hardcoded racial truths. They are social beliefs
+that can change through first contact, philosophy, reform, war, intermarriage,
+shared disaster or the actions of famous individuals.
+
+This keeps species difference from becoming a fixed morality table and gives
+first contact somewhere to propagate socially.
+
+---
+
+## 91. Messages Change Through Mortal Intermediaries
+
+Outside research may feature angels or lesser divine beings carrying messages.
+Worldsim does **not** need those entities to gain the useful mechanic.
+
+Use mortal intermediaries:
+
+```
+Player speaks
+  ↓
+Witness / prophet interprets
+  ↓
+Priest or ruler repeats
+  ↓
+Scribe records
+  ↓
+Population receives
+```
+
+Every handoff may preserve, omit, exaggerate or reinterpret part of the message.
+The player can speak clearly and still lose control of what the world eventually
+hears.
+
+Do not add autonomous supernatural agents, angelic factions, divine bureaucracies
+or heavenly politics.
+
+---
+
+## 92. The One-God Rule Is Stronger Than the Source Material
+
+Research may contain minor gods, angels, divine covenants or multiple beings
+called gods. Worldsim deliberately does not inherit that literal structure.
+
+**The player remains the only actual god-level actor.**
+
+Do not add:
+
+- minor gods
+- rival gods
+- hidden creator gods
+- divine factions
+- divine diplomacy
+- autonomous godlike agents
+- player-equivalent supernatural entities
+
+Mortals may invent any of those concepts. They may worship nonexistent gods,
+misidentify creatures or natural phenomena, or claim that another being created
+them. Those beliefs are allowed precisely because objective reality remains
+separate from social truth.
+
+The useful theme is not “many real gods.” It is:
+
+> **Many people can build incompatible explanations around one reality.**
+
+---
+
+## 93. Four Truth Layers
+
+Future social simulation should preserve four distinct layers where useful:
+
+1. **Objective truth** — what actually happened.
+2. **Social truth** — what a group currently accepts as true.
+3. **Private belief** — what an individual personally believes.
+4. **Public claim** — what the individual says publicly.
+
+These layers may agree or conflict.
+
+This is not a demand for four new databases. It is a conceptual requirement: do
+not design future belief systems in a way that makes these distinctions
+impossible.
+
+---
+
+## 94. Chapters 61–120 Do Not Change the Roadmap
+
+Everything in Sections 73–93 is **future direction**.
+
+Do not move morality, ideology, public/private belief, first contact, advanced
+religion, succession, reform, successor civilizations or multi-species theology
+ahead of the current dependency order in Section 41.
+
+The near-term work remains the autonomous causal foundation. These ideas matter
+now only because the existing architecture should avoid making them impossible
+later.
+
+Where possible, future behaviour should be derived from facts, perception,
+interpretation, knowledge, relationships, history, intents, actions and
+institutions rather than implemented as isolated special-case systems.
+
+The rule from Section 72 applies especially strongly here:
+
+> **Translate an interesting concept into Worldsim's causal architecture before
+> creating a new subsystem for it.**
+
+---
+
+## 95. Long-Term Social Identity
+
+The direction after Chapters 1–120 can be stated as one extended loop:
+
+```
+Reality happens once.
+  ↓
+Minds perceive only part of it.
+  ↓
+Minds interpret it differently.
+  ↓
+Shared interpretations become beliefs and narratives.
+  ↓
+Beliefs become norms, ideologies and institutions.
+  ↓
+Institutions and individuals make decisions.
+  ↓
+Decisions alter the world.
+  ↓
+History preserves competing versions of what happened.
+  ↓
+Later people inherit those versions and act again.
+```
+
+The player's special position is not that they control every layer. It is that
+they are the only god and can act directly on reality while watching meaning
+escape their control.
+
+Preserve these internal principles:
+
+> **The player controls what they do. They do not control what history says they
+> did.**
+
+> **The player changes the world. People decide what those changes mean.**
+
+> **Reality happens once. History does not.**

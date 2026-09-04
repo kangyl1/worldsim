@@ -19,7 +19,7 @@ The user retains authority over game design, project direction, and GitHub publi
 ## Project reference
 
 - Repository: `kangyl1/worldsim`
-- Current important commit: `2d503b95dc3bba4149453ae5b1361d6b369f1434` — `Add Minimal Settlement State v1`
+- Current important commit: `8f97dd72ea5b996b2977cccf6632b145aa2b551a` — `Add Consequence Engine v1`
 
 The mortal causal chain, one commit per layer, oldest first:
 
@@ -28,9 +28,11 @@ The mortal causal chain, one commit per layer, oldest first:
 - `9b1ad6ed3102906b35b4adbf590a68d8dbce0568` — `Record the simulation foundation revision in the GDD`, which is where Part II came from
 - `f8aaf05c27c3e5c9047625cc6309fcae1217e55f` — `Add Broad Intent Model v1` (what mortals want)
 - `0bf0141c1d51e0fd3e692e327f59162ecad55ebe` — `Add Mortal Action Selection v1` (what they try)
-- `36cddb3a5a642c41f7e41e7e83f397ad1cf2327a` — `Add Mortal Action Execution v1` (what came of it)
+- `36cddb3a5a642c41f7e41e7e83f397ad1cf2327a` — `Add Mortal Action Execution v1` (what came of the attempt)
 - `ddbde279d7140e7e4f3f2ce0107c0c8045485893` — `Add Selective Perception v1` (who could know any of it in the first place)
 - `2d503b95dc3bba4149453ae5b1361d6b369f1434` — `Add Minimal Settlement State v1` (where any of it is happening)
+- `8f97dd72ea5b996b2977cccf6632b145aa2b551a` — `Add Consequence Engine v1` (what changed in the world, and nothing about what it meant)
+
 - Local project path: `/Users/jamienfam/Documents/ChatGPT/worldsim`
 - Tested Godot version: `4.7.1`
 - Godot is **not on `PATH`**. Use the full binary path: `/Users/jamienfam/Downloads/Godot.app/Contents/MacOS/Godot`

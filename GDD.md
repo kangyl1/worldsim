@@ -4006,3 +4006,159 @@ retain Worldsim's textual, archival, and terminal personality.
 This section records an approved presentation direction only. It does not require
 an immediate UI rebuild and does not alter the implementation dependency order in
 Section 41.
+
+---
+
+## 100. Responsive Presentation — Mobile Shell, Desktop Expansion
+
+The approved presentation target is **one information architecture that adapts to
+screen size**, not separate mobile and desktop versions of Worldsim.
+
+The phone-style interaction model is the baseline because it forces clear focus:
+one app, one task, one readable hierarchy at a time. On wider screens, the same
+apps may expand into a webpage-style or dashboard-style layout so the player can
+see more related information simultaneously.
+
+> **Mobile decides the structure. Desktop earns more space, not a different
+> game.**
+
+### Mobile presentation
+
+On a phone-sized screen, Worldsim should lean fully into Section 99's fictional
+phone metaphor:
+
+- optional lock-screen-style summary of important changes
+- home screen with app icons and meaningful notification badges
+- persistent dock for World, Prayers, People, and Divine
+- apps open as focused full-screen views
+- lists drill down into individual detail screens
+- large touch targets
+- no interaction that depends on hover
+- short paths back to Home or the previous context
+
+The lock-screen concept is a convenience surface, not a requirement to imitate a
+real operating-system lock screen exactly. Its purpose is to answer:
+
+> **What changed while I was away?**
+
+A player should be able to reopen Worldsim, see a famine worsening, several new
+prayers, or a newly surfaced notable person, and decide whether any of it deserves
+attention before entering the deeper interface.
+
+### Desktop / wide-screen presentation
+
+On a wider display, the phone apps should **expand rather than merely stretch**.
+The same categories, navigation labels, records, and actions remain, but the
+layout may become closer to a compact modern webpage or simulation dashboard.
+
+Useful desktop patterns include:
+
+- persistent left navigation instead of repeatedly returning to Home
+- map plus current-situation panel visible together
+- list and selected detail visible side by side
+- richer person profiles with several related sections visible at once
+- prayers shown as an inbox list beside the selected prayer
+- history timeline beside event detail
+- more room for filters, comparisons, and contextual information
+
+Desktop should use its extra width to reduce unnecessary navigation, not to fill
+the screen with every statistic the simulation owns.
+
+### Same app, different composition
+
+Examples:
+
+**People**
+
+- Mobile: searchable list → tap Mara → full-screen Mara profile.
+- Desktop: searchable list on the left → Mara profile on the right, with beliefs,
+  relationships, history, and prayers available as tabs or adjacent sections.
+
+**World**
+
+- Mobile: map → tap settlement/event → focused detail.
+- Desktop: map can remain visible while a settlement, crisis, or current-situation
+  panel opens beside it.
+
+**Prayers**
+
+- Mobile: inbox list → tap prayer → response screen.
+- Desktop: inbox list and prayer detail may coexist.
+
+**Divine**
+
+- Mobile: focused action categories and current Token reserve.
+- Desktop: powers, available contextual opportunities, and recent interventions
+  may share one wider control surface without becoming a spreadsheet.
+
+The data and simulation behavior behind these views must be identical.
+
+### Navigation continuity
+
+Moving between phone and desktop should not require relearning where systems
+live.
+
+If **People** means People on mobile, it still means People on desktop. If a
+prayer belongs in Prayers on one platform, it belongs there on the other.
+
+Responsive presentation may change:
+
+- number of visible columns
+- whether a sidebar is persistent
+- whether list and detail coexist
+- whether navigation appears as a dock, app grid, or side rail
+
+It should not change:
+
+- category meaning
+- simulation state
+- available information
+- causal rules
+- what an action does
+
+### Approved visual reference direction
+
+The September 2026 mobile/desktop concept mockup is an approved **directional
+reference**, not a final screenshot specification.
+
+What is approved from it:
+
+- dark, clean background
+- restrained accent color
+- readable app icons
+- notification badges used sparingly
+- People presented like contacts/profiles
+- Prayers presented like an inbox
+- World presented around a map and live situations
+- richer multi-panel desktop views
+- occasional character portraits where they improve recognition
+- terminal influence used selectively rather than covering every screen in ASCII
+
+What is **not** locked by the mockup:
+
+- exact colors
+- exact typography
+- exact icon artwork
+- exact spacing
+- exact portrait style
+- exact number of apps
+- literal phone hardware frames
+- literal iOS/Android controls
+
+The finished interface should look intentionally designed for Worldsim rather
+than like a direct copy of a real mobile operating system or a generic AI-made
+sci-fi dashboard.
+
+### Presentation priority
+
+When mobile clarity and desktop information density conflict, protect the shared
+information architecture first.
+
+The desired balance is:
+
+> **mobile-style interaction discipline + webpage-style use of space on wider
+> screens.**
+
+This is now the preferred cross-platform presentation direction for Worldsim.
+It refines Sections 97 and 99, changes no simulation rule, and does not reorder
+the implementation roadmap in Section 41.

@@ -3680,3 +3680,329 @@ The final divine-power model should aim for this feeling:
 This section is future direction. It does not add Divine Tokens, prayer
 aggregation, population search, Create Life, or Apostles to the current
 implementation roadmap. Section 41 remains authoritative.
+
+---
+
+## 99. Presentation Extension — Fake Phone Shell + Divine Control Interface
+
+Worldsim may deliberately present its top-level navigation as a **fake smartphone
+combined with a divine control interface**.
+
+This is not something the presentation needs to hide. The phone-like shell may
+be obvious and familiar. Its purpose is to make a deep simulation immediately
+navigable while giving the player the feeling that God possesses a personal
+interface into the world.
+
+> **The fake phone is the shell. The living simulation is the thing underneath.**
+
+This extends Section 97 rather than replacing it. Section 97 establishes modern
+mobile navigation and terminal personality; this section permits the navigation
+layer to go further and intentionally resemble a fictional phone operating
+system.
+
+### The phone shell is functional, not decorative
+
+Every icon, badge, notification, widget, and screen should correspond to an
+actual game function or actual simulation information.
+
+Do not add fake apps merely to make the home screen look populated.
+
+The shell should help the player:
+
+- observe what changed
+- find people and places
+- hear prayers
+- inspect beliefs and history
+- choose divine actions
+- understand consequences
+- return quickly to the live world
+
+All apps are windows into **one continuous simulation**. They are not separate
+mini-games.
+
+### Home screen
+
+The home screen may use a familiar app-grid structure with notification badges,
+a small number of contextual widgets, and a persistent dock.
+
+Candidate top-level apps:
+
+- **World**
+- **People**
+- **Prayers**
+- **Divine**
+- **History**
+- **Beliefs**
+- **Society**
+- **Archive**
+- **Omens**, only if omens eventually justify a distinct gameplay surface
+- **Apostles**, much later if Section 98's delegation system exists
+- **Developer**, hidden, optional, or visually separated from normal play
+
+The exact final icon count is not locked. Systems should earn a home-screen app
+through useful player interaction rather than through conceptual importance
+alone.
+
+### Contextual home screen
+
+The home screen should not behave as a static launcher. It may contain a compact
+**Needs Attention** area that surfaces a few important changes in the living
+world, such as:
+
+- a famine worsening
+- a new or unusual prayer
+- a ruler dying
+- an important person becoming endangered
+- a major belief dispute spreading
+- a significant historical rediscovery
+- a major divine opportunity
+
+This remains an attention aid, not an objective list. "Needs Attention" means
+**this may matter**, not **the player must solve this**. Section 38 remains in
+force.
+
+A player should be able to launch Worldsim, glance at this surface, understand
+what changed, and decide whether to investigate or simply let the world continue.
+
+### Notification badges
+
+Phone-style badges are allowed and encouraged when they compress useful
+information.
+
+Examples:
+
+- `Prayers 7` — seven surfaced or unread prayer items
+- `World 2` — two important world changes
+- `People 1` — one newly surfaced person worth attention
+- `History 1` — one major historical entry or rediscovery
+
+Badges must not count every simulation tick or mundane event. The phone metaphor
+must not turn Worldsim into notification-clearing busywork.
+
+### Suggested dock
+
+A persistent bottom dock should contain only the actions or categories the player
+returns to constantly.
+
+Current preferred candidates:
+
+- **World**
+- **Prayers**
+- **People**
+- **Divine**
+
+This is a UX preference, not yet a locked implementation requirement.
+
+### App roles
+
+The phone metaphor can make complicated systems intuitive by borrowing familiar
+mental models without literally copying a real app.
+
+#### World — Maps / live world
+
+The World app may contain:
+
+- map
+- settlements
+- regions
+- current conditions
+- major crises
+- resource and population summaries
+- event locations
+
+#### People — Contacts / divine search
+
+The People app may contain:
+
+- known and surfaced individuals
+- rulers and historical figures
+- person profiles
+- relationships
+- beliefs and knowledge where appropriate
+- search and filtering
+- Section 98's future Divine Search
+
+This should become one of the strongest exploration surfaces because the player
+is allowed to place divine attention on an individual deliberately rather than
+waiting for the simulation to randomly present one.
+
+#### Prayers — Inbox / requests
+
+The Prayers app should feel closer to an inbox than a quest log.
+
+A prayer entry may expose:
+
+- who is asking
+- what they want
+- location
+- urgency or surrounding situation
+- whether the request is individual or widespread
+- possible divine responses
+- Token cost of the **actual intervention**, when applicable under Section 98
+
+The player never has an obligation to "clear" the inbox.
+
+#### Divine — Control center
+
+The Divine app may contain:
+
+- Primary Divine Actions
+- currently available Secondary Divine Actions
+- Divine Token reserve and regeneration information
+- recent interventions
+- major miracles
+- promises or divine statements
+- future Create Life functions
+- future Apostle creation and management
+
+Divine Tokens should be visible enough to support planning without making the
+entire interface look like a resource-management game.
+
+#### History — Timeline / remembered past
+
+History represents **what people currently remember, narrate, dispute, and treat
+as history**.
+
+It may contain:
+
+- chronology
+- eras
+- major events
+- remembered divine interventions
+- competing historical accounts
+- myths and contested memories
+- rediscoveries
+
+#### Archive — Files / surviving evidence
+
+Archive is deliberately different from History.
+
+**History asks:** what does the world remember or say happened?
+
+**Archive asks:** what evidence, records, inscriptions, documents, relics, or
+preserved accounts still physically or institutionally survive?
+
+A record may remain in Archive while the event is culturally forgotten, and a
+History entry may remain widely believed even when its original evidence no
+longer exists. This interface distinction reinforces Sections 52, 53 and 96.
+
+#### Beliefs
+
+Beliefs may expose:
+
+- important claims
+- interpretations
+- religions
+- doctrines
+- disputes
+- differences between groups
+
+It should show meaning produced by the simulation, not become a religion editor.
+
+#### Society
+
+Society may later contain institutions, authority structures, factions,
+political arrangements, and ideology when those systems actually exist.
+
+Do not create a large empty Society app ahead of the underlying simulation.
+
+#### Omens
+
+Omens should remain a separate app only if the game later develops enough
+meaningful signs, celestial events, supernatural phenomena, or interpreted
+signals to justify a dedicated workflow.
+
+Otherwise, omen information should live inside Divine, World, Beliefs, or History
+instead of creating navigation for its own sake.
+
+#### Apostles — future agent management
+
+If Apostles from Section 98 are eventually built, their interface may feel like
+an agent/automation surface:
+
+- created Apostles
+- current directive
+- allowed powers
+- autonomy constraints
+- latest actions
+- reports to God
+- unexpected consequences
+
+This app must not imply that Apostles are additional gods. They remain created
+agents inside the one-God world.
+
+### Phone-like behaviour is allowed
+
+Worldsim may borrow familiar smartphone behaviours such as:
+
+- app launch and return-to-home navigation
+- notification badges
+- inbox-like prayer presentation
+- contact-like people browsing
+- map-like world browsing
+- file-like archive browsing
+- timeline-like history browsing
+- a control-center-like Divine surface
+- a compact status bar
+- contextual home-screen widgets
+
+The game does not need to disguise these metaphors.
+
+However, it should not copy iOS or Android one-to-one. The shell should feel like
+Worldsim's own fictional **Divine Interface / World OS**, not a screenshot of a
+consumer phone.
+
+### Visual direction — deliberate rather than ornate
+
+The preferred visual treatment is cleaner and more product-like than ornate
+fantasy concept art.
+
+Prefer:
+
+- consistent icon sizes
+- flat or restrained line icons
+- even spacing and alignment
+- clean typography
+- dark or charcoal surfaces
+- off-white text
+- restrained green, gray, and muted gold accents
+- subtle terminal influence
+- small amounts of texture
+- readable cards only where grouping is useful
+
+Avoid:
+
+- excessive glowing symbols
+- unnecessary cosmic decoration
+- ornate fantasy frames
+- every icon having a different visual language
+- excessive card nesting
+- an interface that looks generated rather than intentionally designed
+
+The divine feeling should come mainly from **what the interface lets the player
+do and know**, not from covering every surface in mystical decoration.
+
+### Terminal identity moves inside the apps
+
+The fake-phone shell does not remove Section 97's terminal identity.
+
+Instead, the terminal flavour can become strongest where the world is speaking:
+
+- event reports
+- divine action confirmations
+- prayer detail
+- historical records
+- person observations
+- developer explanations
+
+The home screen can therefore feel clean and phone-like while individual screens
+retain Worldsim's textual, archival, and terminal personality.
+
+### Final presentation principle
+
+> **Let the shell feel like a fake phone. Let the controls feel divine. Let every
+> app reveal the same living world.**
+
+This section records an approved presentation direction only. It does not require
+an immediate UI rebuild and does not alter the implementation dependency order in
+Section 41.

@@ -21,13 +21,48 @@ const MAX_STORED_PERCEPTIONS := 40
 # the simulation still tracks kingdom-wide values. Per-settlement state can be
 # added later without the interface changing shape.
 const LOCATION_ORDER := ["aster", "westfield", "frontier"]
+# Local conditions a settlement carries. Every one of them exists because a god
+# can notice it, understand it, and eventually do something about it. Anything
+# that fails those three tests does not belong here, and this list must not grow
+# into domain management: settlements are places, not political actors.
+const SETTLEMENT_BANDS := ["food", "stability", "prosperity"]
 
 var year: int = 12
-var population: int = 486
-var food_level: int = 0
-var stability_level: int = 1
-var prosperity_level: int = 1
 var military_level: int = 0
+
+# Kingdom-wide views of local conditions. Settlements own the truth; these read
+# as a population-weighted view of it, and writing one broadcasts to every
+# settlement. That keeps a single source of truth while letting the world still
+# be described, blessed or ruined as a whole.
+var food_level: int:
+	get:
+		return _weighted_band("food")
+	set(value):
+		_broadcast_band("food", value)
+
+var stability_level: int:
+	get:
+		return _weighted_band("stability")
+	set(value):
+		_broadcast_band("stability", value)
+
+var prosperity_level: int:
+	get:
+		return _weighted_band("prosperity")
+	set(value):
+		_broadcast_band("prosperity", value)
+
+# The realm is exactly the people in it. Writing a total spreads the difference
+# across settlements in proportion, so nobody can disagree about how many there
+# are.
+var population: int:
+	get:
+		var total := 0
+		for location_value in locations.values():
+			total += int(location_value.get("population", 0))
+		return maxi(total, 0)
+	set(value):
+		_distribute_population(value)
 var faith: int = 34
 var followers: int = 412
 var divine_power: int = 6
@@ -35,6 +70,9 @@ var max_divine_power: int = 8
 var reputation: String = "Unknown"
 
 var current_event_id: String = "drought"
+# Which settlement this year's event is about. Events are local now, and so is
+# the divine response to them.
+var current_event_location_id: String = "aster"
 var action_taken: bool = false
 var last_result: String = ""
 var last_interpretation: String = ""
@@ -127,9 +165,15 @@ var history_archive: Array[String] = [
 
 
 func _init() -> void:
-	add_location("aster", "Aster", "capital", "Seat of the kingdom", true)
-	add_location("westfield", "Westfield", "farming_village", "Agriculture", false)
-	add_location("frontier", "Frontier", "frontier_settlement", "Border watch", false)
+	add_location("aster", "Aster", "capital", "Seat of the kingdom", {
+		"food": 0, "stability": 1, "prosperity": 2, "population": 240
+	})
+	add_location("westfield", "Westfield", "farming_village", "Agriculture", {
+		"food": 2, "stability": 2, "prosperity": 1, "population": 150
+	})
+	add_location("frontier", "Frontier", "frontier_settlement", "Border watch", {
+		"food": 1, "stability": 0, "prosperity": 1, "population": 96
+	})
 	# These IDs are stable handles for later knowledge, rumor, and consequence data.
 	add_notable_entity("aster_king", "The King", "person", ["ambitious"], {}, "aster")
 	add_notable_entity("mara", "Mara", "person", ["compassionate", "loyal"], {}, "westfield")
@@ -230,19 +274,112 @@ func add_location(
 	display_name: String,
 	location_kind: String,
 	role: String,
-	simulated: bool
+	conditions: Dictionary = {}
 ) -> bool:
 	if location_id.is_empty() or locations.has(location_id):
 		return false
-	locations[location_id] = {
+	var record := {
 		"id": location_id,
 		"name": display_name,
 		"kind": location_kind,
 		"role": role,
-		# False means this settlement has no simulated statistics of its own yet.
-		"simulated": simulated
+		"population": maxi(int(conditions.get("population", 0)), 0)
 	}
+	for band: String in SETTLEMENT_BANDS:
+		record[band] = clampi(int(conditions.get(band, 1)), 0, FOOD_LABELS.size() - 1)
+	locations[location_id] = record
 	return true
+
+
+func get_settlement_band(location_id: String, band: String) -> int:
+	if not locations.has(location_id) or band not in SETTLEMENT_BANDS:
+		return 0
+	return int(locations[location_id][band])
+
+
+func set_settlement_band(location_id: String, band: String, value: int) -> bool:
+	if not locations.has(location_id) or band not in SETTLEMENT_BANDS:
+		return false
+	locations[location_id][band] = clampi(value, 0, FOOD_LABELS.size() - 1)
+	return true
+
+
+func change_settlement_band(location_id: String, band: String, delta: int) -> int:
+	if not set_settlement_band(location_id, band, get_settlement_band(location_id, band) + delta):
+		return 0
+	return get_settlement_band(location_id, band)
+
+
+func get_settlement_population(location_id: String) -> int:
+	return int(locations.get(location_id, {}).get("population", 0))
+
+
+func change_settlement_population(location_id: String, delta: int) -> int:
+	if not locations.has(location_id):
+		return 0
+	locations[location_id]["population"] = maxi(
+		int(locations[location_id]["population"]) + delta, 0
+	)
+	return int(locations[location_id]["population"])
+
+
+# Where a condition is most pronounced. Events use this to find the settlement
+# their year is actually about, without naming any settlement in code.
+func settlement_with_lowest(band: String) -> String:
+	var chosen := ""
+	var lowest := 0
+	for location_id: String in get_location_ids():
+		var value := get_settlement_band(location_id, band)
+		if chosen.is_empty() or value < lowest:
+			chosen = location_id
+			lowest = value
+	return chosen
+
+
+func _weighted_band(band: String) -> int:
+	# Weighted by the people who live with the condition, so a hungry hamlet
+	# does not read the same as a hungry capital.
+	var total_population := 0
+	var weighted := 0
+	for location_value in locations.values():
+		var location: Dictionary = location_value
+		var residents := int(location.get("population", 0))
+		total_population += residents
+		weighted += int(location.get(band, 0)) * residents
+	if total_population <= 0:
+		return 0
+	return clampi(int(round(float(weighted) / float(total_population))), 0, FOOD_LABELS.size() - 1)
+
+
+func _broadcast_band(band: String, value: int) -> void:
+	for location_id_value in locations:
+		set_settlement_band(str(location_id_value), band, value)
+
+
+func _distribute_population(total: int) -> void:
+	var target := maxi(total, 0)
+	var location_ids := get_location_ids()
+	if location_ids.is_empty():
+		return
+	var current := population
+	if current <= 0:
+		locations[location_ids[0]]["population"] = target
+		return
+	var assigned := 0
+	for index in location_ids.size():
+		var location_id := location_ids[index]
+		if index == location_ids.size() - 1:
+			locations[location_id]["population"] = maxi(target - assigned, 0)
+			return
+		var share := int(round(
+			float(get_settlement_population(location_id)) / float(current) * float(target)
+		))
+		locations[location_id]["population"] = maxi(share, 0)
+		assigned += share
+
+
+func location_name(location_id: String) -> String:
+	return str(locations.get(location_id, {}).get("name", location_id))
 
 
 func get_location(location_id: String) -> Dictionary:
@@ -631,10 +768,17 @@ func _normalise_knowledge_record(
 
 
 func clamp_values() -> void:
-	population = maxi(population, 1)
-	food_level = clampi(food_level, 0, FOOD_LABELS.size() - 1)
-	stability_level = clampi(stability_level, 0, STABILITY_LABELS.size() - 1)
-	prosperity_level = clampi(prosperity_level, 0, PROSPERITY_LABELS.size() - 1)
+	# Clamped per settlement. Clamping the aggregate would broadcast it back
+	# down and flatten every local difference the world just built up.
+	for location_id_value in locations:
+		var location_id := str(location_id_value)
+		for band: String in SETTLEMENT_BANDS:
+			set_settlement_band(location_id, band, get_settlement_band(location_id, band))
+		locations[location_id]["population"] = maxi(
+			int(locations[location_id]["population"]), 0
+		)
+	if population < 1:
+		locations[get_location_ids()[0]]["population"] = 1
 	military_level = clampi(military_level, 0, MILITARY_LABELS.size() - 1)
 	faith = clampi(faith, 0, 100)
 	followers = clampi(followers, 0, population)

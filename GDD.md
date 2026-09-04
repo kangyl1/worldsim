@@ -973,6 +973,41 @@ Examples:
 - popular ruler
 - religious tension
 
+Minimal Settlement State v1 makes these local. Each settlement carries its own
+**food**, **stability**, **prosperity** and **population**, and the kingdom's
+figures are a view of them rather than a second copy: writing the realm's food
+reaches every settlement, and reading it weighs each place by the people living
+with the condition. There is one source of truth and it is the settlements.
+
+Not everything became local. The **army, faith, followers and reputation stay
+the realm's** — an army is the kingdom's capacity and belief travels, so
+neither belongs to a place.
+
+> **Settlements are local state containers that create situations for mortals
+> and the god. They are not autonomous political actors, and they are not
+> domains the player manages.**
+
+A settlement has conditions, not intentions. It never decides to stockpile
+grain, raise a levy, or build anything: mortals decide things, places do not.
+There are no taxes, laws, governors, budgets, construction or trade routes, and
+none may be added without a design pass of its own. Settlement simulation exists
+to support divine gameplay, not to replace it.
+
+The year's weather falls on every settlement; the year's **event** names the one
+place where that condition is thinnest, and only that place takes the dramatic
+consequences. That split is what lets ordinary life dominate while still
+producing something worth noticing, and it is why divine acts now land somewhere
+in particular rather than on an average of the realm.
+
+Local conditions also mean local knowledge. A shortage in Westfield is a
+different belief from a shortage in Aster, held and spread separately, and
+whoever lives elsewhere finds out the way anyone finds out about a distant
+place. An event does not need a notable mortal standing in it to be real.
+
+**A settlement's food is not any mortal's to give away.** Ownership is a
+separate, unanswered question, and full granaries do not make a villager capable
+of handing them out.
+
 ### Pressures / Needs
 
 Conditions create motivation. They do not cause outcomes.
@@ -1631,7 +1666,7 @@ The current dependency order. This is not an immutable schedule.
 | 6 | Mortal Action Selection | **Built** — seven verbs, selection only |
 | 7 | Mortal Action Execution | **Built** — immediate results, no consequences |
 | 8 | Consequence Engine | **Next** — results change nothing yet |
-| 9 | Minimal Settlement State | |
+| 9 | Minimal Settlement State | **Built** — local food, order, wealth, people |
 | 10 | Event → Perception → Knowledge pipeline | **Built** — selective, no global teaching |
 | 11 | Autonomous Feedback Loop | |
 | 12 | Divine Actions integrated into the same causal pipeline | |

@@ -13,7 +13,7 @@ The user retains authority over game design, project direction, and GitHub publi
 3. If there is **ANY** design ambiguity, design problem, or architecture decision that could affect game behavior, scope, rules, simulation outcomes, or project direction, **STOP and ask the user before deciding**. Do not make autonomous game-design decisions.
 4. Small, purely mechanical implementation details may be handled without asking only when they cannot alter design intent. If uncertain, ask.
 5. GitHub repository `kangyl1/worldsim` is the source of truth when this document or any handoff summary conflicts with the current committed code. Inspect the repository and history when unsure.
-6. Selective Perception v1, Broad Intent v1, Action Selection v1 and Action Execution v1 are built. Mortals notice different things, want things, try things, and attempts have immediate results. Nothing yet changes the world because of a result. Do not build the Consequence Engine until the user explicitly asks.
+6. Minimal Settlement State v1, Selective Perception v1, Broad Intent v1, Action Selection v1 and Action Execution v1 are built. Mortals notice different things, want things, try things, and attempts have immediate results. Nothing yet changes the world because of a result. Do not build the Consequence Engine until the user explicitly asks.
 7. The player-facing interface shows a mortal's perspective; Developer Mode shows the machine. Never merge the two. See "Interface rules".
 
 ## Project reference
@@ -52,19 +52,20 @@ The current foundation includes:
 - Mortal Action Selection v1: seven parameterised verbs, capability-gated, selection only
 - Mortal Action Execution v1: success/failure/blocked, two-phase ticks, immediate results only
 - Selective Perception v1: events offer claims, only eligible mortals notice, no global teaching
+- Minimal Settlement State v1: settlements own food, stability, prosperity and population; the kingdom view derives from them
 - knowledge generation from existing events, outcome-aware and refreshing stable ids
 - a world map interface with clickable settlements and crisis markers
 - world -> settlement -> person navigation in one reusable panel
 - in-game Developer Mode (DEV button, F1 secondary) exposing raw simulation values, read-only
 - a centralised presentation layer turning numbers into qualitative labels
-- deterministic tests across eleven suites
+- deterministic tests across twelve suites
 - a 72-turn regression suite
 
 Current core source files:
 
 | File | Role |
 |---|---|
-| `scripts/world_state.gd` | stored truth: world values, entities, relationships, knowledge, intents, locations |
+| `scripts/world_state.gd` | stored truth: settlement conditions, entities, relationships, knowledge, intents, actions |
 | `scripts/world_sim.gd` | simulation behaviour: actions, yearly ticks, event knowledge generation |
 | `scripts/knowledge_rules.gd` | rumor transfer scoring and trait effects on information |
 | `scripts/interpretation_system.gd` | how mortals interpret divine actions |
@@ -86,6 +87,7 @@ Test suites, all deterministic:
 | `tests/action_test.gd` | action vocabulary, capability gates, no-viable-action, selection-only |
 | `tests/execution_test.gd` | outcome kinds, TELL through knowledge, ASK direction, effect boundary |
 | `tests/perception_test.gd` | observability modes, eligibility, pathway clarity, no global teaching |
+| `tests/settlement_test.gd` | local ownership, derived kingdom view, generic events, god-game guardrails |
 | `tests/event_knowledge_test.gd` | what events make perceivable, conditions, refresh-not-duplicate |
 | `tests/map_model_test.gd` | location model, map hit-testing, simulation boundary |
 | `tests/person_view_test.gd` | person navigation and the mortal-perspective filter |
@@ -96,7 +98,7 @@ Do not assume this summary is exhaustive or newer than the code. Inspect the rep
 
 ## Planned system order
 
-`Traits -> Relationships -> Perception -> Knowledge/Rumors -> Broad Intents -> Action Selection -> Action Execution -> Consequences -> feedback into world state/relationships/knowledge`
+`Settlement state -> Events -> Perception -> Knowledge/Rumors -> Broad Intents -> Action Selection -> Action Execution -> Consequences -> feedback into settlement state/relationships/knowledge`
 
 Everything up to and including Action Execution is built. Consequences are not.
 
@@ -106,8 +108,8 @@ wider chain: world state -> pressures -> perception -> belief -> interpretation
 history. Read Part II before designing anything in this area.
 
 The next system is the **Consequence Engine**, and it must not begin until the
-user explicitly asks. Attempts now have immediate results; nothing yet reads
-those results and changes the world because of them.
+user explicitly asks. Attempts now have immediate results, and settlements now
+carry state those results could change; nothing yet joins the two.
 
 **Known issue, not yet addressed.** Ambient rumor spreading runs before intents
 form, so it usually carries a fact before anyone deliberately chooses to tell
@@ -115,9 +117,12 @@ it: roughly 18 rumor deliveries to 1 deliberate telling across 40 autonomous
 years. Deliberate speech works and is reachable, but it is rarely the route by
 which anything travels. Fixing it means reordering or rate-limiting
 `tick_knowledge()`, which changes an existing system's semantics and needs its
-own design pass. A second candidate before Consequences is **minimal settlement
-state**, so places other than Aster can generate events at all; today Aster is
-the only source, so mortals elsewhere perceive nothing first-hand.
+own design pass.
+
+**Known issue, not yet addressed.** Only two of the three settlements host
+events across a long run, because an event goes where its condition is thinnest
+and that tends to settle on the same place. The Frontier is quiet. Nothing is
+wrong with the rule; the world is simply small.
 
 **Goal is a conceptual layer only.** GDD Part II lists Goal between
 interpretation and intent. v1 deliberately does not implement it: a goal field
@@ -196,6 +201,22 @@ Selective Perception v1 constraints, settled with the user and to be preserved:
 - missed chances are kept for the current year only (`last_perceptions`); the archive keeps only perceptions that happened
 - seeded homes: the King is in Aster, Mara is in Westfield. That divergence is what makes their informational worlds differ
 - no hallucination or misperception yet; false beliefs still arise through rumor distortion
+
+Minimal Settlement State v1 constraints, settled with the user and to be preserved:
+
+- **Do not expand settlement state into CK-style management, detailed economy, governance, or settlement AI without explicit approval.** This is a hard project guardrail, not a preference
+- settlements are places with conditions, never actors: a settlement has no intentions, no budget, no council, no buildings, and makes no decisions. Mortals decide things
+- no taxes, laws, governors, construction, levies, trade routes, vassals or succession; the god is not a ruler and must not be given a domain to administer
+- a settlement field must pass all three of: can the player notice it, understand it, act on it. If it exists only because a real society would have one, it does not belong
+- settlements own `food`, `stability`, `prosperity` and `population`; the kingdom's `food_level`, `stability_level`, `prosperity_level` and `population` are DERIVED views with broadcast setters, never a second copy
+- **never use `+=` on a derived kingdom band.** It reads the aggregate, adds, and writes the result back to every settlement, flattening the world. Use `change_settlement_band()`
+- `military_level`, `faith`, `followers` and `reputation` stay kingdom-level; not every world stat should become local
+- events are settlement-generic: no code may name a settlement. The claim is a format string, the knowledge id is built from the settlement, and a new settlement needs no new event definition
+- the yearly cycle is weather and falls on every settlement; the event names the one place the condition is thinnest, and only that place takes the extras
+- divine actions land on the current event's settlement, not on the whole realm
+- intent may read the actor's OWN home settlement as directly-lived context; anything about another settlement must still reach them as belief
+- a settlement's food is NOT any mortal's to give: `give` stays blocked, and ownership remains a separate unanswered question
+- `POPULATION_PER_PROSPERITY` is the one invented constant: roughly how many people a place keeps fed at its means. Without it a fed settlement climbs to plenty and stays there forever
 
 ## Design rules
 

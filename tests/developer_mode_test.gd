@@ -3,7 +3,7 @@ extends SceneTree
 # Developer Mode is an inspection tool. These tests hold it to two promises:
 # it shows the machine underneath, and it never touches the machine.
 
-const EXPECTED_TESTS := 16
+const EXPECTED_TESTS := 17
 const FALSE_BELIEF := {
 	"id": "king_divine_claim",
 	"subject_id": "aster_king",
@@ -52,6 +52,7 @@ func _process(_delta: float) -> bool:
 	_test_action_section_is_kept_separate()
 	_test_execution_section_shows_what_happened()
 	_test_perception_section_shows_who_noticed()
+	_test_locations_section_shows_exact_local_state()
 	_test_actions_still_work_with_developer_mode_open()
 	_test_sections_all_render()
 
@@ -274,6 +275,23 @@ func _test_perception_section_shows_who_noticed() -> void:
 	assert(view.contains(state.get_home_location("aster_king")))
 	# Kept apart from what they ended up believing.
 	assert(view != _section_text("knowledge"))
+	completed += 1
+
+
+func _test_locations_section_shows_exact_local_state() -> void:
+	# Meaning first in the player panel, numbers underneath here. Developer
+	# Mode is where the exact local truth lives.
+	var state = main.simulation.state
+	var view := _section_text("locations")
+	for location_id: String in state.get_location_ids():
+		assert(view.contains(location_id))
+		for band: String in WorldState.SETTLEMENT_BANDS:
+			assert(view.contains(band.substr(0, 4)), "%s should be shown" % band)
+		assert(view.contains(str(state.get_settlement_population(location_id))),
+			"%s's exact population belongs here" % location_id)
+	assert(view.contains("derived kingdom view"), "and what those add up to")
+	assert(view.contains("kingdom only"), "kept apart from what stays the realm's")
+	assert(view.contains(state.current_event_location_id), "and where this year's event is")
 	completed += 1
 
 

@@ -247,7 +247,7 @@ func _test_back_returns_to_the_settlement() -> void:
 	assert(main.selected_person_id.is_empty(), "back clears the person")
 	assert(main.selected_location_id == "aster", "back keeps the settlement")
 	assert(_view_text().contains("ASTER"))
-	assert(_view_text().contains("IMPORTANT PEOPLE"))
+	assert(_view_text().contains("PEOPLE HERE"))
 	assert(main.simulation.state.year == year_before, "back must not advance time")
 	assert(main.simulation.state.current_event_id == event_before, "back must not change the event")
 	assert(main.simulation.state.action_taken == action_before, "back must not touch action state")

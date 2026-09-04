@@ -288,14 +288,15 @@ func _render_map() -> void:
 
 
 func _location_in_crisis(location_id: String) -> bool:
-	# Only the capital carries simulated conditions in this prototype.
-	if not bool(simulation.state.get_location(location_id).get("simulated", false)):
+	# A crisis marker belongs on the settlement the year's event is actually
+	# happening in, not on every settlement at once.
+	if simulation.state.current_event_location_id != location_id:
 		return false
 	return simulation.state.current_event_id in CRISIS_EVENTS
 
 
 func _location_is_holy(location_id: String) -> bool:
-	if not bool(simulation.state.get_location(location_id).get("simulated", false)):
+	if location_id != "aster":
 		return false
 	return not simulation.state.beliefs.is_empty()
 
@@ -313,10 +314,7 @@ func _render_location() -> void:
 		"[color=#e5e1d8]%s[/color]" % str(location["name"]).to_upper(),
 		"[color=#68757c]%s[/color]\n" % _location_kind_label(str(location["kind"]))
 	]
-	if bool(location.get("simulated", false)):
-		lines.append_array(_simulated_location_lines())
-	else:
-		lines.append_array(_placeholder_location_lines(location))
+	lines.append_array(_settlement_condition_lines(selected_location_id))
 	location_text.text = "\n".join(lines)
 
 
@@ -331,31 +329,51 @@ func _location_kind_label(kind: String) -> String:
 	return "Settlement of the Kingdom"
 
 
-func _simulated_location_lines() -> Array[String]:
-	# Every value below is read from the simulation. Nothing is stored here.
+func _settlement_condition_lines(location_id: String) -> Array[String]:
+	# Local conditions, in a mortal's terms. Every settlement carries its own,
+	# so what is shown here is this place and not an average of the realm.
 	var state := simulation.state
 	var lines: Array[String] = [
-		"[color=#68757c]POPULATION[/color]   %d" % state.population,
-		"[color=#68757c]FOOD[/color]         %s" % _status_colour(state.food_name(), state.food_level),
-		"[color=#68757c]STABILITY[/color]    %s" % _status_colour(state.stability_name(), state.stability_level),
-		"[color=#68757c]PROSPERITY[/color]   %s" % _status_colour(state.prosperity_name(), state.prosperity_level),
-		"[color=#68757c]MILITARY[/color]     %s" % _status_colour(state.military_name(), state.military_level),
+		"[color=#68757c]POPULATION[/color]   %d" % state.get_settlement_population(location_id),
+		"[color=#68757c]FOOD[/color]         %s" % _band_colour(
+			WorldState.FOOD_LABELS, state.get_settlement_band(location_id, "food")
+		),
+		"[color=#68757c]STABILITY[/color]    %s" % _band_colour(
+			WorldState.STABILITY_LABELS, state.get_settlement_band(location_id, "stability")
+		),
+		"[color=#68757c]PROSPERITY[/color]   %s" % _band_colour(
+			WorldState.PROSPERITY_LABELS, state.get_settlement_band(location_id, "prosperity")
+		),
+		"",
+		# Kept apart from the local rows: the army is the realm's, not a
+		# settlement's, and mixing them would imply local garrisons that do
+		# not exist.
+		"[color=#68757c]KINGDOM ARMY[/color] %s" % _status_colour(
+			state.military_name(), state.military_level
+		),
 		""
 	]
-	if _location_in_crisis(selected_location_id):
-		lines.append("[color=#d66a5e]! %s[/color]" % str(simulation.get_current_event()["title"]))
-	else:
+	var event: Dictionary = simulation.get_current_event()
+	if _location_in_crisis(location_id):
+		lines.append("[color=#d66a5e]! %s[/color]" % str(event["title"]))
+	elif str(event.get("location_id", "")) == location_id:
 		lines.append("[color=#68757c]Current situation:[/color] [color=#9ca5a4]%s[/color]" % str(
-			simulation.get_current_event()["title"]
+			event["title"]
 		))
+	else:
+		lines.append("[color=#68757c]Nothing of note this year.[/color]")
 	lines.append("")
-	lines.append("[color=#68757c]IMPORTANT PEOPLE[/color]")
-	var entity_ids := _sorted_entity_ids()
-	if entity_ids.is_empty():
-		lines.append("[color=#68757c](none)[/color]")
-	for entity_id: String in entity_ids:
+	lines.append("[color=#68757c]PEOPLE HERE[/color]")
+	var residents := simulation.state.residents_of(location_id)
+	if residents.is_empty():
+		lines.append("[color=#73627f](nobody of note)[/color]")
+	for entity_id: String in residents:
 		lines.append(_person_row(entity_id))
 	return lines
+
+
+func _band_colour(labels: Array, level: int) -> String:
+	return _status_colour(str(labels[clampi(level, 0, labels.size() - 1)]), level)
 
 
 # The person view shows what this mortal believes and intends. It deliberately
@@ -559,17 +577,6 @@ func _person_row(entity_id: String) -> String:
 	]
 
 
-func _placeholder_location_lines(location: Dictionary) -> Array[String]:
-	return [
-		"[color=#68757c]Primary role:[/color] [color=#9ca5a4]%s[/color]" % str(location.get("role", "Unknown")),
-		"",
-		"[color=#68757c]Detailed settlement simulation:[/color]",
-		"[color=#73627f]Not yet implemented.[/color]",
-		"",
-		"[color=#68757c]Kingdom-wide conditions are shown under the capital.[/color]"
-	]
-
-
 func _status_colour(value: String, level: int) -> String:
 	var colours := ["#d66a5e", "#d99a54", "#e8be63", "#71b892"]
 	return "[color=%s]%s[/color]" % [colours[clampi(level, 0, 3)], value.to_upper()]
@@ -711,18 +718,52 @@ func _developer_world_lines() -> Array[String]:
 
 
 func _developer_location_lines() -> Array[String]:
+	# Exact local truth, per settlement. The player panel shows these as
+	# conditions a mortal would recognise; this shows the numbers underneath,
+	# alongside the realm-wide view they add up to.
 	var state := simulation.state
 	var lines: Array[String] = [_dev_heading("LOCATIONS")]
-	for location_id: String in state.get_location_ids():
-		var location := state.get_location(location_id)
-		lines.append("")
-		lines.append("[color=#e5e1d8]%s[/color]" % location_id)
-		for key: String in ["name", "kind", "role", "simulated"]:
-			lines.append(_dev_field(key, location.get(key, "-")))
+	lines.append(_dev_field("current_event_id", state.current_event_id))
+	lines.append(_dev_field("current_event_location_id", state.current_event_location_id))
 	lines.append("")
-	lines.append("[color=#73627f]No per-location simulation values exist yet; conditions are kingdom-wide.[/color]")
+	lines.append("[color=#68757c]%-12s %-5s %-5s %-5s %-6s %s[/color]" % [
+		"id", "food", "stab", "prosp", "pop", "residents"
+	])
+	for location_id: String in state.get_location_ids():
+		var residents := state.residents_of(location_id)
+		lines.append("[color=#8d989d]%-12s %-5d %-5d %-5d %-6d %s[/color]" % [
+			location_id,
+			state.get_settlement_band(location_id, "food"),
+			state.get_settlement_band(location_id, "stability"),
+			state.get_settlement_band(location_id, "prosperity"),
+			state.get_settlement_population(location_id),
+			_or_none(", ".join(residents))
+		])
+	lines.append("")
+	lines.append("[color=#76c8d5]derived kingdom view[/color]")
+	lines.append(_dev_field("  food_level", "%d  (%s)" % [state.food_level, state.food_name()]))
+	lines.append(_dev_field("  stability_level", "%d  (%s)" % [
+		state.stability_level, state.stability_name()
+	]))
+	lines.append(_dev_field("  prosperity_level", "%d  (%s)" % [
+		state.prosperity_level, state.prosperity_name()
+	]))
+	lines.append(_dev_field("  population", state.population))
+	lines.append("")
+	lines.append("[color=#76c8d5]kingdom only[/color]")
+	lines.append(_dev_field("  military_level", "%d  (%s)" % [
+		state.military_level, state.military_name()
+	]))
+	lines.append("")
+	lines.append("[color=#76c8d5]full records[/color]")
+	for location_id: String in state.get_location_ids():
+		var record: Dictionary = state.get_location(location_id)
+		lines.append("[color=#8d989d]  %s[/color]" % location_id)
+		for key: String in ["name", "kind", "role", "food", "stability", "prosperity", "population"]:
+			lines.append("[color=#68757c]    %s[/color]  [color=#8d989d]%s[/color]" % [
+				key.rpad(12), str(record.get(key, ""))
+			])
 	return lines
-
 
 func _developer_people_lines() -> Array[String]:
 	var state := simulation.state

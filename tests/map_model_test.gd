@@ -5,11 +5,6 @@ const WorldMapScript = preload("res://scripts/world_map.gd")
 const MainScript = preload("res://Main.gd")
 
 # Values the map must never keep its own copy of.
-const SIMULATION_STATISTICS := [
-	"population", "food", "food_level", "stability", "stability_level",
-	"prosperity", "prosperity_level", "military", "military_level",
-	"faith", "followers", "divine_power"
-]
 const EXPECTED_TESTS := 9
 
 var completed := 0
@@ -17,7 +12,7 @@ var completed := 0
 
 func _init() -> void:
 	_test_location_model()
-	_test_locations_hold_no_statistics()
+	_test_settlements_are_the_single_source_of_truth()
 	_test_location_accessor_returns_a_copy()
 	_test_map_view_cannot_touch_simulation()
 	_test_person_rows_are_selectable()
@@ -39,37 +34,60 @@ func _test_location_model() -> void:
 	var ids: Array[String] = simulation.state.get_location_ids()
 	assert(ids == ["aster", "westfield", "frontier"], "prototype scope is one region, three settlements")
 	assert(simulation.state.get_location("aster")["kind"] == "capital")
-	assert(bool(simulation.state.get_location("aster")["simulated"]), "only the capital carries conditions")
-	for placeholder in ["westfield", "frontier"]:
-		var location: Dictionary = simulation.state.get_location(str(placeholder))
+	# Every settlement carries its own conditions now, not just the capital.
+	for location_id: String in ids:
+		var location: Dictionary = simulation.state.get_location(location_id)
 		assert(not location.is_empty())
-		assert(not bool(location["simulated"]), "%s has no simulated statistics yet" % placeholder)
-		assert(not str(location["role"]).is_empty(), "a placeholder still needs a stated role")
+		assert(not str(location["role"]).is_empty(), "a settlement still needs a stated role")
+		for band: String in WorldState.SETTLEMENT_BANDS:
+			assert(location.has(band), "%s must carry its own %s" % [location_id, band])
+		assert(int(location["population"]) > 0, "%s must have people in it" % location_id)
 	assert(simulation.state.get_location("nowhere").is_empty())
 	completed += 1
-	print("  MODEL: %s, capital simulated, others declared placeholders." % ", ".join(ids))
+	print("  MODEL: %s, each carrying its own conditions." % ", ".join(ids))
 
 
-func _test_locations_hold_no_statistics() -> void:
-	# The map must read world values, never keep a second copy of them.
+func _test_settlements_are_the_single_source_of_truth() -> void:
+	# Settlements own local conditions; the kingdom view is derived from them.
+	# Two independent copies would be the thing to fear, not one owner.
 	var simulation = _new_simulation()
-	for location_id: String in simulation.state.get_location_ids():
-		var location: Dictionary = simulation.state.get_location(location_id)
-		for field: String in SIMULATION_STATISTICS:
+	var state = simulation.state
+	var aster_food: int = state.get_settlement_band("aster", "food")
+	assert(bool(state.set_settlement_band("westfield", "food", 3)))
+	assert(int(state.get_settlement_band("westfield", "food")) == 3)
+	assert(int(state.get_settlement_band("aster", "food")) == aster_food,
+		"changing one settlement must not change another")
+
+	# The realm reads as the people in it, weighted by where they live.
+	var weighted := 0
+	var people := 0
+	for location_id: String in state.get_location_ids():
+		var residents: int = state.get_settlement_population(location_id)
+		weighted += int(state.get_settlement_band(location_id, "food")) * residents
+		people += residents
+	assert(int(state.food_level) == int(round(float(weighted) / float(people))),
+		"the kingdom view must be derived, never stored separately")
+	assert(int(state.population) == people, "the realm is exactly the people in its settlements")
+
+	# Kingdom-only values stay kingdom-only.
+	for location_id: String in state.get_location_ids():
+		var location: Dictionary = state.get_location(location_id)
+		for field: String in ["military_level", "faith", "followers", "divine_power"]:
 			assert(not location.has(field),
-				"location '%s' must not duplicate the simulation value '%s'" % [location_id, field])
+				"%s must not carry the kingdom's %s" % [location_id, field])
 	completed += 1
-	print("  NO DUPLICATION: locations carry identity only, no world statistics.")
+	print("  ONE TRUTH: settlements own local conditions, the kingdom view derives from them.")
 
 
 func _test_location_accessor_returns_a_copy() -> void:
 	var simulation = _new_simulation()
 	var location: Dictionary = simulation.state.get_location("aster")
 	location["name"] = "Tampered"
-	location["simulated"] = false
+	location["food"] = 3
 	assert(str(simulation.state.get_location("aster")["name"]) == "Aster",
 		"interface code must not be able to edit world data through an accessor")
-	assert(bool(simulation.state.get_location("aster")["simulated"]))
+	assert(simulation.state.get_settlement_band("aster", "food") != 3,
+		"nor edit a settlement's conditions through one")
 	completed += 1
 	print("  ACCESSOR: get_location() hands out a copy, not the record.")
 
@@ -140,6 +158,7 @@ func _test_person_rows_are_selectable() -> void:
 
 func _test_crisis_marker_rule() -> void:
 	var ui = MainScript.new()
+	ui.simulation.state.current_event_location_id = "aster"
 	ui.simulation.state.current_event_id = "drought"
 	assert(ui._location_in_crisis("aster"), "a drought is an active crisis")
 	ui.simulation.state.current_event_id = "unrest"
@@ -147,15 +166,19 @@ func _test_crisis_marker_rule() -> void:
 	ui.simulation.state.current_event_id = "good_harvest"
 	assert(not ui._location_in_crisis("aster"), "a good harvest is not a crisis")
 	ui.simulation.state.current_event_id = "drought"
-	for placeholder in ["westfield", "frontier"]:
-		assert(not ui._location_in_crisis(str(placeholder)),
-			"unsimulated settlements must not claim the capital's crisis")
+	for elsewhere in ["westfield", "frontier"]:
+		assert(not ui._location_in_crisis(str(elsewhere)),
+			"a crisis belongs to the settlement it is happening in")
+	# And it travels with the event.
+	ui.simulation.state.current_event_location_id = "westfield"
+	assert(ui._location_in_crisis("westfield"))
+	assert(not ui._location_in_crisis("aster"), "the capital does not keep every crisis")
 	assert(not ui._location_is_holy("aster"), "no beliefs have formed yet")
 	ui.simulation.state.beliefs.append("God answers sincere prayer.")
 	assert(ui._location_is_holy("aster"))
 	ui.free()
 	completed += 1
-	print("  MARKERS: crisis follows the event, and only where conditions are simulated.")
+	print("  MARKERS: crisis follows the event to the settlement it is happening in.")
 
 
 func _test_actions_still_resolve_once() -> void:

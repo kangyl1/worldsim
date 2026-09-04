@@ -488,8 +488,9 @@ func _evaluate_candidate(
 			trait_id, "favours" if trait_delta >= 0 else "resists"
 		])
 
+	var home_id := str(actor.get("home_location_id", ""))
 	for rule: Dictionary in template.get("world_state_rules", []):
-		if not _check_world_state(state, rule):
+		if not _check_world_state(state, rule, home_id):
 			continue
 		var world_delta := int(rule["delta"])
 		score += world_delta
@@ -497,7 +498,7 @@ func _evaluate_candidate(
 			"source": "world_state",
 			"detail": str(rule["detail"]),
 			"field": str(rule["field"]),
-			"value": _world_state_value(state, str(rule["field"])),
+			"value": _world_state_value(state, str(rule["field"]), home_id),
 			"delta": world_delta
 		})
 		reasons.append(str(rule["detail"]))
@@ -680,9 +681,9 @@ func _target_bonus(target_kind: String, relationship: Dictionary) -> int:
 	return 10 if not relationship.is_empty() else 5
 
 
-func _check_world_state(state: WorldState, condition: Dictionary) -> bool:
+func _check_world_state(state: WorldState, condition: Dictionary, home_id: String = "") -> bool:
 	return _compare(
-		_world_state_value(state, str(condition["field"])),
+		_world_state_value(state, str(condition["field"]), home_id),
 		str(condition["op"]),
 		int(condition["value"])
 	)
@@ -703,14 +704,26 @@ func _compare(left: int, op: String, right: int) -> bool:
 	return false
 
 
-func _world_state_value(state: WorldState, field: String) -> int:
+# Local conditions are read from where the actor lives. A mortal knows whether
+# there is food where they are without being told, and that is the one place the
+# intent layer may touch settlement truth: it is their own directly-lived
+# context, not a report about somewhere else. Anything about ANOTHER settlement
+# must still reach them as belief.
+func _world_state_value(state: WorldState, field: String, home_id: String = "") -> int:
+	var band := ""
 	match field:
 		"food_level":
-			return state.food_level
+			band = "food"
 		"stability_level":
-			return state.stability_level
+			band = "stability"
 		"prosperity_level":
-			return state.prosperity_level
+			band = "prosperity"
+	if not band.is_empty():
+		if not home_id.is_empty() and state.locations.has(home_id):
+			return state.get_settlement_band(home_id, band)
+		# No home means no local context: fall back to how the realm reads.
+		return _kingdom_band(state, band)
+	match field:
 		"military_level":
 			return state.military_level
 		"faith":
@@ -723,4 +736,15 @@ func _world_state_value(state: WorldState, field: String) -> int:
 			return state.followers
 		"year":
 			return state.year
+	return 0
+
+
+func _kingdom_band(state: WorldState, band: String) -> int:
+	match band:
+		"food":
+			return state.food_level
+		"stability":
+			return state.stability_level
+		"prosperity":
+			return state.prosperity_level
 	return 0

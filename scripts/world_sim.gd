@@ -68,62 +68,64 @@ const ACTIONS := {
 const EVENTS := {
 	"drought": {
 		"title": "THE LONG DROUGHT",
-		"description": "For three months, no rain has fallen. Wells are drying up. Farmers have gathered outside the old shrine and are asking an unknown god for help.",
+		"description": "For three months, no rain has fallen. %s's wells are drying up. Farmers have gathered outside the old shrine and are asking an unknown god for help.",
 		"ascii": "       _\n      /_\\\n   o  | |  o\n  /|\\ | | /|\\\n  / \\ |_| / \\"
 	},
 	"good_harvest": {
 		"title": "A PROMISING HARVEST",
-		"description": "Heavy heads of grain bend in the fields. The people wonder whether fortune, labour, or an unseen hand has favoured Aster.",
+		"description": "Heavy heads of grain bend in the fields. The people wonder whether fortune, labour, or an unseen hand has favoured %s.",
 		"ascii": "  \\ | /   \\ | /\n --\\|/-- --\\|/--\n    |       |\n   / \\     / \\"
 	},
 	"unrest": {
 		"title": "VOICES IN THE SQUARE",
-		"description": "Empty cupboards have sharpened old grudges. A crowd gathers before the storehouse. Some demand justice; others demand a sign.",
+		"description": "Empty cupboards have sharpened old grudges in %s. A crowd gathers before the storehouse. Some demand justice; others demand a sign.",
 		"ascii": "  o  o  o  o\n /|\\/|\\/|\\/|\\\n / \\/ \\/ \\/ \\"
 	}
 }
 
 # What each event makes perceivable, and how widely. Conditions are checked
-# against world state AFTER the event handler and clamping have run, so an event
-# the world absorbed offers nothing to notice.
+# against the SUBJECT SETTLEMENT after the event handler and clamping have run,
+# so an event a place absorbed offers nothing to notice.
 #
-# These templates say what CAN be perceived. They no longer say who learns it:
-# that is Selective Perception's question, and every claim here is about one
-# named settlement, so all three are local to it. Someone living elsewhere finds
-# out the way anyone finds out about a distant place — by being told.
+# Nothing here names a settlement. The same three templates serve Aster,
+# Westfield, the Frontier and anywhere added later: the claim is a format
+# string, and the knowledge id is built from the settlement it concerns, so
+# "Westfield does not have enough food" and "Aster does not have enough food"
+# are separate beliefs that can be held, aged and spread independently.
+#
+# These templates say what CAN be perceived. They do not say who learns it:
+# that is Selective Perception's question, and every claim is local to its
+# settlement. Someone living elsewhere finds out by being told.
 const EVENT_KNOWLEDGE := {
 	"drought": {
-		"id": "aster_food_shortage",
-		"subject_id": "aster",
+		"id_suffix": "food_shortage",
 		"topic": "food_shortage",
-		"claim": "Aster does not have enough food",
-		"observability": "local",
+		"claim": "%s does not have enough food",
 		"confidence": 90,
 		"truth_state": "true",
 		"fresh_for_years": 3,
-		"conditions": [{"field": "food_level", "op": "lte", "value": 1}]
+		"observability": "local",
+		"conditions": [{"band": "food", "op": "lte", "value": 1}]
 	},
 	"unrest": {
-		"id": "aster_unrest",
-		"subject_id": "aster",
+		"id_suffix": "unrest",
 		"topic": "danger_unrest",
-		"claim": "Order is breaking down in Aster",
-		"observability": "local",
+		"claim": "Order is breaking down in %s",
 		"confidence": 90,
 		"truth_state": "true",
 		"fresh_for_years": 3,
-		"conditions": [{"field": "stability_level", "op": "lte", "value": 0}]
+		"observability": "local",
+		"conditions": [{"band": "stability", "op": "lte", "value": 0}]
 	},
 	"good_harvest": {
-		"id": "aster_surplus",
-		"subject_id": "aster",
+		"id_suffix": "surplus",
 		"topic": "surplus",
-		"claim": "Aster's stores are full again",
-		"observability": "local",
+		"claim": "%s's stores are full again",
 		"confidence": 90,
 		"truth_state": "true",
 		"fresh_for_years": 3,
-		"conditions": [{"field": "food_level", "op": "gte", "value": 2}]
+		"observability": "local",
+		"conditions": [{"band": "food", "op": "gte", "value": 2}]
 	}
 }
 
@@ -138,7 +140,14 @@ var debug_logging_enabled: bool = true
 
 
 func get_current_event() -> Dictionary:
-	return EVENTS[state.current_event_id]
+	# Events name the settlement they are happening in. One definition serves
+	# every settlement rather than one definition per place.
+	var event: Dictionary = EVENTS[state.current_event_id].duplicate(true)
+	event["location_id"] = state.current_event_location_id
+	event["location_name"] = state.location_name(state.current_event_location_id)
+	if str(event["description"]).contains("%s"):
+		event["description"] = str(event["description"]) % event["location_name"]
+	return event
 
 
 func get_action(action_id: String) -> Dictionary:
@@ -359,15 +368,16 @@ func observable_fact() -> Dictionary:
 	var template: Dictionary = EVENT_KNOWLEDGE.get(state.current_event_id, {})
 	if template.is_empty():
 		return {}
+	var location_id := state.current_event_location_id
 	for condition: Dictionary in template.get("conditions", []):
-		if not _event_condition_met(condition):
+		if not _event_condition_met(location_id, condition):
 			return {}
 	return {
-		"id": str(template["id"]),
+		"id": "%s_%s" % [location_id, str(template["id_suffix"])],
 		"event_id": state.current_event_id,
-		"subject_id": str(template["subject_id"]),
+		"subject_id": location_id,
 		"topic": str(template["topic"]),
-		"claim": str(template["claim"]),
+		"claim": str(template["claim"]) % state.location_name(location_id),
 		"confidence": int(template["confidence"]),
 		"truth_state": str(template["truth_state"]),
 		"objective_truth_state": str(template["truth_state"]),
@@ -412,8 +422,8 @@ func tick_perception() -> Array[Dictionary]:
 	_log_perception(opportunities)
 	return opportunities
 
-func _event_condition_met(condition: Dictionary) -> bool:
-	var left := _event_state_value(str(condition["field"]))
+func _event_condition_met(location_id: String, condition: Dictionary) -> bool:
+	var left := state.get_settlement_band(location_id, str(condition["band"]))
 	var right := int(condition["value"])
 	match str(condition["op"]):
 		"gte":
@@ -423,23 +433,6 @@ func _event_condition_met(condition: Dictionary) -> bool:
 		"eq":
 			return left == right
 	return false
-
-
-func _event_state_value(field: String) -> int:
-	match field:
-		"food_level":
-			return state.food_level
-		"stability_level":
-			return state.stability_level
-		"prosperity_level":
-			return state.prosperity_level
-		"military_level":
-			return state.military_level
-		"faith":
-			return state.faith
-		"population":
-			return state.population
-	return 0
 
 
 func _log_perception(opportunities: Array[Dictionary]) -> void:
@@ -587,32 +580,39 @@ func _apply_immediate_action(action_id: String) -> String:
 	return "The world waits."
 
 
+# Divine acts land where the year's event is happening. A god who sends rain
+# during a drought in Westfield helps Westfield, not an average of the realm.
+# Faith and followers remain the whole kingdom's, because belief travels.
 func _resolve_send_rain() -> String:
+	var location_id := state.current_event_location_id
+	var place := state.location_name(location_id)
 	state.intervention_counts["rain_during_drought"] += int(state.current_event_id == "drought")
 	if state.current_event_id == "drought":
-		state.food_level += 2
+		state.change_settlement_band(location_id, "food", 2)
 		state.faith += 5
 		state.followers += 16
-		if state.food_level <= 1:
-			state.stability_level += 1
-		return "Rain reaches the Grey River and the empty wells begin to fill."
-	state.food_level += 1
+		if state.get_settlement_band(location_id, "food") <= 1:
+			state.change_settlement_band(location_id, "stability", 1)
+		return "Rain reaches %s and its empty wells begin to fill." % place
+	state.change_settlement_band(location_id, "food", 1)
 	state.faith += 2
 	state.followers += 6
-	return "Unexpected rain passes over Aster and changes the season's course."
+	return "Unexpected rain passes over %s and changes the season's course." % place
 
 
 func _resolve_bless_harvest() -> String:
+	var location_id := state.current_event_location_id
+	var place := state.location_name(location_id)
 	var improvement := 2 if state.current_event_id == "good_harvest" else 1
-	state.food_level += improvement
+	state.change_settlement_band(location_id, "food", improvement)
 	state.population_growth_bonus += 4
 	state.faith += 3
 	state.followers += 8
 	state.intervention_counts["blessed_harvest"] += 1
-	if state.prosperity_level <= 1:
-		state.prosperity_level += 1
-		return "Full granaries begin lifting Aster out of poverty."
-	return "The fields yield more grain than their soil should allow."
+	if state.get_settlement_band(location_id, "prosperity") <= 1:
+		state.change_settlement_band(location_id, "prosperity", 1)
+		return "Full granaries begin lifting %s out of poverty." % place
+	return "The fields around %s yield more grain than their soil should allow." % place
 
 
 func _resolve_speak_mortal() -> String:
@@ -621,16 +621,20 @@ func _resolve_speak_mortal() -> String:
 	state.followers += 12
 	state.intervention_counts["mortal_voice"] += 1
 	if state.current_event_id == "unrest":
-		state.stability_level += 1
+		state.change_settlement_band(state.current_event_location_id, "stability", 1)
 	return "Mara speaks with an unfamiliar certainty, and the crowd turns to listen."
 
 
 func _apply_interpretation(interpretation: Dictionary) -> Array[String]:
 	var new_flags: Array[String] = []
 	var effects: Dictionary = interpretation.get("effects", {})
-	state.food_level += int(effects.get("food", 0))
-	state.stability_level += int(effects.get("stability", 0))
-	state.prosperity_level += int(effects.get("prosperity", 0))
+	# Local, because the act they are interpreting was local. Reading the
+	# kingdom view and adding to it would broadcast one number back over every
+	# settlement and flatten the whole world.
+	var location_id := state.current_event_location_id
+	state.change_settlement_band(location_id, "food", int(effects.get("food", 0)))
+	state.change_settlement_band(location_id, "stability", int(effects.get("stability", 0)))
+	state.change_settlement_band(location_id, "prosperity", int(effects.get("prosperity", 0)))
 	state.faith += int(effects.get("faith", 0))
 	state.followers += int(effects.get("followers", 0))
 	state.population_growth_bonus += int(effects.get("population_growth_bonus", 0))
@@ -726,19 +730,64 @@ func _process_population() -> void:
 
 
 func _process_world_drift() -> void:
-	if state.food_level > 0:
-		state.food_level -= 1
-	if state.food_level == 0:
-		state.prosperity_level -= 1
-	elif state.food_level >= 2 and state.stability_level >= 2:
-		state.prosperity_level += 1
+	# Ordinary life in every settlement. Order follows the belly: a fed place
+	# settles, a starving one comes apart. Wealth follows plenty and order, and
+	# scarcity wears it away. Nothing here is an economy — it is the slow
+	# background against which an event becomes worth noticing.
+	for location_id: String in state.get_location_ids():
+		var food := state.get_settlement_band(location_id, "food")
+		var stability := state.get_settlement_band(location_id, "stability")
+		if food >= 2:
+			state.change_settlement_band(location_id, "stability", 1)
+		elif food == 0:
+			state.change_settlement_band(location_id, "stability", -1)
+		# More mouths than a place keeps at its means. Without this a fed
+		# settlement climbs to plenty and stays there forever, because nothing
+		# in the world costs anything: growth is the cost. It uses only what
+		# already exists — how many live there, and how well the place is doing.
+		if state.get_settlement_population(location_id) > _supportable_population(location_id):
+			state.change_settlement_band(location_id, "food", -1)
+		if state.get_settlement_band(location_id, "food") == 0:
+			state.change_settlement_band(location_id, "prosperity", -1)
+		elif food >= 2 and stability >= 2:
+			state.change_settlement_band(location_id, "prosperity", 1)
+		elif food <= 1:
+			state.change_settlement_band(location_id, "prosperity", -1)
+	# Followers are the kingdom's, so they answer to the realm as a whole.
 	if state.stability_level == 0:
 		state.followers -= 5
+
+# Which condition each event is about. An event is surfaced where it matters
+# most, which is where that condition is thinnest: a dry year is news in the
+# settlement with the emptiest stores, and a good harvest is news in the one
+# that needed it. No settlement is named here, so the same rule serves any
+# settlement the world later gains.
+# Roughly how many people a settlement keeps fed at its current means. One
+# number with one plain meaning, not an economy.
+const POPULATION_PER_PROSPERITY := 80
+
+const EVENT_BANDS := {
+	"drought": "food",
+	"good_harvest": "food",
+	"unrest": "stability"
+}
+
+# What each year's weather does to every settlement, before the event singles
+# one of them out. Splitting these apart is what keeps the world from either
+# draining away or drifting up to uniform plenty: the season balances across the
+# cycle, while the story stays local.
+const EVENT_WEATHER := {
+	"drought": {"food": -1},
+	"good_harvest": {"food": 1},
+	"unrest": {"stability": -1}
+}
 
 
 func _select_next_event() -> void:
 	var cycle := ["drought", "good_harvest", "unrest"]
 	state.current_event_id = cycle[(state.year - 12) % cycle.size()]
+	state.current_event_location_id = event_location_for(state.current_event_id)
+	_apply_event_weather(state.current_event_id)
 	match state.current_event_id:
 		"drought":
 			_begin_drought()
@@ -748,63 +797,85 @@ func _select_next_event() -> void:
 			_begin_unrest()
 
 
+func _supportable_population(location_id: String) -> int:
+	return POPULATION_PER_PROSPERITY * (state.get_settlement_band(location_id, "prosperity") + 1)
+
+
+func _apply_event_weather(event_id: String) -> void:
+	# The season falls on everyone. Nobody is spared a dry year for living in
+	# the wrong settlement, and nobody is singled out for one either.
+	var weather: Dictionary = EVENT_WEATHER.get(event_id, {})
+	for location_id: String in state.get_location_ids():
+		for band_value in weather:
+			state.change_settlement_band(location_id, str(band_value), int(weather[band_value]))
+
+
+func event_location_for(event_id: String) -> String:
+	var band := str(EVENT_BANDS.get(event_id, "food"))
+	var chosen := state.settlement_with_lowest(band)
+	return state.current_event_location_id if chosen.is_empty() else chosen
+
+
 func _begin_drought() -> void:
+	var location_id := state.current_event_location_id
+	var place := state.location_name(location_id)
 	if state.world_flags["wells_built"]:
 		state.world_flag_use_counts["wells_built"] += 1
 		if state.world_flags["irrigation_known"]:
 			state.world_flag_use_counts["irrigation_known"] += 1
 			state.population_growth_bonus += 1
-		state.add_history("The wells built during the Great Silence allowed Aster to withstand another drought.")
+		state.add_history("The wells built during the Great Silence allowed %s to withstand another drought." % place)
 		return
-	state.food_level -= 1
-	if state.food_level <= 0:
-		state.population -= 8
-		state.stability_level -= 1
-		state.add_history("Drought struck empty stores, driving hungry families from Aster and weakening public order.")
+	if state.get_settlement_band(location_id, "food") <= 0:
+		state.change_settlement_population(location_id, -8)
+		state.change_settlement_band(location_id, "stability", -1)
+		state.add_history("Drought struck empty stores, driving hungry families from %s and weakening public order." % place)
 	elif state.faith >= 55:
 		state.followers += 5
-		state.add_history("As the skies dried again, growing numbers gathered at the shrine to pray.")
+		state.add_history("As the skies dried over %s, growing numbers gathered at the shrine to pray." % place)
 	else:
-		state.add_history("Cloudless skies returned, and the Grey River began to shrink.")
+		state.add_history("Cloudless skies returned to %s, and its water began to shrink." % place)
 
 
 func _begin_good_harvest() -> void:
-	state.food_level += 1
-	if state.prosperity_level <= 1:
-		state.prosperity_level += 1
+	var location_id := state.current_event_location_id
+	var place := state.location_name(location_id)
+	if state.get_settlement_band(location_id, "prosperity") <= 1:
+		state.change_settlement_band(location_id, "prosperity", 1)
 		state.population_growth_bonus += 3
 	if state.world_flags["irrigation_known"]:
 		state.world_flag_use_counts["irrigation_known"] += 1
-		state.food_level += 1
-		state.add_history("Channels first cut by Aster's farmers turned mild weather into a harvest large enough to restore trade.")
+		state.change_settlement_band(location_id, "food", 1)
+		state.add_history("Channels first cut by %s's farmers turned mild weather into a harvest large enough to restore trade." % place)
 	elif state.belief_pressure["naturalism"] >= 3:
-		state.add_history("The fields ripened, and villagers debated whether skill or providence deserved the credit.")
+		state.add_history("The fields around %s ripened, and villagers debated whether skill or providence deserved the credit." % place)
 	else:
-		state.add_history("The fields ripened beneath a mild and generous sun, offering Aster a path out of poverty.")
+		state.add_history("The fields ripened beneath a mild and generous sun, offering %s a path out of poverty." % place)
 
 
 func _begin_unrest() -> void:
-	state.stability_level -= 1
-	if state.prosperity_level == 0:
-		state.stability_level -= 1
+	var location_id := state.current_event_location_id
+	var place := state.location_name(location_id)
+	if state.get_settlement_band(location_id, "prosperity") == 0:
+		state.change_settlement_band(location_id, "stability", -1)
 	if state.world_flags["local_council_empowered"]:
 		state.world_flag_use_counts["local_council_empowered"] += 1
-		state.stability_level += 1
-		state.add_history("The elders who once ended unrest without divine aid negotiated another peaceful settlement.")
+		state.change_settlement_band(location_id, "stability", 1)
+		state.add_history("The elders who once ended unrest without divine aid negotiated another peaceful settlement in %s." % place)
 	elif state.world_flags["mara_is_prophet"] and state.faith >= 45:
 		state.world_flag_use_counts["mara_is_prophet"] += 1
-		state.stability_level += 1
-		state.add_history("Mara invoked her earlier revelation and calmed a crowd angered by Aster's poverty.")
+		state.change_settlement_band(location_id, "stability", 1)
+		state.add_history("Mara invoked her earlier revelation and calmed a crowd angered by %s's poverty." % place)
 	elif state.world_flags["king_claims_divine_favor"]:
 		state.world_flag_use_counts["king_claims_divine_favor"] += 1
 		if state.faith >= 45:
-			state.stability_level += 1
-			state.add_history("The king invoked his claimed divine favour and persuaded the crowd to stand down.")
+			state.change_settlement_band(location_id, "stability", 1)
+			state.add_history("The king invoked his claimed divine favour and persuaded the crowd in %s to stand down." % place)
 		else:
-			state.stability_level -= 1
-			state.add_history("The king invoked divine favour, but a sceptical crowd treated the claim as proof of corruption.")
+			state.change_settlement_band(location_id, "stability", -1)
+			state.add_history("The king invoked divine favour, but a sceptical crowd in %s treated the claim as proof of corruption." % place)
 	else:
-		state.add_history("Poor conditions sharpened old grievances, drawing an angry crowd into Aster's square.")
+		state.add_history("Poor conditions sharpened old grievances, drawing an angry crowd into %s's square." % place)
 
 
 func _log_interpretation(

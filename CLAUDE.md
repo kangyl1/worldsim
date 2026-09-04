@@ -13,7 +13,7 @@ The user retains authority over game design, project direction, and GitHub publi
 3. If there is **ANY** design ambiguity, design problem, or architecture decision that could affect game behavior, scope, rules, simulation outcomes, or project direction, **STOP and ask the user before deciding**. Do not make autonomous game-design decisions.
 4. Small, purely mechanical implementation details may be handled without asking only when they cannot alter design intent. If uncertain, ask.
 5. GitHub repository `kangyl1/worldsim` is the source of truth when this document or any handoff summary conflicts with the current committed code. Inspect the repository and history when unsure.
-6. Minimal Settlement State v1, Selective Perception v1, Broad Intent v1, Action Selection v1, Action Execution v1 and Consequence Engine v1 are built. Mortals notice different things, want things, try things, and attempts have immediate results. Nothing yet changes the world because of a result. Do not build the Consequence Engine until the user explicitly asks.
+6. Minimal Settlement State v1, Selective Perception v1, Broad Intent v1, Action Selection v1, Action Execution v1 and Consequence Engine v1 are built. Mortals notice different things, want things, try things, attempts have results, and results objectively change the world. **Nothing yet decides what any of it MEANT.** Do not build interpretation of social or divine events, or History generation, until the user explicitly asks.
 7. The player-facing interface shows a mortal's perspective; Developer Mode shows the machine. Never merge the two. See "Interface rules".
 
 ## Project reference
@@ -113,6 +113,14 @@ nothing yet decides what any of it MEANT.
 wider chain: world state -> pressures -> perception -> belief -> interpretation
 -> goal -> **broad intent** -> action selection -> consequence -> memory ->
 history. Read Part II before designing anything in this area.
+
+`GDD.md` **Part III (sections 44-54) is long-term direction and is NOT the
+roadmap.** It records where the simulation is eventually going — pressure,
+interpretation, historical consequence, and the limits on ecological and
+planetary systems — so that near-term decisions do not foreclose it. Nothing in
+Part III is scheduled or scoped, and none of it may be implemented without an
+explicit request. Read it before designing, never as a work queue. If a Part III
+idea starts to feel urgent, that is a signal to finish the layer in progress.
 
 The next system is **Interpretation of social and divine events** — what a
 mortal decides an occurrence meant, and how that changes their relationships,

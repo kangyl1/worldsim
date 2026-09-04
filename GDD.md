@@ -1724,6 +1724,11 @@ eventually run through the same causal pipeline as mortal actions, rather than
 existing as a separate special case. The god should be an actor in the world's
 causality, not an exception to it.
 
+**This table is the whole roadmap.** Part III records long-term direction and
+adds nothing to it: no section from 44 to 54 appears here, and none should be
+read as scheduled work. If a Part III idea starts to feel urgent, that is a
+reason to finish the layer currently in progress.
+
 ---
 
 ## 42. Foundation Milestone — The Autonomous Story Test
@@ -1808,3 +1813,325 @@ Section 28 still has the last word:
 **The world should not simply react to the player's powers.**
 
 **The world should try to understand the player.**
+
+---
+
+# PART III — FUTURE SIMULATION DIRECTION
+## Pressure, Interpretation, and Historical Consequences
+
+> **This part is direction, not roadmap.**
+>
+> Nothing in Sections 44–54 is current work. None of it is scheduled, none of it
+> is scoped, and none of it may be implemented without an explicit request. The
+> current milestone order in Section 41 is unchanged by anything written here.
+>
+> Part II describes how mortals behave today. Part III describes what that
+> behaviour is eventually for. It exists so that near-term decisions do not
+> quietly foreclose the long-term shape of the game — not to add work.
+
+---
+
+## 44. The Future Causal Loop
+
+The chain Worldsim should increasingly follow:
+
+```
+Player changes conditions
+  ↓
+Entities perceive those changes
+  ↓
+Entities interpret them, using knowledge, beliefs, relationships,
+traits and their own history
+  ↓
+Entities decide for themselves
+  ↓
+Consequences change the world
+  ↓
+Those consequences become knowledge, rumors, relationships,
+traditions and history
+  ↓
+The changed world creates new pressures
+```
+
+The player's proper input to that loop is **conditions**, not outcomes.
+
+Example:
+
+The player causes heavy rainfall.
+
+The player does **not** choose:
+
+> Village becomes prosperous.
+
+Rainfall enters a world that already has a state, and what it becomes there
+depends on that state: crops, food, migration, trade, disease, belief,
+relationships, political decisions, or conflict. The same rain falling on two
+different settlements is not the same event.
+
+This extends Section 3 rather than replacing it. Action → Interpretation →
+Belief → Behaviour → History is the same loop seen from the player's end; this
+is the same loop seen from the world's.
+
+---
+
+## 45. Disasters Do Not Overwrite Society
+
+A famine, plague, storm, migration wave or resource collapse must interact with
+the society it lands on. It must never impose one generic response.
+
+Faced with the same disaster, different entities or societies may:
+
+- cooperate
+- hoard resources
+- migrate
+- blame outsiders
+- turn toward religion
+- overthrow their leaders
+- exploit weaker groups
+- send aid
+- isolate themselves
+- spread misinformation
+- adapt successfully
+
+Which of those happens should follow from what was already there: traits,
+institutions, knowledge, relationships, needs, resources, and history.
+
+This is Section 34 at a larger scale. A pressure that produces one predetermined
+outcome is a script, not a simulation — and a disaster that produces the same
+outcome everywhere is a cutscene wearing a system's clothes.
+
+---
+
+## 46. Catastrophes Create History, Not Game Over
+
+A large disaster should normally open a new historical era rather than end the
+simulation.
+
+Possible outcomes include:
+
+- migrations
+- population loss
+- political collapse
+- new factions
+- new settlements
+- cultural change
+- changed beliefs
+- resource redistribution
+- new alliances and rivalries
+- long-term historical memory
+
+A catastrophe can destroy much of the existing world while creating the
+conditions for something else. The interesting question after a collapse is not
+whether the player lost, but what grew in the gap.
+
+Section 23 already establishes that there is no conventional Game Over and that
+failure should generate history. This states the stronger form: the worst thing
+that can happen to a world is not that it ends, but that it stops producing
+history.
+
+---
+
+## 47. Intervention Can Create Dependence
+
+Player intervention should eventually be capable of unintended long-term
+effects. Repeatedly rescuing an entity, settlement or civilization could come to
+produce:
+
+- dependence on divine intervention
+- stronger religious belief
+- expectation of future assistance
+- reduced willingness to solve problems locally
+- political legitimacy claimed from divine favour
+- resentment when help does not arrive
+- loyalty, or fear, toward the player
+
+**Do not build an "Intervention Meter."** No counter, no dependence stat, no
+hidden slider tracking how much the player has helped.
+
+This behaviour should emerge from what the world already records: history,
+knowledge, belief, relationships, and the accumulated evidence of repeated
+divine action. If it cannot emerge from those, the answer is that those systems
+are not deep enough yet — not that a meter is needed.
+
+---
+
+## 48. Belief Emerges From Interpretation
+
+Entities do not automatically understand what the player did. The same event
+reaches different minds and becomes different things.
+
+The player produces rain during a drought. One group may conclude:
+
+> The god answered us.
+
+Another:
+
+> Our ruler has divine favour.
+
+Another:
+
+> This was coincidence.
+
+Another may, in time, arrive at a natural explanation — and be right, or be
+right for the wrong reasons.
+
+This builds on Sections 11, 12 and 13, and on the Knowledge, Rumor and
+Perception systems already built. Perception says what someone saw; it must
+never say what it meant. That separation is already a law (Part II, Section 30)
+and Part III does not relax it.
+
+**The deliberate exception:** Divine Revelation and Divine Voice (Section 9) are
+powers whose whole purpose is that the god communicates directly. Those are the
+cases where meaning is transmitted rather than inferred, and they are valuable
+precisely because everything else is not.
+
+---
+
+## 49. History Preserves Old Consequences
+
+An important event should stay relevant long after the year it happened in.
+Later generations and later entities may:
+
+- remember it accurately
+- inherit an incomplete version of it
+- distort it into rumor
+- turn it into tradition
+- build political claims on it
+- interpret it religiously
+- rediscover old evidence that contradicts what everyone accepted
+
+A player action hundreds of simulated years earlier should be able to affect a
+later society indirectly, through the record it left rather than through a
+lingering effect.
+
+This is the long-range form of Section 36. Selective memory decides what is
+worth keeping; this decides what keeping it is for. Note the tension worth
+holding onto: a world that remembers everything has no traditions, because
+tradition is what a partially forgotten fact becomes.
+
+---
+
+## 50. Saving Something May Change It
+
+Preservation is itself an intervention, and it should be able to alter what was
+preserved. This applies to societies and institutions, not only to populations
+or species.
+
+Examples:
+
+- a settlement repeatedly given aid becomes economically dependent
+- a ruler repeatedly protected becomes politically untouchable
+- a faction repeatedly rescued becomes reckless
+- a population isolated for its own protection develops different beliefs and
+  traditions from those it was separated from
+
+**Survival is not the same as preserving the previous state.** A thing that
+continues to exist because the player kept intervening is not the thing that
+would have existed without them, and the difference is a story rather than a
+failure.
+
+---
+
+## 51. Ecological and Planetary Simulation
+
+Recorded as long-term possibilities **only**:
+
+- climate eras
+- migration pressure
+- ecological change
+- species adaptation
+- extinction
+- behavioural adaptation
+- protected refuges
+- artificial habitats
+- planetary and environmental causality
+- deeper biological simulation
+
+**None of this is on the implementation roadmap.**
+
+It may be explored only after the existing people, knowledge, decision and
+history simulation is proven fun. Section 42's Autonomous Story Test is the gate
+for that, and it has not been passed.
+
+**Worldsim is not becoming an evolution simulator.** Ecology, if it ever arrives,
+arrives as a source of pressure on societies — a reason for people to move,
+argue, believe and decide — not as a subject in its own right. The moment a
+planetary system stops producing human consequences, it has failed Section 39
+and should be cut regardless of how correct it is.
+
+---
+
+## 52. No Additional Gods
+
+For the foreseeable direction, **the player is the only god-level actor.**
+
+Do not add:
+
+- rival gods
+- hidden creator gods
+- competing divine entities
+- ancient god characters
+- supernatural factions operating at the player's level
+
+Mortals may misunderstand natural events, player actions, or each other as gods,
+spirits or divine forces, and may build entire religions on that mistake. That
+is the point of Sections 11 and 12, and nothing here restricts it.
+
+What must not exist is a second actual god — an entity that really does act at
+the player's level. The player's uniqueness is not a balance decision. It is
+what makes their choices legible: a world in which any unexplained event might
+have been another god's doing is a world where the player cannot be blamed,
+credited, or understood.
+
+Section 17's emergent identities are interpretations mortals hold about the
+player, never separate beings.
+
+---
+
+## 53. Development Priority Is Unchanged
+
+The current priority stands exactly as Section 41 describes it:
+
+```
+Entities
+  → Relationships
+  → Knowledge and Rumors
+  → Perception
+  → Decisions
+  → Events
+  → Player Actions
+  → Consequences
+  → Historical memory
+```
+
+Nothing in Part III may interrupt that order. Planetary, ecological and
+evolutionary systems in particular sit behind all of it, and behind the
+Autonomous Story Test.
+
+If a Part III idea seems urgent, that is a signal to finish the layer currently
+in progress, not to reorder the list.
+
+---
+
+## 54. Scope Warning
+
+> **Worldsim should simulate enough underlying reality to produce interesting
+> human and social consequences — not simulate reality for its own sake.**
+
+Every future system must justify itself by producing at least one of:
+
+- meaningful decisions
+- beliefs
+- relationships
+- consequences
+- history
+
+**Do not add complexity because it is realistic.** Realism is not a
+justification, and a system that models something correctly while producing
+nothing anyone would notice is worse than the same system absent: it costs
+attention, invites more of its own kind, and makes the interesting parts harder
+to see.
+
+This restates Section 39's three questions as a rule for Part III specifically.
+A proposed system that cannot answer them should be recorded here as a
+possibility and left unbuilt.

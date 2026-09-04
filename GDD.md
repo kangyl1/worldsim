@@ -1239,10 +1239,52 @@ not exist yet.
 
 ### Immediate Consequence
 
-**Not built.** Action Execution stops at the immediate result; nothing yet
-reads those results and changes the world because of them.
-
 Actions change the world locally first.
+
+Consequence Engine v1 answers one question and refuses the next:
+
+> **A consequence says what objectively changed or occurred.**
+> **It never decides what that meant.**
+
+A refusal is a refusal. It is not a betrayal until somebody decides it was, and
+deciding that belongs to interpretation. So the engine records no trust,
+hostility, faith or reputation movement, and it must never become a table of
+scripted emotional reactions.
+
+The route back into the simulation is deliberately indirect:
+
+```
+Execution
+  ↓
+Consequence          what objectively happened
+  ↓
+Event                something there was to notice
+  ↓
+Perception           who was placed to notice it
+  ↓
+Knowledge            what they took from it
+  ↓
+Interpretation       what they decide it meant     (later system)
+```
+
+That indirection is what keeps a private refusal private, lets it spread later
+only if somebody passes it on, and stops a slight becoming a war by itself.
+
+**Mortal and divine acts enter through the same door.** A god who causes rain
+produces "rain fell on Westfield" — a thing that happened, with no motive
+recorded. One mortal may call it mercy, another weather, another favouritism.
+The god acted once; the simulation makes the meaning.
+
+Consequences are conservative. Agreeing to a request is not delivering on it:
+an accepted request changes nothing about a hungry settlement. Telling someone
+something already moved the knowledge while it was being carried out, so its
+consequence is deliberately nothing at all rather than a second route to the
+same fact.
+
+Because social occurrences become beliefs, mortals now forget. What goes first
+is what could least change what they do next — retracted claims, then stale ones
+they were never sure of. That is Section 36 applied to memory rather than to
+history.
 
 Consequences may affect:
 
@@ -1665,7 +1707,7 @@ The current dependency order. This is not an immutable schedule.
 | 5 | Broad Intent Model | **Built** — ten directions, intentions only |
 | 6 | Mortal Action Selection | **Built** — seven verbs, selection only |
 | 7 | Mortal Action Execution | **Built** — immediate results, no consequences |
-| 8 | Consequence Engine | **Next** — results change nothing yet |
+| 8 | Consequence Engine | **Built** — objective change only, no reactions |
 | 9 | Minimal Settlement State | **Built** — local food, order, wealth, people |
 | 10 | Event → Perception → Knowledge pipeline | **Built** — selective, no global teaching |
 | 11 | Autonomous Feedback Loop | |

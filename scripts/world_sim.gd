@@ -135,6 +135,7 @@ var intent_rules := IntentRules.new()
 var action_rules := ActionRules.new()
 var execution_rules := ExecutionRules.new()
 var perception_rules := PerceptionRules.new()
+var consequence_rules := ConsequenceRules.new()
 var knowledge_rules := KnowledgeRules.new()
 var debug_logging_enabled: bool = true
 
@@ -173,7 +174,17 @@ func resolve_action(action_id: String) -> Dictionary:
 
 	state.divine_power -= cost
 	state.action_counts[action_id] += 1
+	var location_id := state.current_event_location_id
+	var before := _settlement_snapshot(location_id)
 	var immediate_result := _apply_immediate_action(action_id)
+	# The same consequence pipeline mortals use. What the act changed is already
+	# in the world; this records that it happened and gives mortals something to
+	# notice. No motive is attached: "rain fell" is the fact, and what it means
+	# is theirs to decide.
+	var divine_consequence := consequence_rules.plan_divine(
+		state, action_id, location_id, _settlement_changes(location_id, before)
+	)
+	state.record_consequence(consequence_rules.apply(state, divine_consequence))
 	var interpretation := interpretation_system.choose(state, action_id, state.current_event_id)
 	var previous_reputation := state.reputation
 	var new_flags := _apply_interpretation(interpretation)
@@ -220,6 +231,7 @@ func advance_year() -> Dictionary:
 	state.last_intents = tick_intents()
 	state.last_actions = tick_action_selection()
 	state.last_executions = tick_action_execution()
+	state.last_consequences = tick_consequences()
 	_process_population()
 	_process_world_drift()
 	_select_next_event()
@@ -397,21 +409,33 @@ func tick_perception() -> Array[Dictionary]:
 	# learn anything. One observer coming to know a thing must never change
 	# whether another could see it for themselves.
 	var opportunities: Array[Dictionary] = []
-	var fact := observable_fact()
-	if fact.is_empty():
+	# Everything there was to notice this year: what the world did, and what
+	# mortals and gods did to each other. Consequence events are private by
+	# default, so most of these reach nobody but the people involved.
+	var facts: Array[Dictionary] = []
+	var world_fact := observable_fact()
+	if not world_fact.is_empty():
+		facts.append(world_fact)
+	facts.append_array(state.pending_perception_facts)
+	state.pending_perception_facts = []
+	if facts.is_empty():
 		return opportunities
 	var entity_ids: Array = state.notable_entities.keys()
 	entity_ids.sort()
-	for entity_id_value in entity_ids:
-		opportunities.append(perception_rules.evaluate(state, fact, str(entity_id_value)))
+	for fact: Dictionary in facts:
+		for entity_id_value in entity_ids:
+			opportunities.append(perception_rules.evaluate(state, fact, str(entity_id_value)))
 	for opportunity: Dictionary in opportunities:
 		if not bool(opportunity["perceived"]):
+			continue
+		var source_fact := _fact_for(facts, str(opportunity["topic_id"]))
+		if source_fact.is_empty():
 			continue
 		# Perception supplies the observation; the knowledge system owns what
 		# happens to it from here — ageing, distortion, transmission and all.
 		var record := state.learn_direct_knowledge(
 			str(opportunity["observer_id"]),
-			perception_rules.perceived_claim(fact, opportunity)
+			perception_rules.perceived_claim(source_fact, opportunity)
 		)
 		if record.is_empty():
 			opportunity["perceived"] = false
@@ -421,6 +445,13 @@ func tick_perception() -> Array[Dictionary]:
 		state.record_perception(opportunity)
 	_log_perception(opportunities)
 	return opportunities
+
+
+func _fact_for(facts: Array[Dictionary], knowledge_id: String) -> Dictionary:
+	for fact: Dictionary in facts:
+		if str(fact["id"]) == knowledge_id:
+			return fact
+	return {}
 
 func _event_condition_met(location_id: String, condition: Dictionary) -> bool:
 	var left := state.get_settlement_band(location_id, str(condition["band"]))
@@ -466,6 +497,26 @@ func tick_action_selection() -> Array[Dictionary]:
 			continue
 		selected.append(state.record_action(action))
 	return selected
+
+
+func tick_consequences() -> Array[Dictionary]:
+	# What objectively came of the year's attempts, and nothing about what any
+	# of it meant. Two phases again, so no consequence can change whether
+	# another one exists.
+	#
+	# Consequences do not reach into relationships, faith or reputation. They
+	# emit events, perception decides who noticed, and the meaning is worked out
+	# later by whoever noticed. That indirection is the whole design.
+	var planned: Array[Dictionary] = []
+	for execution: Dictionary in state.last_executions:
+		var record := consequence_rules.plan_execution(state, execution)
+		if record.is_empty():
+			continue
+		planned.append(record)
+	var applied: Array[Dictionary] = []
+	for record: Dictionary in planned:
+		applied.append(state.record_consequence(consequence_rules.apply(state, record)))
+	return applied
 
 
 func tick_action_execution() -> Array[Dictionary]:
@@ -565,6 +616,30 @@ func _relationship_axes(record: Dictionary) -> Dictionary:
 	for axis: String in WorldState.RELATIONSHIP_AXES:
 		result[axis] = record[axis]
 	return result
+
+
+func _settlement_snapshot(location_id: String) -> Dictionary:
+	var snapshot := {}
+	for band: String in WorldState.SETTLEMENT_BANDS:
+		snapshot[band] = state.get_settlement_band(location_id, band)
+	return snapshot
+
+
+func _settlement_changes(location_id: String, before: Dictionary) -> Array:
+	# Before and after, not a delta. What a value was is part of explaining why
+	# what it became matters.
+	var changes: Array = []
+	for band: String in WorldState.SETTLEMENT_BANDS:
+		var after := state.get_settlement_band(location_id, band)
+		if after == int(before[band]):
+			continue
+		changes.append({
+			"subject_id": location_id,
+			"field": band,
+			"before": int(before[band]),
+			"after": after
+		})
+	return changes
 
 
 func _apply_immediate_action(action_id: String) -> String:

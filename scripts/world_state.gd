@@ -16,6 +16,12 @@ const MAX_STORED_INTENTS := 40
 const MAX_STORED_ACTIONS := 40
 const MAX_STORED_EXECUTIONS := 40
 const MAX_STORED_PERCEPTIONS := 40
+const MAX_STORED_CONSEQUENCES := 40
+# Selective memory (GDD section 36). Social occurrences accumulate one belief per
+# interaction, so a mortal cannot carry everything they ever learned. What goes
+# first is what could least change their behaviour: retracted claims, then stale
+# ones they were never sure of.
+const MAX_KNOWLEDGE_PER_ENTITY := 12
 # Version 0.1 keeps one region and three settlements, per the GDD prototype
 # scope. Locations carry identity only: no statistics are stored here, because
 # the simulation still tracks kingdom-wide values. Per-settlement state can be
@@ -156,6 +162,12 @@ var execution_archive: Array[Dictionary] = []
 var last_perceptions: Array[Dictionary] = []
 var perceptions: Array[Dictionary] = []
 var perception_archive: Array[Dictionary] = []
+var last_consequences: Array[Dictionary] = []
+var consequences: Array[Dictionary] = []
+var consequence_archive: Array[Dictionary] = []
+# Facts waiting for the year's perception pass. Consequences put things here;
+# nothing reads them until perception decides who noticed.
+var pending_perception_facts: Array[Dictionary] = []
 var history_archive: Array[String] = [
 	"Year 12 - The people prayed for help.",
 	"Year 11 - The river began to recede.",
@@ -680,6 +692,86 @@ func get_perceptions_for(observer_id: String) -> Array[Dictionary]:
 	return matches
 
 
+func record_consequence(record: Dictionary) -> Dictionary:
+	# What objectively came of something. A consequence never carries a
+	# relationship, faith or reputation delta: those are reactions, and
+	# reactions belong to interpretation.
+	if record.is_empty():
+		return {}
+	var stored := record.duplicate(true)
+	consequences.append(stored)
+	consequence_archive.append(stored)
+	if consequences.size() > MAX_STORED_CONSEQUENCES:
+		consequences = consequences.slice(consequences.size() - MAX_STORED_CONSEQUENCES)
+	return stored.duplicate(true)
+
+
+func get_consequence(consequence_id: String) -> Dictionary:
+	for record: Dictionary in consequence_archive:
+		if str(record["id"]) == consequence_id:
+			return record.duplicate(true)
+	return {}
+
+
+func get_consequences_for(actor_id: String) -> Array[Dictionary]:
+	var matches: Array[Dictionary] = []
+	for record: Dictionary in consequence_archive:
+		if str(record["actor_id"]) == actor_id or str(record["target_id"]) == actor_id:
+			matches.append(record.duplicate(true))
+	return matches
+
+
+func get_consequence_for_source(source_id: String) -> Dictionary:
+	for record: Dictionary in consequence_archive:
+		if str(record["source_id"]) == source_id:
+			return record.duplicate(true)
+	return {}
+
+
+func prune_memory(entity_id: String) -> Array[String]:
+	# Forgetting, deliberately. A mortal keeps what could still matter: what is
+	# retracted goes first, then what is stale and was never firmly held.
+	# Nothing learned this year is ever dropped.
+	var forgotten: Array[String] = []
+	if not notable_entities.has(entity_id):
+		return forgotten
+	var stored: Dictionary = notable_entities[entity_id]["knowledge"]
+	if stored.size() <= MAX_KNOWLEDGE_PER_ENTITY:
+		return forgotten
+	var candidates: Array[Dictionary] = []
+	for knowledge_id_value in stored:
+		var record: Dictionary = stored[str(knowledge_id_value)]
+		if int(record.get("last_updated_year", year)) >= year:
+			continue
+		candidates.append({
+			"id": str(knowledge_id_value),
+			"invalidated": bool(record.get("invalidated", false)),
+			"outdated": bool(record.get("is_outdated", false)),
+			"confidence": int(record.get("confidence", 0)),
+			"last_updated_year": int(record.get("last_updated_year", year))
+		})
+	candidates.sort_custom(_weakest_memory_first)
+	var excess := stored.size() - MAX_KNOWLEDGE_PER_ENTITY
+	for candidate: Dictionary in candidates:
+		if forgotten.size() >= excess:
+			break
+		if remove_knowledge(entity_id, str(candidate["id"])):
+			forgotten.append(str(candidate["id"]))
+	return forgotten
+
+
+func _weakest_memory_first(left: Dictionary, right: Dictionary) -> bool:
+	if bool(left["invalidated"]) != bool(right["invalidated"]):
+		return bool(left["invalidated"])
+	if bool(left["outdated"]) != bool(right["outdated"]):
+		return bool(left["outdated"])
+	if int(left["confidence"]) != int(right["confidence"]):
+		return int(left["confidence"]) < int(right["confidence"])
+	if int(left["last_updated_year"]) != int(right["last_updated_year"]):
+		return int(left["last_updated_year"]) < int(right["last_updated_year"])
+	return str(left["id"]) < str(right["id"])
+
+
 func age_knowledge() -> Array[Dictionary]:
 	var aged_records: Array[Dictionary] = []
 	for entity_id_value in notable_entities:
@@ -712,6 +804,8 @@ func age_knowledge() -> Array[Dictionary]:
 			stored_knowledge[knowledge_id] = record
 		entity["knowledge"] = stored_knowledge
 		notable_entities[entity_id] = entity
+	for entity_id_value in notable_entities:
+		prune_memory(str(entity_id_value))
 	return aged_records
 
 

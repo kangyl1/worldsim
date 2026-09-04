@@ -3,7 +3,7 @@ extends SceneTree
 # Developer Mode is an inspection tool. These tests hold it to two promises:
 # it shows the machine underneath, and it never touches the machine.
 
-const EXPECTED_TESTS := 17
+const EXPECTED_TESTS := 18
 const FALSE_BELIEF := {
 	"id": "king_divine_claim",
 	"subject_id": "aster_king",
@@ -53,6 +53,7 @@ func _process(_delta: float) -> bool:
 	_test_execution_section_shows_what_happened()
 	_test_perception_section_shows_who_noticed()
 	_test_locations_section_shows_exact_local_state()
+	_test_consequence_section_stays_objective()
 	_test_actions_still_work_with_developer_mode_open()
 	_test_sections_all_render()
 
@@ -295,6 +296,22 @@ func _test_locations_section_shows_exact_local_state() -> void:
 	completed += 1
 
 
+func _test_consequence_section_stays_objective() -> void:
+	# Four questions, four records: what they wanted, what they tried, what
+	# happened, and what objectively changed. The last one must never start
+	# answering the fifth.
+	var view := _section_text("consequences")
+	assert(view.contains("CONSEQUENCES"))
+	assert(view.contains("state_changes"), "what moved must be inspectable")
+	assert(view.contains("events_created"), "and what it left for others to notice")
+	for word: String in ["trust", "hostility", "faith", "reputation"]:
+		assert(not view.to_lower().contains("%s -" % word),
+			"a consequence view showed a %s delta" % word)
+	for other: String in ["executions", "intents", "actions"]:
+		assert(view != _section_text(other), "the records must not be merged")
+	completed += 1
+
+
 func _test_actions_still_work_with_developer_mode_open() -> void:
 	if not main.developer_mode_enabled:
 		main.toggle_developer_mode()
@@ -352,5 +369,6 @@ func _snapshot() -> Array:
 		str(state.belief_pressure), str(state.world_flags),
 		state.history_archive.size(), state.intent_archive.size(), state.action_archive.size(),
 		state.execution_archive.size(), state.perception_archive.size(),
+		state.consequence_archive.size(),
 		state.knowledge_events.size()
 	]

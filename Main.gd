@@ -8,7 +8,7 @@ const ACTION_ROW_WIDTH := 34
 const PERSON_META_PREFIX := "person:"
 const DEV_TAB_META := "dev_tab:"
 const DEV_PERSON_META := "dev_person:"
-const DEV_SECTIONS := ["world", "locations", "people", "perceptions", "knowledge", "intents", "actions", "executions", "belief", "history"]
+const DEV_SECTIONS := ["world", "locations", "people", "perceptions", "knowledge", "intents", "actions", "executions", "consequences", "belief", "history"]
 const DEV_LIST_LIMIT := 24
 const BACK_META := "back"
 # Player-readable names for the broad intents the engine records. These name a
@@ -676,6 +676,8 @@ func _render_developer() -> void:
 			developer_text.text = "\n".join(_developer_action_lines())
 		"executions":
 			developer_text.text = "\n".join(_developer_execution_lines())
+		"consequences":
+			developer_text.text = "\n".join(_developer_consequence_lines())
 		"belief":
 			developer_text.text = "\n".join(_developer_belief_lines())
 		"history":
@@ -792,6 +794,59 @@ func _developer_people_lines() -> Array[String]:
 				int(record["trust"]), int(record["fear"]),
 				int(record["respect"]), int(record["hostility"])
 			])
+	return lines
+
+
+func _developer_consequence_lines() -> Array[String]:
+	# The fourth question, and the one that must stay narrow: what objectively
+	# changed. Never how anyone felt about it — that is not recorded here
+	# because it is not decided here.
+	var state := simulation.state
+	var lines: Array[String] = [_dev_heading("CONSEQUENCES  ·  THIS YEAR")]
+	if state.last_consequences.is_empty():
+		lines.append("[color=#73627f]Nothing came of anything this year.[/color]")
+	for record: Dictionary in state.last_consequences:
+		lines.append("[color=#8d989d]  %-10s %-24s %s[/color]" % [
+			str(record["consequence_type"]), str(record["result_type"]),
+			_or_none(", ".join(record["events_created"]))
+		])
+	lines.append("")
+	lines.append("[color=#76c8d5]latest for %s[/color]" % _or_none(developer_person_id))
+	if developer_person_id.is_empty():
+		lines.append("[color=#73627f]  Select an entity in PEOPLE.[/color]")
+		return lines
+	var records: Array[Dictionary] = state.get_consequences_for(developer_person_id)
+	if records.is_empty():
+		lines.append("[color=#73627f]  Nothing has come of anything they did.[/color]")
+		return lines
+	var latest: Dictionary = records.back()
+	for field: String in [
+		"id", "source_type", "source_id", "consequence_type", "result_type",
+		"actor_id", "target_id", "subject_id", "year"
+	]:
+		lines.append(_dev_field("  %s" % field, _or_none(str(latest[field]))))
+	lines.append("")
+	lines.append("[color=#76c8d5]state_changes[/color]")
+	if latest["state_changes"].is_empty():
+		lines.append("[color=#73627f]  (none — nothing in the world moved)[/color]")
+	for change: Dictionary in latest["state_changes"]:
+		lines.append("[color=#8d989d]  %s.%s  %d -> %d[/color]" % [
+			str(change["subject_id"]), str(change["field"]),
+			int(change["before"]), int(change["after"])
+		])
+	lines.append("")
+	lines.append("[color=#76c8d5]events_created[/color]")
+	if latest["events_created"].is_empty():
+		lines.append("[color=#73627f]  (none)[/color]")
+	for created in latest["events_created"]:
+		lines.append("[color=#8d989d]  %s[/color]" % str(created))
+	lines.append("")
+	lines.append("[color=#76c8d5]reasons[/color]")
+	for reason in latest["reasons"]:
+		lines.append("[color=#8d989d]  %s[/color]" % str(reason))
+	lines.append("")
+	lines.append("[color=#68757c]What any of it meant is not decided here.[/color]")
+	lines.append(_dev_field("consequences recorded", records.size()))
 	return lines
 
 
@@ -1103,6 +1158,7 @@ func _developer_history_lines() -> Array[String]:
 			_or_none(str(action.get("target_id", ""))), int(action.get("score", 0)),
 			str(action.get("selection", ""))
 		])
+	lines.append(_dev_field("last_consequences", state.last_consequences.size()))
 	lines.append(_dev_field("last_executions", state.last_executions.size()))
 	for execution: Dictionary in state.last_executions:
 		lines.append("[color=#8d989d]  %s  %s  %s  %s  effects %d[/color]" % [

@@ -67,7 +67,7 @@ func _init() -> void:
 		print("EXECUTION TEST FAILED: %d of %d tests finished." % [completed, EXPECTED_TESTS])
 		quit(1)
 		return
-	print("EXECUTION TEST PASSED: attempts have results, and results have no consequences yet.")
+	print("EXECUTION TEST PASSED: attempts have results, and execution applies nothing else.")
 	quit(0)
 
 

@@ -13,7 +13,7 @@ The user retains authority over game design, project direction, and GitHub publi
 3. If there is **ANY** design ambiguity, design problem, or architecture decision that could affect game behavior, scope, rules, simulation outcomes, or project direction, **STOP and ask the user before deciding**. Do not make autonomous game-design decisions.
 4. Small, purely mechanical implementation details may be handled without asking only when they cannot alter design intent. If uncertain, ask.
 5. GitHub repository `kangyl1/worldsim` is the source of truth when this document or any handoff summary conflicts with the current committed code. Inspect the repository and history when unsure.
-6. Minimal Settlement State v1, Selective Perception v1, Broad Intent v1, Action Selection v1 and Action Execution v1 are built. Mortals notice different things, want things, try things, and attempts have immediate results. Nothing yet changes the world because of a result. Do not build the Consequence Engine until the user explicitly asks.
+6. Minimal Settlement State v1, Selective Perception v1, Broad Intent v1, Action Selection v1, Action Execution v1 and Consequence Engine v1 are built. Mortals notice different things, want things, try things, and attempts have immediate results. Nothing yet changes the world because of a result. Do not build the Consequence Engine until the user explicitly asks.
 7. The player-facing interface shows a mortal's perspective; Developer Mode shows the machine. Never merge the two. See "Interface rules".
 
 ## Project reference
@@ -54,12 +54,13 @@ The current foundation includes:
 - Mortal Action Execution v1: success/failure/blocked, two-phase ticks, immediate results only
 - Selective Perception v1: events offer claims, only eligible mortals notice, no global teaching
 - Minimal Settlement State v1: settlements own food, stability, prosperity and population; the kingdom view derives from them
+- Consequence Engine v1: objective occurrence and state change only, routed back through events and perception
 - knowledge generation from existing events, outcome-aware and refreshing stable ids
 - a world map interface with clickable settlements and crisis markers
 - world -> settlement -> person navigation in one reusable panel
 - in-game Developer Mode (DEV button, F1 secondary) exposing raw simulation values, read-only
 - a centralised presentation layer turning numbers into qualitative labels
-- deterministic tests across twelve suites
+- deterministic tests across thirteen suites
 - a 72-turn regression suite
 
 Current core source files:
@@ -74,6 +75,7 @@ Current core source files:
 | `scripts/action_rules.gd` | Mortal Action Selection v1: intent -> viable attempt, never executed |
 | `scripts/execution_rules.gd` | Mortal Action Execution v1: attempt -> immediate result, no consequences |
 | `scripts/perception_rules.gd` | Selective Perception v1: who could notice an event, and how clearly |
+| `scripts/consequence_rules.gd` | Consequence Engine v1: what objectively happened, never what it meant |
 | `scripts/world_map.gd` | map presentation and click hit-testing; reads nothing from the simulation |
 | `scripts/presentation_rules.gd` | number -> label bands for the player-facing interface |
 | `Main.gd` / `Main.tscn` | interface and player interaction only |
@@ -89,6 +91,7 @@ Test suites, all deterministic:
 | `tests/execution_test.gd` | outcome kinds, TELL through knowledge, ASK direction, effect boundary |
 | `tests/perception_test.gd` | observability modes, eligibility, pathway clarity, no global teaching |
 | `tests/settlement_test.gd` | local ownership, derived kingdom view, generic events, god-game guardrails |
+| `tests/consequence_test.gd` | objective occurrence, no reactions, private events, no double effects |
 | `tests/event_knowledge_test.gd` | what events make perceivable, conditions, refresh-not-duplicate |
 | `tests/map_model_test.gd` | location model, map hit-testing, simulation boundary |
 | `tests/person_view_test.gd` | person navigation and the mortal-perspective filter |
@@ -101,16 +104,18 @@ Do not assume this summary is exhaustive or newer than the code. Inspect the rep
 
 `Settlement state -> Events -> Perception -> Knowledge/Rumors -> Broad Intents -> Action Selection -> Action Execution -> Consequences -> feedback into settlement state/relationships/knowledge`
 
-Everything up to and including Action Execution is built. Consequences are not.
+Everything in that chain is built. What is missing is the layer after it:
+nothing yet decides what any of it MEANT.
 
 `GDD.md` Part II (sections 29-43) revises this. Mortals should pass through a
 wider chain: world state -> pressures -> perception -> belief -> interpretation
 -> goal -> **broad intent** -> action selection -> consequence -> memory ->
 history. Read Part II before designing anything in this area.
 
-The next system is the **Consequence Engine**, and it must not begin until the
-user explicitly asks. Attempts now have immediate results, and settlements now
-carry state those results could change; nothing yet joins the two.
+The next system is **Interpretation of social and divine events** — what a
+mortal decides an occurrence meant, and how that changes their relationships,
+beliefs and future wants. It must not begin until the user explicitly asks.
+Consequences now produce objective occurrences nobody has yet reacted to.
 
 **Known issue, not yet addressed.** Ambient rumor spreading runs before intents
 form, so it usually carries a fact before anyone deliberately chooses to tell
@@ -119,6 +124,13 @@ years. Deliberate speech works and is reachable, but it is rarely the route by
 which anything travels. Fixing it means reordering or rate-limiting
 `tick_knowledge()`, which changes an existing system's semantics and needs its
 own design pass.
+
+**Known issue, not yet addressed.** Mortals now forget. Social occurrences add
+one belief per interaction, so `MAX_KNOWLEDGE_PER_ENTITY` bounds what anyone
+carries, and pruning drops retracted claims first and stale low-confidence ones
+next. A mortal can therefore forget something that mattered. The cap is tuned,
+not derived, and the rule has no notion of significance beyond confidence and
+age.
 
 **Known issue, not yet addressed.** Only two of the three settlements host
 events across a long run, because an event goes where its condition is thinnest
@@ -131,7 +143,7 @@ would be derived one-to-one from the intent type and would duplicate what
 `knowledge_used` already records. Build it only if a later system needs one
 goal to produce several different intents.
 
-Consequences **MUST NOT be implemented until the user explicitly asks**.
+Interpretation of social events, and History generation, **MUST NOT be implemented until the user explicitly asks**.
 
 Broad Intent Model v1 constraints, settled with the user and to be preserved:
 
@@ -218,6 +230,23 @@ Minimal Settlement State v1 constraints, settled with the user and to be preserv
 - intent may read the actor's OWN home settlement as directly-lived context; anything about another settlement must still reach them as belief
 - a settlement's food is NOT any mortal's to give: `give` stays blocked, and ownership remains a separate unanswered question
 - `POPULATION_PER_PROSPERITY` is the one invented constant: roughly how many people a place keeps fed at its means. Without it a fed settlement climbs to plenty and stays there forever
+
+Consequence Engine v1 constraints, settled with the user and to be preserved:
+
+- **a consequence says what objectively changed or occurred, and never what it meant.** No trust, hostility, fear, respect, faith or reputation delta may EVER be written by this layer
+- **`scripts/consequence_rules.gd` must not become a table of scripted emotional reactions.** If a consequence seems to need one, the reaction belongs to interpretation
+- relationship, faith, reputation and theological reactions emerge through perception and interpretation, never from a consequence
+- the route back into the simulation is Consequence -> Event -> Perception -> Knowledge -> Interpretation. Do not shortcut it by mutating subjective state directly
+- mortal and divine acts enter the same consequence pipeline; a divine act records what happened ("rain fell on Westfield") and never why
+- claims describe occurrences, never judgements: "%s refused %s's request" is allowed, "%s abandoned %s" is not
+- social occurrences are DIRECT: only the participants perceive them. There is no visibility model that would honestly say otherwise
+- TELL and OBSERVE resolve to `no_effect` because execution already moved the knowledge; never add a second route to the same fact
+- agreeing is not delivering: an accepted request changes no settlement state, and creates no new intent in the same tick
+- consequences are perceived the same year and answered the next; the tick order already guarantees this, and no same-year Intent -> Action -> Consequence recursion may be introduced
+- state changes record `subject_id`, `field`, `before` and `after`, never a bare delta
+- the divine layer still moves faith, followers and reputation directly inside `resolve_action`. That migration is deliberately deferred and needs its own pass
+- `MAX_KNOWLEDGE_PER_ENTITY` bounds what a mortal carries, since social occurrences accumulate one belief per interaction. Forgetting drops retracted claims first, then stale low-confidence ones, and never anything learned this year
+- the bounded ripple law holds: no automatic cascade from a refusal to hostility to rebellion. Each step needs a real system and a real condition
 
 ## Design rules
 

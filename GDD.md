@@ -1730,9 +1730,9 @@ existing as a separate special case. The god should be an actor in the world's
 causality, not an exception to it.
 
 **This table is the whole roadmap.** Part III records long-term direction and
-adds nothing to it. No Part III section appears here, and none should be read as
-scheduled work. If a Part III idea starts to feel urgent, that is a reason to
-finish the layer currently in progress.
+adds nothing to it: no section from 44 to 72 appears here, and none should be
+read as scheduled work. If a Part III idea starts to feel urgent, that is a
+reason to finish the layer currently in progress.
 
 ---
 
@@ -3077,3 +3077,125 @@ Preserve these internal principles:
 > **The player changes the world. People decide what those changes mean.**
 
 > **Reality happens once. History does not.**
+
+---
+
+## 96. Historical Forgetting Must Be Gradual and Legible
+
+History may fade, fragment, and eventually be forgotten, but it must never feel
+like the simulation randomly deleted data.
+
+The intended long-term progression is gradual:
+
+```
+Living memory
+  ↓
+Recorded memory
+  ↓
+Traditional account
+  ↓
+Fragmented account
+  ↓
+Uncertain / contested account
+  ↓
+Forgotten
+```
+
+Important history should not jump abruptly from **known** to **gone** simply
+because enough years passed.
+
+A major event should leave intermediate traces as it weakens. For example:
+
+- people remember the event directly while witnesses still live
+- later generations know it through parents, teachers, ritual, or records
+- later still, only institutions or regional traditions preserve it
+- surviving accounts may become contradictory or incomplete
+- eventually only inscriptions, ruins, phrases, rituals, names, or fragments may
+  remain
+- complete forgetting is possible only when the channels preserving the event
+  are actually gone
+
+### Records and belief decay separately
+
+Evidence surviving and people believing it are different things.
+
+A written record may survive for centuries after a population stops caring about
+or believing it. Conversely, a story may remain widely believed after every
+original record has disappeared.
+
+Worldsim should therefore be able to produce states such as:
+
+> **Widely believed, poorly evidenced.**
+
+or:
+
+> **Well documented, culturally forgotten.**
+
+This strengthens Sections 52 and 53: preservation affects access to claims, not
+the truth of those claims.
+
+### Forgetting should have causes
+
+Decay should depend on what actually preserves or damages a memory, not only on
+time.
+
+Factors that may preserve history include:
+
+- living witnesses
+- repeated teaching
+- ritual repetition
+- cultural importance
+- connection to group identity
+- writing and archives
+- active institutions
+- monuments or physical evidence
+
+Factors that may accelerate loss include:
+
+- death of witnesses
+- failed transmission
+- institutional collapse
+- archive destruction
+- war or disaster
+- deliberate suppression
+- language change
+- competing narratives replacing attention
+
+These are future design factors, not a request for a full memory-decay system
+now.
+
+### Rediscovery can reactivate old history
+
+Forgotten or marginal history may become relevant again when evidence returns:
+
+```
+Event
+  → Memory
+  → Record / Tradition
+  → Distortion
+  → Fragmentation
+  → Forgetting
+  → Rediscovery
+  → New Interpretation
+```
+
+A ruined inscription, reopened archive, recovered ritual, or excavated sacred
+site may revive an old religious doctrine, political claim, territorial dispute,
+or philosophical argument.
+
+The rediscovered interpretation does not need to match the original one.
+Rediscovery creates another perception-and-interpretation event in the present.
+
+### Player trust rule
+
+> **Historical forgetting must be gradual, visible, and causally explainable.
+> The player should never feel that important history vanished because the
+> simulation deleted it.**
+
+When this system eventually exists, Developer Mode should be able to explain why
+a memory weakened or survived — for example: the last witness died, an archive
+was destroyed, a ritual kept the account alive, or only one regional tradition
+still preserves it.
+
+This is future direction only. It does not change the implementation roadmap in
+Section 41.

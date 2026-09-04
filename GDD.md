@@ -3199,3 +3199,188 @@ still preserves it.
 
 This is future direction only. It does not change the implementation roadmap in
 Section 41.
+
+---
+
+## 97. Gameplay Presentation — Terminal Identity, Modern Mobile Navigation
+
+Worldsim should keep the **terminal as its personality**, while using **modern
+mobile-first information architecture** for navigation and readability.
+
+The presentation target is not a pure terminal and not a generic management
+dashboard. It is a hybrid:
+
+> **The world speaks through a terminal. The player studies the world through a
+> modern interface.**
+
+References such as mobile life simulators and modern category-based web apps are
+useful for interaction clarity: large touch targets, grouped categories, clean
+cards, drill-down screens, readable hierarchy, and a clear "what needs attention"
+entry point. These are usability references only; Worldsim should not copy their
+visual identity, content structure, or scripted-event model.
+
+### Two presentation layers
+
+#### Play layer — atmospheric and event-focused
+
+The main play screen remains the most terminal-like surface. It should focus on
+what is happening **now**:
+
+- current year and key world status
+- recent or important events
+- prayers and requests
+- notable mortal actions
+- emerging crises or opportunities
+- concise interpretations when relevant
+- divine actions available to the player
+- Advance / continue control
+
+The player should be able to open the game, understand the important situation,
+make or decline an intervention, advance time, and leave without navigating a
+complex management interface.
+
+A situation may be presented as a focused event card or terminal panel, for
+example:
+
+```text
+YEAR 126
+
+WESTFIELD — FOOD CRISIS
+
+Harvest stores have fallen below sustainable levels.
+Mara has asked the capital for assistance.
+
+KNOWN INTERPRETATIONS
+> Mara: The capital can help.
+> Aster King: The shortage is temporary.
+
+PRAYERS
+2 requests awaiting response.
+
+[OBSERVE] [INTERVENE] [SPEAK] [IGNORE]
+```
+
+This is presentation only. The situation must still come from simulation state,
+not from a fixed sequence of prewritten choice cards.
+
+#### Information layer — modern, categorized, drill-down
+
+When the player wants to understand the world more deeply, information should be
+organized like a modern mobile app or compact webpage rather than a raw terminal
+log.
+
+Possible top-level categories:
+
+- **World** — settlements, conditions, crises, population, map
+- **People** — rulers, prophets, scholars, rebels, historical figures
+- **Beliefs** — beliefs, religions, interpretations, disputes
+- **History** — timeline, eras, major events, divine interventions, contested
+  accounts
+- **Divine** — prayers, player actions, promises, known names, how mortals
+  interpret the player
+- **Society** — institutions, authority, factions and ideology when those systems
+  eventually exist
+- **Developer** — objective truth and simulation internals
+
+The exact categories are not locked. They should grow only when the underlying
+simulation justifies them.
+
+### Start Here / Needs Attention
+
+A prominent entry area may summarize what deserves the player's attention now:
+
+- worsening famine
+- unanswered prayer
+- ruler succession crisis
+- new religious dispute
+- important historical figure in danger
+- newly discovered information
+
+This should be a convenience layer, **not an objective list**. It must not tell
+the player what they are supposed to solve. Section 38 still applies: the world
+creates opportunities, not quests.
+
+A situation may be marked as important because it has high consequence,
+uncertainty, direct relevance to the player, or a pending request — never because
+the UI decided that helping is the correct choice.
+
+### Drill-down instead of information overload
+
+Worldsim will eventually contain more information than should fit on one screen.
+The player should move from summary → category → detail.
+
+Example:
+
+```text
+HISTORY
+  ↓
+The Westfield Famine
+  ↓
+Year 126 · Major Event · Strongly Remembered
+  ↓
+Known interpretations / people involved / later consequences
+```
+
+Likewise, a Person card should show only the information that helps recognition
+and decision-making first, with deeper beliefs, relationships, knowledge and
+history available after opening the profile.
+
+The normal UI should never require reading giant debug-style tables to play.
+
+### Visual identity
+
+Use modern layout logic without adopting a soft corporate dashboard aesthetic.
+Worldsim should retain its own atmosphere through:
+
+- dark or near-black surfaces
+- off-white / gray primary text
+- restrained terminal-style accent colors
+- monospace or semi-monospace typography where readable
+- thin borders and dividers
+- sparse icons and symbols
+- selective ASCII / terminal language
+- minimal animation
+- strong hierarchy through spacing rather than decoration
+
+Cards and panels exist to organize information, not to turn every value into a
+separate widget.
+
+### Mobile-first interaction
+
+The interface should be designed so the same conceptual structure works on a
+phone:
+
+- vertical navigation is acceptable
+- touch targets should be generous
+- important information should not depend on hover
+- categories should open into focused screens rather than squeeze into many
+  columns
+- the player should be able to complete a meaningful observe / intervene /
+  advance loop quickly
+
+Desktop may show more panels simultaneously, but it should not require a
+different game structure.
+
+### Reference rule
+
+The useful lesson from mobile life simulators is **clarity of interaction**, not
+their event-generation model.
+
+Worldsim must not become:
+
+> prewritten card appears → choose A/B/C → next prewritten card
+
+Instead:
+
+> simulation creates a situation → UI packages it clearly → player chooses
+> whether and how to respond → simulation continues
+
+That distinction is load-bearing.
+
+### Presentation principle
+
+> **Warsim underneath; modern mobile usability in navigation; terminal identity
+> in presentation.**
+
+This section refines Sections 18 and 19. It does not change the simulation
+roadmap in Section 41 and does not require immediate UI reconstruction.

@@ -100,7 +100,13 @@ const DOCTRINE_TOPICS := ["claim", "faith", "doctrine", "ritual", "prophecy", "h
 const INTENT_INTERPRETATION_RULES := {
 	"rain_divine_help": {"learn": 12},
 	"rain_divine_favour": {"learn": 10},
-	"rain_natural_weather": {}
+	"rain_natural_weather": {},
+	# The world conditions, as SHORT-TERM readings. Deliberately smaller than
+	# the beliefs they feed, and superseded by them once one is established.
+	"home_is_in_danger": {"protect": 10, "preserve": 6},
+	"home_is_recovering": {"preserve": 6},
+	"instability_is_an_opening": {"acquire": 8},
+	"elsewhere_is_struggling": {"help": 8}
 }
 
 # What an ESTABLISHED belief does to what someone wants. Deliberately smaller
@@ -121,7 +127,9 @@ const INTENT_BELIEF_RULES := {
 	BeliefRules.DIVINE_HELP_FOLLOWS_NEED: {"learn": 10, "preserve": 6},
 	BeliefRules.DIVINE_INTERVENTION_EXISTS: {"learn": 8},
 	BeliefRules.IS_SUPPORTIVE: {"connect": 8},
-	BeliefRules.IS_UNRELIABLE: {"distance": 8}
+	BeliefRules.IS_UNRELIABLE: {"distance": 8},
+	BeliefRules.HOME_IS_UNSAFE: {"protect": 12, "preserve": 8},
+	BeliefRules.CONDITIONS_ARE_IMPROVING: {"preserve": 6, "wait": 4}
 }
 
 const INTENT_TRAIT_RULES := {

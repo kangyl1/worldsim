@@ -388,6 +388,229 @@ const WORLD_CANDIDATES := {
 				]
 			}
 		]
+	},
+	# --- The yearly conditions -------------------------------------------
+	#
+	# These three topics are produced every single year by the event cycle and
+	# were, until now, the largest uninterpreted surface in the simulation:
+	# mortals held "our settlement does not have enough food" and drew nothing
+	# from it whatsoever.
+	#
+	# The dividing line is WHERE THEY LIVE, which the stance already answers.
+	# A shortage at home is a different thing from a shortage somewhere else,
+	# and neither reading is more correct than the other — they are answers to
+	# different questions about the same fact.
+	#
+	# No relationship effect on any of them. A settlement running short is not
+	# something a person did to another person, and inventing a party to blame
+	# would need a model of who is responsible for a place, which does not
+	# exist. What these change is what their holder comes to believe, and
+	# therefore what they later want.
+	"food_shortage": {
+		STANCE_WITNESS: [
+			{
+				"id": "home_is_in_danger",
+				"meaning": "This place cannot feed us, and that will not fix itself.",
+				"effect": {},
+				"base_score": 48,
+				"factors": [
+					{"kind": "trait", "value": "cautious", "score": 14},
+					{"kind": "home_was_in_crisis", "value": true, "score": 16},
+					{
+						"kind": "belief_at_least",
+						"value": {
+							"proposition": BeliefRules.HOME_IS_UNSAFE,
+							"confidence": BeliefRules.ESTABLISHED_CONFIDENCE
+						},
+						"score": 12
+					},
+					# A faint report supports a fainter conclusion. Without this a
+					# well-disposed mortal could reach a confident reading from a
+					# rumour they barely credit, which is exactly the gap between a
+					# 10-confidence whisper and a 90-confidence thing they lived
+					# through. The uncertainty candidate then wins on its own merits.
+					{"kind": "confidence_below", "value": UNCERTAIN_CONFIDENCE, "score": -30}
+				]
+			},
+			{
+				"id": "shortage_will_pass",
+				"meaning": "Lean years come and go; this one will pass too.",
+				"effect": {},
+				"base_score": 46,
+				"factors": [
+					{"kind": "trait", "value": "loyal", "score": 20},
+					{"kind": "trait", "value": "gullible", "score": 14},
+					{
+						"kind": "belief_at_least",
+						"value": {
+							"proposition": BeliefRules.CONDITIONS_ARE_IMPROVING,
+							"confidence": BeliefRules.ESTABLISHED_CONFIDENCE
+						},
+						"score": 12
+					},
+					# A faint report supports a fainter conclusion. Without this a
+					# well-disposed mortal could reach a confident reading from a
+					# rumour they barely credit, which is exactly the gap between a
+					# 10-confidence whisper and a 90-confidence thing they lived
+					# through. The uncertainty candidate then wins on its own merits.
+					{"kind": "confidence_below", "value": UNCERTAIN_CONFIDENCE, "score": -30}
+				]
+			}
+		],
+		STANCE_DISTANT: [
+			{
+				"id": "elsewhere_is_struggling",
+				"meaning": "%s is going hungry.",
+				"effect": {},
+				"base_score": 50,
+				"factors": [
+					{"kind": "trait", "value": "compassionate", "score": 14},
+					# A faint report supports a fainter conclusion. Without this a
+					# well-disposed mortal could reach a confident reading from a
+					# rumour they barely credit, which is exactly the gap between a
+					# 10-confidence whisper and a 90-confidence thing they lived
+					# through. The uncertainty candidate then wins on its own merits.
+					{"kind": "confidence_below", "value": UNCERTAIN_CONFIDENCE, "score": -30}
+				]
+			}
+		]
+	},
+	"danger_unrest": {
+		STANCE_WITNESS: [
+			{
+				"id": "home_is_in_danger",
+				"meaning": "It is no longer safe where we live.",
+				"effect": {},
+				"base_score": 50,
+				"factors": [
+					{"kind": "trait", "value": "cautious", "score": 14},
+					{"kind": "home_was_in_crisis", "value": true, "score": 14},
+					{
+						"kind": "belief_at_least",
+						"value": {
+							"proposition": BeliefRules.HOME_IS_UNSAFE,
+							"confidence": BeliefRules.ESTABLISHED_CONFIDENCE
+						},
+						"score": 12
+					},
+					# A faint report supports a fainter conclusion. Without this a
+					# well-disposed mortal could reach a confident reading from a
+					# rumour they barely credit, which is exactly the gap between a
+					# 10-confidence whisper and a 90-confidence thing they lived
+					# through. The uncertainty candidate then wins on its own merits.
+					{"kind": "confidence_below", "value": UNCERTAIN_CONFIDENCE, "score": -30}
+				]
+			},
+			{
+				"id": "unrest_will_settle",
+				"meaning": "Tempers are short. It will settle.",
+				"effect": {},
+				"base_score": 44,
+				"factors": [
+					{"kind": "trait", "value": "loyal", "score": 18},
+					{
+						"kind": "belief_at_least",
+						"value": {
+							"proposition": BeliefRules.CONDITIONS_ARE_IMPROVING,
+							"confidence": BeliefRules.ESTABLISHED_CONFIDENCE
+						},
+						"score": 12
+					},
+					# A faint report supports a fainter conclusion. Without this a
+					# well-disposed mortal could reach a confident reading from a
+					# rumour they barely credit, which is exactly the gap between a
+					# 10-confidence whisper and a 90-confidence thing they lived
+					# through. The uncertainty candidate then wins on its own merits.
+					{"kind": "confidence_below", "value": UNCERTAIN_CONFIDENCE, "score": -30}
+				]
+			}
+		],
+		STANCE_DISTANT: [
+			{
+				"id": "elsewhere_is_unstable",
+				"meaning": "%s is coming apart.",
+				"effect": {},
+				"base_score": 50,
+				"factors": [
+					{"kind": "trait", "value": "cautious", "score": 10},
+					# A faint report supports a fainter conclusion. Without this a
+					# well-disposed mortal could reach a confident reading from a
+					# rumour they barely credit, which is exactly the gap between a
+					# 10-confidence whisper and a 90-confidence thing they lived
+					# through. The uncertainty candidate then wins on its own merits.
+					{"kind": "confidence_below", "value": UNCERTAIN_CONFIDENCE, "score": -30}
+				]
+			},
+			{
+				# Somebody else's disorder read as room to move. Grounded in
+				# the same public fact as the reading above, and reached only
+				# by a mortal already disposed to think that way.
+				"id": "instability_is_an_opening",
+				"meaning": "%s is weak enough that things could be rearranged.",
+				"effect": {},
+				"base_score": 36,
+				"factors": [
+					{"kind": "trait", "value": "ambitious", "score": 20},
+					{"kind": "trait", "value": "cruel", "score": 10},
+					# A faint report supports a fainter conclusion. Without this a
+					# well-disposed mortal could reach a confident reading from a
+					# rumour they barely credit, which is exactly the gap between a
+					# 10-confidence whisper and a 90-confidence thing they lived
+					# through. The uncertainty candidate then wins on its own merits.
+					{"kind": "confidence_below", "value": UNCERTAIN_CONFIDENCE, "score": -30}
+				]
+			}
+		]
+	},
+	"surplus": {
+		STANCE_WITNESS: [
+			{
+				"id": "home_is_recovering",
+				"meaning": "We have come through it.",
+				"effect": {},
+				"base_score": 52,
+				"factors": [
+					{
+						"kind": "belief_at_least",
+						"value": {
+							"proposition": BeliefRules.CONDITIONS_ARE_IMPROVING,
+							"confidence": BeliefRules.ESTABLISHED_CONFIDENCE
+						},
+						"score": 10
+					},
+					# A faint report supports a fainter conclusion. Without this a
+					# well-disposed mortal could reach a confident reading from a
+					# rumour they barely credit, which is exactly the gap between a
+					# 10-confidence whisper and a 90-confidence thing they lived
+					# through. The uncertainty candidate then wins on its own merits.
+					{"kind": "confidence_below", "value": UNCERTAIN_CONFIDENCE, "score": -30}
+				]
+			},
+			{
+				"id": "surplus_is_ordinary_luck",
+				"meaning": "A good year. They happen.",
+				"effect": {},
+				"base_score": 46,
+				"factors": [
+					{"kind": "trait", "value": "cautious", "score": 14},
+					# A faint report supports a fainter conclusion. Without this a
+					# well-disposed mortal could reach a confident reading from a
+					# rumour they barely credit, which is exactly the gap between a
+					# 10-confidence whisper and a 90-confidence thing they lived
+					# through. The uncertainty candidate then wins on its own merits.
+					{"kind": "confidence_below", "value": UNCERTAIN_CONFIDENCE, "score": -30}
+				]
+			}
+		],
+		STANCE_DISTANT: [
+			{
+				"id": "elsewhere_is_recovering",
+				"meaning": "%s has had a good year.",
+				"effect": {},
+				"base_score": 50,
+				"factors": []
+			}
+		]
 	}
 }
 
@@ -409,8 +632,31 @@ func is_social_topic(topic: String) -> bool:
 	return topic in SOCIAL_TOPICS
 
 
+# An occurrence with no second mortal in it: weather, a shortage, a settlement
+# coming apart. Two sources, deliberately.
+#
+# A registered divine occurrence is a world topic whether or not anybody has
+# designed what it could mean — that is how `harvest_yield` stays observable and
+# uninterpreted. Anything with a candidate family here is one too, which is what
+# lets the yearly event topics (`food_shortage`, `danger_unrest`, `surplus`)
+# become interpretable by adding candidates and nothing else. Coverage for
+# another existing topic is one entry in WORLD_CANDIDATES, not an edit to the
+# tick.
 func is_world_topic(topic: String) -> bool:
-	return topic in divine_action_rules.occurrence_topics()
+	return WORLD_CANDIDATES.has(topic) or topic in divine_action_rules.occurrence_topics()
+
+
+# Every topic anybody has designed meanings for. Used by the coverage
+# diagnostic to tell "the system chose uncertainty" apart from "nobody has
+# written this yet".
+func covered_topics() -> Array[String]:
+	var topics: Array[String] = []
+	for key_value in CANDIDATES.keys():
+		topics.append(str(key_value))
+	for key_value in WORLD_CANDIDATES.keys():
+		topics.append(str(key_value))
+	topics.sort()
+	return topics
 
 
 # Whether anybody has yet decided what this KIND of occurrence could mean. A
@@ -424,6 +670,40 @@ func has_candidates(topic: String) -> bool:
 
 func is_interpretable(topic: String) -> bool:
 	return (is_social_topic(topic) or is_world_topic(topic)) and has_candidates(topic)
+
+
+# What this run has actually put in front of mortals, and how much of it anybody
+# has designed a meaning for.
+#
+# The distinction worth keeping visible is between "the system considered this
+# and chose uncertainty" and "nobody has written candidates for this yet". The
+# second is a content gap, and without a diagnostic it looks exactly like the
+# first from the outside.
+#
+# Deliberately a plain report over current state, not telemetry: no counters
+# accumulate anywhere and nothing is recorded between calls.
+func coverage_report(state: WorldState) -> Dictionary:
+	var encountered: Array[String] = []
+	for entity_value in state.notable_entities.values():
+		var entity: Dictionary = entity_value
+		for record_value in state.get_all_knowledge(str(entity["id"])).values():
+			var topic := str((record_value as Dictionary).get("topic", ""))
+			if not topic.is_empty() and topic not in encountered:
+				encountered.append(topic)
+	encountered.sort()
+	var covered: Array[String] = []
+	var uncovered: Array[String] = []
+	for topic: String in encountered:
+		if has_candidates(topic):
+			covered.append(topic)
+		else:
+			uncovered.append(topic)
+	return {
+		"topics_encountered": encountered,
+		"topics_covered": covered,
+		"topics_without_candidates": uncovered,
+		"families_designed": covered_topics()
+	}
 
 
 func pending_for(state: WorldState, observer_id: String) -> Array[Dictionary]:
@@ -445,7 +725,9 @@ func pending_for(state: WorldState, observer_id: String) -> Array[Dictionary]:
 			continue
 		if bool(record.get("invalidated", false)):
 			continue
-		if state.has_interpretation(observer_id, knowledge_id):
+		if state.has_interpretation(
+			observer_id, knowledge_id, int(record.get("episode", 0))
+		):
 			continue
 		pending.append(record)
 	return pending
@@ -675,7 +957,9 @@ func _build_record(
 			)
 		}
 	return {
-		"id": state.interpretation_id(observer_id, knowledge_id),
+		"id": state.interpretation_id(
+			observer_id, knowledge_id, int(knowledge.get("episode", 0))
+		),
 		"year": state.year,
 		"observer_id": observer_id,
 		# The belief this was drawn from. The fact itself is untouched and stays

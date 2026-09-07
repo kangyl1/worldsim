@@ -42,12 +42,22 @@ const DIVINE_INTERVENTION_EXISTS := "divine_intervention_exists"
 const DIVINE_HELP_FOLLOWS_NEED := "divine_help_follows_need"
 const IS_SUPPORTIVE := "is_supportive"
 const IS_UNRELIABLE := "is_unreliable"
+# Added with the world-condition readings. Both earn their place by being
+# supported by SEVERAL interpretation types across two topics, and by changing
+# what their holder later wants — a mortal who has concluded their home is
+# unsafe wants to protect and preserve, which is a want the gating law already
+# admits. A proposition only one reading feeds and nothing acts on would be
+# ontology for its own sake.
+const HOME_IS_UNSAFE := "home_is_unsafe"
+const CONDITIONS_ARE_IMPROVING := "conditions_are_improving"
 
 const PROPOSITIONS := [
 	DIVINE_INTERVENTION_EXISTS,
 	DIVINE_HELP_FOLLOWS_NEED,
 	IS_SUPPORTIVE,
-	IS_UNRELIABLE
+	IS_UNRELIABLE,
+	HOME_IS_UNSAFE,
+	CONDITIONS_ARE_IMPROVING
 ]
 
 # Propositions about a particular person. Their belief record carries a
@@ -87,6 +97,21 @@ const SUPPORTS := {
 	],
 	"opposition_stood_against_me": [
 		{"proposition": IS_UNRELIABLE, "weight": 10}
+	],
+	# The world conditions. Both home readings feed the same proposition from
+	# two different topics, which is what makes it a belief about the PLACE
+	# rather than a memory of one bad year.
+	"home_is_in_danger": [
+		{"proposition": HOME_IS_UNSAFE, "weight": 15}
+	],
+	"home_is_recovering": [
+		{"proposition": CONDITIONS_ARE_IMPROVING, "weight": 14}
+	],
+	"shortage_will_pass": [
+		{"proposition": CONDITIONS_ARE_IMPROVING, "weight": 10}
+	],
+	"unrest_will_settle": [
+		{"proposition": CONDITIONS_ARE_IMPROVING, "weight": 10}
 	]
 }
 
@@ -103,6 +128,15 @@ const CONTRADICTS = {
 	],
 	"support_stood_with_me": [
 		{"proposition": IS_UNRELIABLE, "weight": 8}
+	],
+	# Coming through it is evidence against the place being unsafe, and a year
+	# of danger is evidence against things improving. Each is a real conclusion
+	# the mortal reached, never an absence of one.
+	"home_is_recovering": [
+		{"proposition": HOME_IS_UNSAFE, "weight": 12}
+	],
+	"home_is_in_danger": [
+		{"proposition": CONDITIONS_ARE_IMPROVING, "weight": 12}
 	]
 }
 

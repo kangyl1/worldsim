@@ -1155,8 +1155,20 @@ func _developer_interpretation_lines() -> Array[String]:
 	lines.append("")
 	lines.append("[color=#68757c]The occurrence itself is unchanged; this is only what they made of it.[/color]")
 	lines.append(_dev_field("interpretations recorded", records.size()))
+	# Which topics mortals are currently holding that nobody has written a
+	# meaning for. A fact with no candidate family is not the system choosing
+	# uncertainty — it is a gap in the design, and the two look identical from
+	# the outside unless one of them says so.
+	var coverage: Dictionary = simulation.interpretation_rules.coverage_report(state)
+	lines.append("")
+	lines.append(_dev_heading("COVERAGE"))
+	lines.append(_dev_field("topics encountered", coverage["topics_encountered"].size()))
+	lines.append(_dev_field("with a candidate family", coverage["topics_covered"].size()))
+	for topic: String in coverage["topics_without_candidates"]:
+		lines.append("[color=#8d989d]  %-22s NO INTERPRETATION DESIGNED[/color]" % topic)
+	if coverage["topics_without_candidates"].is_empty():
+		lines.append("[color=#68757c]  Every topic in play has meanings designed for it.[/color]")
 	return lines
-
 
 func _developer_perception_lines() -> Array[String]:
 	# Who noticed, and who did not. Kept apart from KNOWLEDGE on purpose: what

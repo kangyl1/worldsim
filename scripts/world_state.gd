@@ -910,15 +910,24 @@ func record_interpretation(record: Dictionary) -> Dictionary:
 	return stored.duplicate(true)
 
 
-func interpretation_id(observer_id: String, knowledge_id: String) -> String:
-	return "interpretation_%s_%s" % [observer_id, knowledge_id]
+# `episode` distinguishes one spell of a recurring condition from the next.
+# Zero for everything whose id is already unique per occurrence, so social
+# interpretation ids are unchanged.
+func interpretation_id(observer_id: String, knowledge_id: String, episode: int = 0) -> String:
+	if episode <= 0:
+		return "interpretation_%s_%s" % [observer_id, knowledge_id]
+	return "interpretation_%s_%s_%d" % [observer_id, knowledge_id, episode]
 
 
-func has_interpretation(observer_id: String, knowledge_id: String) -> bool:
+func has_interpretation(observer_id: String, knowledge_id: String, episode: int = 0) -> bool:
 	# One mortal reaches one conclusion about one occurrence, once. Without this
 	# a fact still believed next year would be re-interpreted every year, and a
 	# single refusal would grind a relationship down forever.
-	var wanted := interpretation_id(observer_id, knowledge_id)
+	#
+	# "Once" means once per SPELL. A famine that lifts and returns years later
+	# is a second thing to have an opinion about; a famine that simply continues
+	# is not.
+	var wanted := interpretation_id(observer_id, knowledge_id, episode)
 	for record: Dictionary in interpretation_archive:
 		if str(record["id"]) == wanted:
 			return true
@@ -1061,6 +1070,21 @@ func _normalise_knowledge_record(
 		"year_learned",
 		existing.get("year_learned", year)
 	))
+	# Which SPELL of an ongoing condition this is.
+	#
+	# A world condition carries a stable id per settlement ("westfield_food_shortage")
+	# and is refreshed every year it holds, so without this a mortal would
+	# conclude something about a recurring famine exactly once in their life.
+	# A gap in the refreshes means the condition lifted and came back, which is
+	# a new situation to have an opinion about; an unbroken run of years is one
+	# situation, and concluding about it once is the point of the rule.
+	#
+	# Social occurrences already carry the year in their id, so every one of
+	# them is its own episode and nothing here changes them.
+	var previous_update := int(existing.get("last_updated_year", year))
+	var episode := int(existing.get("episode", 0))
+	if not existing.is_empty() and year > previous_update + 1:
+		episode += 1
 	return {
 		"id": str(knowledge_data["id"]),
 		"owner_id": entity_id,
@@ -1089,6 +1113,7 @@ func _normalise_knowledge_record(
 		)),
 		"year_learned": learned_year,
 		"last_updated_year": int(knowledge_data.get("last_updated_year", year)),
+		"episode": episode,
 		"fresh_for_years": maxi(int(knowledge_data.get(
 			"fresh_for_years",
 			existing.get("fresh_for_years", DEFAULT_KNOWLEDGE_FRESH_YEARS)

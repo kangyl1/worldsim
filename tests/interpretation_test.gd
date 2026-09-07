@@ -110,6 +110,19 @@ func _first_for(records: Array, observer_id: String) -> Dictionary:
 	return matches[0] if not matches.is_empty() else {}
 
 
+# The reading OF A PARTICULAR TOPIC, rather than whichever came first.
+#
+# A mortal now interprets several kinds of thing in one tick — a refusal they
+# were party to, and the condition of the settlement they live in. Selecting by
+# position used to be unambiguous and no longer is, so these tests say which
+# occurrence they mean.
+func _first_about(records: Array, observer_id: String, topic: String) -> Dictionary:
+	for record: Dictionary in _interpretations_by(records, observer_id):
+		if str(record["topic"]) == topic:
+			return record
+	return {}
+
+
 # --- what the layer does -----------------------------------------------------
 
 func _test_a_social_occurrence_becomes_an_interpretation() -> void:
@@ -140,9 +153,10 @@ func _test_the_same_occurrence_reads_differently_to_each_participant() -> void:
 	var simulation := _sim()
 	_deliver(simulation, _social_fact("request_refused", "mara", "aster_king", "westfield"))
 	var reached: Array = simulation.tick_interpretations()
-	var mara := _first_for(reached, "mara")
-	var king := _first_for(reached, "aster_king")
-	assert(not mara.is_empty() and not king.is_empty())
+	var mara := _first_about(reached, "mara", "request_refused")
+	var king := _first_about(reached, "aster_king", "request_refused")
+	assert(not mara.is_empty() and not king.is_empty(),
+		"one of the two parties did not interpret the refusal at all")
 	assert(str(mara["role"]) == "actor", "Mara asked, so she is the actor")
 	assert(str(king["role"]) == "target", "the King answered, so he is the target")
 	assert(str(mara["interpretation_type"]) != str(king["interpretation_type"]),
@@ -423,8 +437,15 @@ func _test_nothing_is_interpreted_that_was_never_perceived() -> void:
 	simulation.tick_perception()
 	assert(not simulation.state.has_knowledge("mara", str(secret["id"])),
 		"a hidden occurrence was learned anyway")
+	# Asserted against THIS fact rather than against the tick being empty: a
+	# mortal may legitimately interpret other things they do know about in the
+	# same tick, and the claim here is only that the hidden one reached nobody.
 	var reached: Array = simulation.tick_interpretations()
-	assert(reached.is_empty(), "something nobody perceived was still interpreted")
+	for record: Dictionary in reached:
+		assert(str(record["source_knowledge_id"]) != str(secret["id"]),
+			"something nobody perceived was still interpreted")
+		assert(str(record["topic"]) != "request_refused",
+			"a refusal nobody knew about produced a reading")
 	print("  UNSEEN: an occurrence nobody perceived meant nothing to anyone.")
 	completed += 1
 

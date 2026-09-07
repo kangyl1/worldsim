@@ -185,6 +185,12 @@ func apply(state: WorldState, record: Dictionary) -> Dictionary:
 	if not fact.is_empty():
 		state.pending_perception_facts.append(fact)
 		record["events_created"].append(str(fact["id"]))
+		# Keep what this occurrence STATED, so the record can describe itself
+		# after the fact has been handed to perception. The claim is objective by
+		# construction — this layer is forbidden from writing a judgement — and
+		# retaining it is not a second route to the fact: `pending_fact` is still
+		# erased, so nobody can learn it from here.
+		record["claim"] = str(fact["claim"])
 	record.erase("pending_fact")
 	return record
 
@@ -215,6 +221,7 @@ func _new_record(
 		"state_changes": [] as Array[Dictionary],
 		"events_created": [] as Array[String],
 		"reasons": [] as Array[String],
+		"claim": "",
 		"pending_fact": {}
 	}
 

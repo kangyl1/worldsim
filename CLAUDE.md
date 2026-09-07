@@ -13,13 +13,13 @@ The user retains authority over game design, project direction, and GitHub publi
 3. If there is **ANY** design ambiguity, design problem, or architecture decision that could affect game behavior, scope, rules, simulation outcomes, or project direction, **STOP and ask the user before deciding**. Do not make autonomous game-design decisions.
 4. Small, purely mechanical implementation details may be handled without asking only when they cannot alter design intent. If uncertain, ask.
 5. GitHub repository `kangyl1/worldsim` is the source of truth when this document or any handoff summary conflicts with the current committed code. Inspect the repository and history when unsure.
-6. Minimal Settlement State v1, Selective Perception v1, Broad Intent v1, Action Selection v1, Action Execution v1, Consequence Engine v1, **Interpretation v1** and **Divine Actions in the shared causal pipeline v1** are built. Mortals notice different things, want things, try things, attempts have results, results objectively change the world, and mortals now decide what those results MEANT — which changes what they want later. **Exactly ONE divine power, Send Rain, has been migrated onto that same road**, and the road itself is now generic: `scripts/divine_action_rules.gd` is the single surface that registers how any power enters the world. Bless Harvest and Divine Voice still get one collective meaning from the populace-level `DivineReceptionSystem`. Migrating any further power, designing what its occurrence could MEAN, and History generation, must not be built until the user explicitly asks.
+6. Minimal Settlement State v1, Selective Perception v1, Broad Intent v1, Action Selection v1, Action Execution v1, Consequence Engine v1, **Interpretation v1** and **Divine Actions in the shared causal pipeline v1** are built. Mortals notice different things, want things, try things, attempts have results, results objectively change the world, and mortals now decide what those results MEANT — which changes what they want later. **Exactly ONE divine power, Send Rain, has been migrated onto that same road**, and the road itself is now generic: `scripts/divine_action_rules.gd` is the single surface that registers how any power enters the world. Bless Harvest and Divine Voice still get one collective meaning from the populace-level `DivineReceptionSystem`. **Historical Selection + Chronicle v1** is also built: the simulation now decides which occurrences mattered enough to become history, and links them causally. Migrating any further power, designing what its occurrence could MEAN, and the later history systems (myth, decay, competing accounts) must not be built until the user explicitly asks.
 7. The player-facing interface shows a mortal's perspective; Developer Mode shows the machine. Never merge the two. See "Interface rules".
 
 ## Project reference
 
 - Repository: `kangyl1/worldsim`
-- Current important commit: `a8037fc44678056d6b7f8c2e4b670fa9297990cc` — `Add Generic Divine Action Pipeline Foundation`, which makes the second migration cheap
+- Current important commit: `PENDING_CHRONICLE_COMMIT` — `Add Historical Selection and Chronicle v1`, the layer that decides what mattered
 
 The mortal causal chain, one commit per layer, oldest first:
 
@@ -35,6 +35,7 @@ The mortal causal chain, one commit per layer, oldest first:
 - `00205742da26112ba9b36f9e534465f89b111246` — `Add Interpretation v1` (what one mortal decided it meant, and how that changes what they want next)
 - `0f6cd1aa86b33ec18513e4c86731e201123dba45` — `Add Divine Actions in the shared causal pipeline v1` (the god acts, and mortals — not the act — decide what it was)
 - `a8037fc44678056d6b7f8c2e4b670fa9297990cc` — `Add Generic Divine Action Pipeline Foundation` (one road, registered in one place, that any power can walk)
+- `PENDING_CHRONICLE_COMMIT` — `Add Historical Selection and Chronicle v1` (of everything that happened, what shaped the world — and what caused what)
 
 - Local project path: `/Users/jamienfam/Documents/ChatGPT/worldsim`
 - Tested Godot version: `4.7.1`
@@ -63,12 +64,13 @@ The current foundation includes:
 - Interpretation v1: what one mortal decided a social occurrence meant, per observer, feeding a small directed relationship change and therefore later intents
 - Divine Actions in the shared causal pipeline v1: Send Rain records what the god DID, changes the world objectively, and lets each mortal reach their own conclusion — including that it was only weather
 - Generic Divine Action Pipeline Foundation: one registration surface decides how any divine power enters the world, so migrating the next one is a flag and an effect rather than new plumbing
+- Historical Selection + Chronicle v1: deterministic importance scoring over records the world already wrote, keeping a small fraction as objective history with causal links between entries
 - knowledge generation from existing events, outcome-aware and refreshing stable ids
 - a world map interface with clickable settlements and crisis markers
 - world -> settlement -> person navigation in one reusable panel
 - in-game Developer Mode (DEV button, F1 secondary) exposing raw simulation values, read-only
 - a centralised presentation layer turning numbers into qualitative labels
-- deterministic tests across sixteen suites
+- deterministic tests across seventeen suites
 - a 72-turn regression suite
 
 Current core source files:
@@ -86,6 +88,7 @@ Current core source files:
 | `scripts/execution_rules.gd` | Mortal Action Execution v1: attempt -> immediate result, no consequences |
 | `scripts/perception_rules.gd` | Selective Perception v1: who could notice an event, and how clearly |
 | `scripts/consequence_rules.gd` | Consequence Engine v1: what objectively happened, never what it meant |
+| `scripts/chronicle_rules.gd` | Chronicle v1: which occurrences mattered enough to become history, and why |
 | `scripts/world_map.gd` | map presentation and click hit-testing; reads nothing from the simulation |
 | `scripts/presentation_rules.gd` | number -> label bands for the player-facing interface |
 | `Main.gd` / `Main.tscn` | interface and player interaction only |
@@ -110,6 +113,7 @@ Test suites, all deterministic:
 | `tests/interpretation_test.gd` | Interpretation v1: divergence, bounded effects, and everything the layer refuses to do |
 | `tests/divine_action_test.gd` | Send Rain end to end, and the twelve things a divine act must no longer do |
 | `tests/divine_pipeline_test.gd` | the road is generic: one routing surface, and an unforeseen power can walk it |
+| `tests/chronicle_test.gd` | historical selection, causal links, and the Autonomous Story Test (GDD 42) |
 
 Do not assume this summary is exhaustive or newer than the code. Inspect the repository first, and use GitHub as the source of truth if anything conflicts.
 
@@ -121,8 +125,13 @@ Everything in that chain is built, and so is the layer after it: mortals now
 decide what an occurrence MEANT, and that decision changes what they want in
 later years. Roadmap item 12 is PARTLY done — Send Rain travels the mortal road,
 three other powers do not — but the road is now generic, so the remaining
-migrations are design work rather than plumbing. History (roadmap item 13)
-remains unbuilt.
+migrations are design work rather than plumbing. Roadmap item 13 now has its
+objective half: history is SELECTED and CAUSALLY LINKED. What remains unbuilt is
+everything after that — myth, competing accounts, cultural memory and gradual
+forgetting.
+
+**The Autonomous Story Test (GDD section 42) now passes**, on all ten of its
+conditions, asserted by `tests/chronicle_test.gd`.
 
 `GDD.md` Part II (sections 29-43) revises this. Mortals should pass through a
 wider chain: world state -> pressures -> perception -> belief -> interpretation
@@ -184,7 +193,7 @@ would be derived one-to-one from the intent type and would duplicate what
 `knowledge_used` already records. Build it only if a later system needs one
 goal to produce several different intents.
 
-History generation, and the migration of any FURTHER divine power onto the shared pipeline, **MUST NOT be implemented until the user explicitly asks**.
+Myth, cultural memory, competing historical accounts, historical forgetting, and the migration of any FURTHER divine power onto the shared pipeline, **MUST NOT be implemented until the user explicitly asks**.
 
 Broad Intent Model v1 constraints, settled with the user and to be preserved:
 
@@ -285,6 +294,7 @@ Consequence Engine v1 constraints, settled with the user and to be preserved:
 - agreeing is not delivering: an accepted request changes no settlement state, and creates no new intent in the same tick
 - consequences are perceived the same year and answered the next; the tick order already guarantees this, and no same-year Intent -> Action -> Consequence recursion may be introduced
 - state changes record `subject_id`, `field`, `before` and `after`, never a bare delta
+- `apply()` keeps the occurrence's own `claim` on the record after handing the fact to perception, so a consequence can describe itself later. `pending_fact` is still erased, so this is not a second route to the fact — nobody can LEARN it from the record
 - the divine layer still moves faith, followers and reputation directly inside `resolve_action` for every UNMIGRATED power. Send Rain no longer does; see the divine pipeline constraints below
 - `MAX_KNOWLEDGE_PER_ENTITY` bounds what a mortal carries, since social occurrences accumulate one belief per interaction. Forgetting drops retracted claims first, then stale low-confidence ones, and never anything learned this year
 - the bounded ripple law holds: no automatic cascade from a refusal to hostility to rebellion. Each step needs a real system and a real condition
@@ -422,6 +432,80 @@ to be preserved:
   `world_sim.gd`. Interpretation candidates are optional and come later. If a
   migration ever needs edits across five unrelated files again, the abstraction
   has come undone
+
+Historical Selection + Chronicle v1 constraints, settled with the user and to be
+preserved:
+
+- **history answers a different question from every other layer.** The rest of
+  the simulation answers what happened; the chronicle answers which of it
+  SHAPED THE WORLD. Its whole value is in what it leaves out, and a chronicle
+  that recorded everything would be the event log with extra steps
+- the test is GDD section 36, and it is about the future rather than about
+  drama: a memory earns its place by being capable of affecting later behaviour,
+  belief, relationships or history. Reference run: **27 entries from 40 years**,
+  against 254 records the world produced
+- **history is a RECORD layer and steers nothing.** Nothing outside
+  `chronicle_rules.gd` may read `state.chronicle`, and a test greps every other
+  rules file for it. Two identical runs produce identical intents whether or not
+  a chronicle exists
+- it runs LAST in the yearly tick, after interpretation, so everything it reads
+  has settled and nothing it writes can reach a decision already made
+- **it consumes existing records and invents no occurrence.** Four sources:
+  settlement conditions, divine actions, execution consequences, interpretations.
+  Conditions are read from the settlement bands directly, because the yearly
+  cycle and world drift move them without ever writing a consequence
+- **the source record is never touched.** History points back with
+  `source_record_type` + `source_record_id` and never edits or copies what it
+  points at; a test compares source records before and after chronicling
+- scoring is deterministic, threshold **50**, and every point names its own
+  source in `factors`. A test asserts each record's factors sum exactly to its
+  importance. Developer Mode must be able to answer BOTH "why is this history"
+  and "why is that not" — rejections are kept for the current year only, because
+  keeping them forever rebuilds the log this layer exists to avoid
+- **history states occurrences, never verdicts.** "The King refused Mara's
+  request" is history; "the cruel King betrayed Westfield" is what somebody
+  decided, and lives in `interpretation_archive` where it can be disagreed with.
+  A test greps summaries for judgement words and asserts no interpretation's
+  `meaning` text was ever copied into a summary
+- **a divine act is not history for being divine.** It needs objective impact:
+  `divine_impact` requires the consequence to have actually changed state, and an
+  act that changed nothing scores ZERO and is refused by name. Reference run: 7
+  of 40 acts recorded
+- **an interpretation enters only through its EFFECT**, and the record says what
+  the reading DID rather than that it was right. Relationship movement qualifies
+  only by crossing an existing `PresentationRules` band — no new threshold was
+  invented, and bare relationship ticks are never a history source
+- causal links are **id pairs, both directions, one strongest parent**. Not every
+  record has a parent: 15 of 27 in the reference run are roots, and forcing a
+  parent onto them would invent causality
+- **`during_open_crisis` is both a scoring factor and the causal link.** What
+  makes an occurrence important and what makes it part of a story are the same
+  fact: a ruler refusing aid during a famine is history, and the same refusal in
+  a fed and quiet year is two people disagreeing
+- **the chronicle is uncapped, immutable and permanent in v1**, unlike every
+  other archive. The others are working memory that forgets cheaply; this one
+  would leave dangling causal links if it dropped its oldest entries. The single
+  permitted mutation is `led_to` growing as later records name an earlier one.
+  GDD 96 wants fading to be gradual and legible one day — a record carrying its
+  own year, source and links can be faded, contested or half-remembered later
+  without any of this being rewritten
+- **Chronicle v1 is Developer Mode only.** The existing prose History Log panel
+  is untouched. Whether the chronicle deserves the player-facing panel is a
+  presentation decision to make after seeing real output, not now
+
+**Known issue, not yet addressed.** The divine belief loop has no bootstrap.
+Across 40 autonomous years `interpretation_factors` in intent scoring is ZERO:
+every rain reading is `rain_natural_weather`, because `rain_divine_help` needs a
+PRIOR divine reading and nothing seeds the first one. The design is right — a
+mortal with no divine experience calls rain weather — but the loop cannot start
+on its own. The live feedback channel is the social one instead: 41 applied
+interpretation effects and 136 relationship factors cited by intents in the same
+run. Seeding the first divine reading is a design decision, not a fix.
+
+**Known issue, not yet addressed.** Chronicle summaries carry raw topic ids
+(`support_given`) and inherit the "request concerning The King" wording problem
+from action selection. Acceptable while the chronicle is Developer Mode only;
+both would need addressing before it faces the player.
 
 ## Design rules
 

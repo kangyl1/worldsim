@@ -8,7 +8,7 @@ const ACTION_ROW_WIDTH := 34
 const PERSON_META_PREFIX := "person:"
 const DEV_TAB_META := "dev_tab:"
 const DEV_PERSON_META := "dev_person:"
-const DEV_SECTIONS := ["world", "locations", "people", "perceptions", "knowledge", "intents", "actions", "executions", "divine", "consequences", "interpretations", "belief", "history"]
+const DEV_SECTIONS := ["world", "locations", "people", "perceptions", "knowledge", "intents", "actions", "executions", "divine", "consequences", "interpretations", "chronicle", "belief", "history"]
 const DEV_LIST_LIMIT := 24
 const BACK_META := "back"
 # Player-readable names for the broad intents the engine records. These name a
@@ -678,6 +678,8 @@ func _render_developer() -> void:
 			developer_text.text = "\n".join(_developer_execution_lines())
 		"divine":
 			developer_text.text = "\n".join(_developer_divine_lines())
+		"chronicle":
+			developer_text.text = "\n".join(_developer_chronicle_lines())
 		"consequences":
 			developer_text.text = "\n".join(_developer_consequence_lines())
 		"interpretations":
@@ -851,6 +853,62 @@ func _developer_consequence_lines() -> Array[String]:
 	lines.append("")
 	lines.append("[color=#68757c]What any of it meant is not decided here.[/color]")
 	lines.append(_dev_field("consequences recorded", records.size()))
+	return lines
+
+
+func _developer_chronicle_lines() -> Array[String]:
+	# What was important enough to become history, why, and what it came out of.
+	# Its own section: the chronicle is a SELECTION over the other sections, and
+	# showing it beside them is the only way to see what was left out.
+	var state := simulation.state
+	var lines: Array[String] = [
+		_dev_heading("CHRONICLE  ·  %d entries, oldest first" % state.chronicle.size())
+	]
+	if state.chronicle.is_empty():
+		lines.append("[color=#73627f]Nothing has yet shaped the world enough to record.[/color]")
+	for record: Dictionary in _tail(state.chronicle, DEV_LIST_LIMIT):
+		var entry: Dictionary = record
+		lines.append("")
+		lines.append("[color=#d8c98a]  YEAR %d   [%d]   %s[/color]" % [
+			int(entry["year"]), int(entry["importance"]), str(entry["id"])
+		])
+		lines.append("[color=#cfd6d8]    %s[/color]" % str(entry["summary"]))
+		# Why it is history, point by point. Every point names its own source.
+		for factor_value in entry["factors"]:
+			var factor: Dictionary = factor_value
+			lines.append("[color=#8d989d]      +%-3d %-26s %s[/color]" % [
+				int(factor["score"]), str(factor["kind"]), str(factor["detail"])
+			])
+		lines.append(_dev_field("      event_type", str(entry["event_type"])))
+		lines.append(_dev_field("      location", _or_none(str(entry["location_id"]))))
+		# The record this was drawn from, never a copy of it.
+		lines.append(_dev_field("      source", "%s  %s" % [
+			str(entry["source_record_type"]), str(entry["source_record_id"])
+		]))
+		if not entry["caused_by"].is_empty():
+			lines.append("[color=#76c8d5]      caused_by  %s[/color]"
+				% ", ".join(entry["caused_by"]))
+		if not entry["led_to"].is_empty():
+			lines.append("[color=#76c8d5]      led_to     %s[/color]"
+				% ", ".join(entry["led_to"]))
+
+	# And the other half of the question: what was considered and left out. This
+	# year only — keeping it would rebuild the exhaustive log history avoids.
+	lines.append("")
+	lines.append(_dev_heading("CONSIDERED AND NOT RECORDED  ·  THIS YEAR ONLY"))
+	if state.last_chronicle_rejections.is_empty():
+		lines.append("[color=#73627f]Nothing was put forward this year.[/color]")
+	for rejection: Dictionary in _tail(state.last_chronicle_rejections, DEV_LIST_LIMIT):
+		var candidate: Dictionary = rejection
+		lines.append("[color=#8d989d]  [%3d] %s[/color]" % [
+			int(candidate["importance"]), str(candidate["summary"])
+		])
+		lines.append("[color=#68757c]        %s  ·  %s[/color]" % [
+			str(candidate["reason"]), str(candidate["source_record_type"])
+		])
+	lines.append("")
+	lines.append(_dev_field("threshold", ChronicleRules.IMPORTANCE_THRESHOLD))
+	lines.append("[color=#68757c]History records what happened, never what it meant.[/color]")
 	return lines
 
 

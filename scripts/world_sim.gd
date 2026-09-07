@@ -153,6 +153,7 @@ var action_rules := ActionRules.new()
 var execution_rules := ExecutionRules.new()
 var perception_rules := PerceptionRules.new()
 var consequence_rules := ConsequenceRules.new()
+var chronicle_rules := ChronicleRules.new()
 var knowledge_rules := KnowledgeRules.new()
 var debug_logging_enabled: bool = true
 
@@ -331,6 +332,11 @@ func advance_year() -> Dictionary:
 
 	state.year += 1
 	state.divine_power = mini(state.divine_power + 2, state.max_divine_power)
+	# The world as it stood before this year moved it. History reads settlement
+	# conditions directly, because the yearly cycle and world drift change them
+	# without ever writing a consequence record, and a famine nobody recorded is
+	# still a famine.
+	var conditions_before := _settlement_conditions()
 	state.last_relationship_changes = tick_relationships()
 	state.last_knowledge_shares = tick_knowledge()
 	state.last_intents = tick_intents()
@@ -356,6 +362,14 @@ func advance_year() -> Dictionary:
 	# already wanted this one. That is the existing one-step-per-year causal
 	# rule, and it is why nothing here creates an action.
 	state.last_interpretations = tick_interpretations()
+	# History runs LAST, after everything it reads has settled.
+	#
+	# It is a record layer, not an actor. Nothing it writes is read by anything
+	# this year or any other year's reasoning: no intent consults the chronicle,
+	# no action is gated on it, no relationship moves because of it. Placing it
+	# last is what makes that easy to keep true — by the time it runs, every
+	# decision the year contained has already been made.
+	state.last_chronicle_entries = tick_chronicle(conditions_before)
 	state_changed.emit()
 	return {"ok": true, "message": state.last_result}
 
@@ -632,6 +646,65 @@ func tick_consequences() -> Array[Dictionary]:
 	for record: Dictionary in planned:
 		applied.append(state.record_consequence(consequence_rules.apply(state, record)))
 	return applied
+
+
+# Every settlement's conditions right now. A plain snapshot; nothing is derived
+# and nothing is judged.
+func _settlement_conditions() -> Dictionary:
+	var snapshot := {}
+	for location_id_value in state.locations.keys():
+		var location_id := str(location_id_value)
+		var bands := {}
+		for band: String in WorldState.SETTLEMENT_BANDS:
+			bands[band] = state.get_settlement_band(location_id, band)
+		snapshot[location_id] = bands
+	return snapshot
+
+
+# Which of this year's occurrences were important enough to become history.
+#
+# Consumes records the simulation already wrote — conditions, divine acts,
+# consequences, interpretations — and writes only to the chronicle. It creates
+# no event, changes no state, and moves nothing anybody will react to.
+func tick_chronicle(conditions_before: Dictionary) -> Array[Dictionary]:
+	var selection := chronicle_rules.select(
+		state,
+		conditions_before,
+		_divine_actions_this_year(),
+		state.last_consequences,
+		state.last_interpretations
+	)
+	state.last_chronicle_rejections = selection["rejected"]
+	var written: Array[Dictionary] = []
+	for candidate_value in selection["kept"]:
+		var candidate: Dictionary = candidate_value
+		# Written first, so a parent recorded earlier this year is already
+		# findable when the next record looks for its cause.
+		var parent_id := chronicle_rules.parent_for(state, candidate)
+		var stored := state.record_chronicle(candidate)
+		if not parent_id.is_empty():
+			state.link_chronicle(parent_id, str(stored["id"]))
+		written.append(stored)
+	_log_chronicle(written, selection["rejected"])
+	return written
+
+
+# The acts the god has taken that history has not yet considered.
+#
+# A divine act is resolved BEFORE the turn advances, so it carries the year the
+# player took it and the tick that shows its results carries the next one. Asking
+# for "acts stamped with this year" therefore finds nothing, which is how the
+# first version of this silently chronicled no divine action at all. Asking what
+# has not been considered yet has no such edge.
+func _divine_actions_this_year() -> Array[Dictionary]:
+	var found: Array[Dictionary] = []
+	for record: Dictionary in state.divine_action_archive:
+		if state.year - int(record["year"]) > 1:
+			continue
+		if state.has_chronicle(state.chronicle_id(int(record["year"]), str(record["id"]))):
+			continue
+		found.append(record)
+	return found
 
 
 func tick_interpretations() -> Array[Dictionary]:
@@ -1168,4 +1241,22 @@ func _log_knowledge_share(result: Dictionary) -> void:
 			result["received_confidence"],
 			result["distorted"],
 			", ".join(result["trait_effects"])
+		])
+
+
+func _log_chronicle(written: Array[Dictionary], rejected: Array) -> void:
+	if not debug_logging_enabled:
+		return
+	if written.is_empty() and rejected.is_empty():
+		return
+	print("[CHRONICLE %d] %d recorded, %d considered and left out"
+		% [state.year, written.size(), rejected.size()])
+	for record: Dictionary in written:
+		var kinds: Array[String] = []
+		for factor_value in record["factors"]:
+			kinds.append(str((factor_value as Dictionary)["kind"]))
+		print("  %s  [%d]  %s  (%s)%s" % [
+			str(record["id"]), int(record["importance"]), str(record["summary"]),
+			", ".join(kinds),
+			"  caused_by %s" % str(record["caused_by"]) if not record["caused_by"].is_empty() else ""
 		])

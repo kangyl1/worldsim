@@ -182,6 +182,28 @@ var consequence_archive: Array[Dictionary] = []
 # Facts waiting for the year's perception pass. Consequences put things here;
 # nothing reads them until perception decides who noticed.
 var pending_perception_facts: Array[Dictionary] = []
+# Chronicle v1 — what was important enough to become history.
+#
+# Deliberately NOT capped and NOT pruned, unlike every other archive here. The
+# other stores are working memory for layers that only ever look at the last few
+# years, and they forget cheaply. This one is the record of how the world became
+# what it is, and a chronicle that quietly drops its oldest entries is worse
+# than no chronicle: the causal links would dangle and nobody could tell why.
+#
+# GDD 96 wants history to fade one day, gradually and legibly, through stages
+# rather than by deletion. That is a later system and needs its own pass. An
+# entry carrying its own year, source and links can be faded, contested or
+# half-remembered later without any of this being rewritten.
+#
+# Entries are immutable once written, with ONE exception: `led_to` grows as
+# later records name an earlier one as their cause. Nothing else may change.
+var chronicle: Array[Dictionary] = []
+# Why something did NOT become history. Current year only, on purpose: this is
+# a debugging aid, and keeping it forever would rebuild the exhaustive event log
+# the Chronicle exists to avoid.
+var last_chronicle_rejections: Array[Dictionary] = []
+var last_chronicle_entries: Array[Dictionary] = []
+
 var history_archive: Array[String] = [
 	"Year 12 - The people prayed for help.",
 	"Year 11 - The river began to recede.",
@@ -977,3 +999,63 @@ func clamp_values() -> void:
 	faith = clampi(faith, 0, 100)
 	followers = clampi(followers, 0, population)
 	divine_power = clampi(divine_power, 0, max_divine_power)
+
+
+# --- Chronicle -------------------------------------------------------------
+
+func chronicle_id(year_value: int, source_record_id: String) -> String:
+	return "hist_%04d_%s" % [year_value, source_record_id]
+
+
+# Write one record into history. Returns it as stored.
+#
+# The source record is NOT touched: history points back at what happened and
+# never edits it. If a chronicle entry could rewrite its own source, the
+# objective record would stop being objective.
+func record_chronicle(entry: Dictionary) -> Dictionary:
+	var stored := entry.duplicate(true)
+	stored["id"] = chronicle_id(int(stored["year"]), str(stored["source_record_id"]))
+	if has_chronicle(str(stored["id"])):
+		return get_chronicle(str(stored["id"]))
+	chronicle.append(stored)
+	return stored
+
+
+func has_chronicle(record_id: String) -> bool:
+	for record: Dictionary in chronicle:
+		if str(record["id"]) == record_id:
+			return true
+	return false
+
+
+func get_chronicle(record_id: String) -> Dictionary:
+	for record: Dictionary in chronicle:
+		if str(record["id"]) == record_id:
+			return record
+	return {}
+
+
+# The one permitted mutation of an existing entry: an earlier record learning
+# that a later one came out of it. The link is a pair of ids, never copied prose.
+func link_chronicle(parent_id: String, child_id: String) -> bool:
+	if parent_id.is_empty() or child_id.is_empty() or parent_id == child_id:
+		return false
+	var parent := get_chronicle(parent_id)
+	var child := get_chronicle(child_id)
+	if parent.is_empty() or child.is_empty():
+		return false
+	var led_to: Array = parent["led_to"]
+	if child_id not in led_to:
+		led_to.append(child_id)
+	var caused_by: Array = child["caused_by"]
+	if parent_id not in caused_by:
+		caused_by.append(parent_id)
+	return true
+
+
+func chronicle_for_location(location_id: String) -> Array[Dictionary]:
+	var found: Array[Dictionary] = []
+	for record: Dictionary in chronicle:
+		if str(record["location_id"]) == location_id:
+			found.append(record)
+	return found

@@ -19,7 +19,7 @@ The user retains authority over game design, project direction, and GitHub publi
 ## Project reference
 
 - Repository: `kangyl1/worldsim`
-- Current important commit: `PENDING_FEEDBACK_COMMIT` — `Add Situational Choices and Theatrical Feedback v1`, which made the simulation visible in normal play
+- Current important commit: `ede5410f3af1734d4b06568e39e11a88922edd31` — `Add Situational Choices and Theatrical Feedback v1`, which made the simulation visible in normal play
 
 The mortal causal chain, one commit per layer, oldest first:
 
@@ -39,7 +39,7 @@ The mortal causal chain, one commit per layer, oldest first:
 - `c7f2571306313e4ce781d2fe09cc037d73f3b840` — `Add Belief Formation v1` (what one mortal came to accept, from their own repeated conclusions)
 - `0529b3543f1aac1e98ba353ef7f8334076af23b6` — `Add Population and Locality Coverage Foundation v1` (the rules stopped knowing which settlements and people happen to exist)
 - `da5abee821793741e9b9d636bb2102e8e5dd71bd` — `Add Broader Interpretation Coverage v1` (the world's own conditions became things a mortal can have an opinion about)
-- `PENDING_FEEDBACK_COMMIT` — `Add Situational Choices and Theatrical Feedback v1` (the player can finally see what the simulation had been doing all along)
+- `ede5410f3af1734d4b06568e39e11a88922edd31` — `Add Situational Choices and Theatrical Feedback v1` (the player can finally see what the simulation had been doing all along)
 
 - Local project path: `/Users/jamienfam/Documents/ChatGPT/worldsim`
 - Tested Godot version: `4.7.1`

@@ -652,6 +652,11 @@ Avoid expensive animation.
 
 The world should feel alive through information and consequences rather than graphical spectacle.
 
+Section 97 refines this section and Section 19, and carries the presentation
+identity: the terminal is the surface, and the tone is **a legend being written
+in real time**. Section 40 carries the rule that decides what reaches the player
+at all — hide machinery, not drama.
+
 ---
 
 ## 19. Main Screen Concept
@@ -1697,6 +1702,42 @@ Developer Mode is also where the mortal-perspective rule is deliberately
 broken. The player panel shows what a character believes; Developer Mode shows
 what is true. Those two views must never be merged.
 
+### Hide machinery, not drama
+
+The rule above is about NUMBERS. It has been read too broadly, as though
+withholding the numbers meant withholding the meaning too, and the simulation
+has since grown deep enough that the difference matters.
+
+> **Hide machinery, not drama.**
+
+The player is God, not a detective. The game must not conceal important
+reactions, interpretations, beliefs or causal meaning merely to make the player
+infer them. The player should be able to FEEL the world reacting.
+
+Stays beneath the surface, or in Developer Mode:
+
+- exact trust, fear, respect and hostility values
+- belief confidence arithmetic and thresholds
+- intent weights, scoring factors and selection formulas
+- record ids, truth metadata, and anything the observing mortal could not have
+
+Should be communicated clearly, and when it matters, dramatically:
+
+- what a mortal concluded from an important event
+- an important belief forming, strengthening, weakening or breaking
+- major relationship changes
+- why a mortal took a significant action
+- how an earlier divine intervention shaped later behaviour
+- a settlement entering or escaping a major crisis
+- two mortals disagreeing about the same event
+- the long-term consequence of repeated actions or repeated refusals
+
+The distinction is not "more information". It is that **the player should
+understand what something MEANS without being shown the number that produced
+it.** Surfacing meaning does not make the normal game a debug view: Developer
+Mode still exists, still shows the exact internal representation, and is still
+never merged with the player's screen.
+
 ---
 
 ## 41. System Dependency Order
@@ -2438,18 +2479,50 @@ however correct it is.
 
 ---
 
-## 69. The Player Does Not See Every Belief
+## 69. The Player Does Not See Every Belief — But Important Beliefs Are Shown
 
-Future religious and ideological information need not be fully transparent. The
-player might reliably see the dominant belief, major doctrines, public rituals
-and known disputes, while some of what people actually think stays uncertain.
+**Revised.** This section previously implied that belief should generally be
+concealed, and that a society would be learned mostly by inference. Half of that
+survives; half was wrong, and it was wrong in the direction Section 40's
+"hide machinery, not drama" now corrects.
 
-A society would then be learned partly by watching: behaviour, documents,
-rituals, conversations, political decisions.
+### What survives
 
-**Do not implement hidden-belief UI.** Recorded as future UX direction. Note that
-this is a change from today, where player-facing belief is shown in full, and it
-does not touch Developer Mode — Developer Mode shows the machine and always will
+The player does not need a live dump of every private belief in every mortal.
+Minor, temporary, weakly-held or causally irrelevant beliefs may stay hidden, and
+a future society may reasonably be read partly by watching: behaviour, documents,
+rituals, conversations, political decisions. Religious and ideological
+information need not be exhaustively transparent.
+
+### What is revised
+
+Concealment is no longer the default for beliefs that MATTER.
+
+> **Important beliefs should be surfaced when they become dramatically or
+> causally relevant.**
+
+Occasions that qualify:
+
+- a belief becomes established
+- an important belief breaks
+- confidence changes substantially
+- two important mortals openly disagree about the same thing
+- a belief causes a significant later decision
+- a belief contributes to a historical turning point
+
+The reason is the one in Section 40: the simulation now decides a great deal
+that the player cannot currently perceive, and withholding it produces mystery
+without producing depth. A belief that changes what somebody does is part of the
+drama, not part of the machinery.
+
+This does not make the player omniscient. It does not mean showing every private
+thought at all times, every score, every unperceived event, or truth metadata.
+When important internal state is shown it should be shown **theatrically** —
+through character voice, narration or clear status feedback (Section 97) — rather
+than as a raw database view.
+
+**Still do not implement hidden-belief UI**, and this still does not touch
+Developer Mode, which shows the exact internal representation and always will
 (Section 40).
 
 ---
@@ -2500,6 +2573,13 @@ the Autonomous Story Test.
 
 If a Part III idea starts to feel urgent, that is a signal to finish the layer in
 progress, not to reorder the list.
+
+**Player feedback does not reorder this either.** Section 97 records that
+situational choices and causal, theatrical feedback are a near-term EXECUTION
+emphasis — the engine has grown deeper than the player can perceive, and the
+answer is to make existing depth legible rather than to add more. That is a
+statement about how the list is worked through, not about its order. No
+simulation milestone moves, and none is replaced by presentation work.
 
 ---
 
@@ -3384,6 +3464,186 @@ That distinction is load-bearing.
 
 This section refines Sections 18 and 19. It does not change the simulation
 roadmap in Section 41 and does not require immediate UI reconstruction.
+
+---
+
+### Presentation identity — a legend being written in real time
+
+The terminal is the SURFACE. This is the TONE.
+
+> **Worldsim should feel like watching a legend being written in real time.**
+
+Important world reactions should sometimes feel theatrical, mythic and
+memorable. The tone may draw lightly on legends, oral history, historical drama
+and Shakespeare-like dramatic delivery — the DELIVERY, not the vocabulary.
+
+Do not make normal text archaic, verbose, or full of faux-Shakespearean
+phrasing. Prefer:
+
+- short lines
+- strong reactions
+- memorable phrasing
+- restrained narration
+- dramatic contrast
+- occasional poetic weight
+
+Avoid long monologues. A scene should be understandable almost immediately. The
+target is **a small amount of text carrying high dramatic value** — not a
+dialogue-heavy RPG.
+
+This does not contradict Section 37. Section 37 governs how OFTEN a year is
+significant, and most years should stay ordinary. This governs how vividly the
+significant ones are shown when they arrive. Theatre applied to every year would
+destroy the contrast that makes it work.
+
+### Three presentation voices
+
+Three complementary voices may present simulation outcomes. All three are
+PRESENTATION. None of them is a new simulation system, and none may assert
+anything the simulation does not already hold.
+
+**1. Character Voice** — an individual mortal's speech, thought or
+self-dialogue, used to make interpretation, belief and emotional reaction
+visible.
+
+```text
+Mara: "Again he turns us away."
+Mara: "He heard us."
+Mara: "Rain is rain."
+```
+
+Each line must be grounded in that mortal's actual interpretation, belief and
+relationship state. The presentation layer must never invent a conviction the
+simulation does not support.
+
+**2. Chronicler Voice** — short dramatic narration for meaningful developments.
+
+```text
+The rains returned to Westfield.
+Years of refusal have hardened Mara against the crown.
+What began as suspicion has become conviction.
+```
+
+**This is a VOICE, not a second History system.** It is not the same thing as
+the Chronicle store: it may present existing causal state dramatically, but it
+reads that state and never becomes another record of it. Do not implement a
+second history.
+
+**3. World Voice** — collective human texture: crowds, rumours, prayers,
+repeated sayings, public reactions, fragments of what people tell each other.
+
+```text
+"He heard us."
+"Then why did he leave Frontier to starve?"
+```
+
+World Voice must eventually be DERIVED from what people actually know, believe,
+repeat or interpret. It does not create collective belief out of nowhere, and
+collective belief remains unbuilt (Section 48). For now this is future
+presentation direction and not a new mechanic.
+
+### Reactions may be exaggerated; causality may not
+
+Worldsim does not need understated realism. Important events may be theatrical,
+exaggerated, emotionally clear, funny, tragic, triumphant or ominous, because
+the simulation should be enjoyable to watch.
+
+The limit is absolute:
+
+> **Exaggeration may amplify presentation. It must never fabricate causality.**
+
+If Mara has not lost trust in the King, presentation may not claim their bond
+has broken. If she read the rain as ordinary weather, she may not proclaim
+divine intervention. The simulation provides the truth of the reaction;
+presentation controls only how vividly that truth is shown.
+
+### The same action is not the same scene
+
+> **A repeated primitive action does not require repeated player-facing text.**
+
+Several `ASK -> request_refused` executions may represent completely different
+historical situations. A first refusal:
+
+```text
+The King refuses Mara's request.
+```
+
+The same underlying execution after years of refusal and deteriorating
+relations:
+
+```text
+The King refuses — again.
+Mara says nothing this time.
+Something between them has changed.
+```
+
+Presentation should distinguish meaningful repetitions using what already
+exists: previous occurrences, Chronicle history, relationship state,
+interpretation, belief, and repeated-action context.
+
+**Do not invent a new action merely to produce different wording.**
+
+### Primitive action vs situational action
+
+The simulation primitives stay small — `ask`, `tell`, `support`, `oppose`,
+`observe`, `give`, `wait` (Section 41 and the Action Selection constraints). The
+player-facing expression of them should eventually be CONTEXTUAL:
+
+```text
+Ask the King for food aid.
+Ask Mara what she knows about the unrest.
+Ask the King to reconsider his refusal.
+```
+
+All three execute through the same underlying `ask`. This is how a small
+mechanical vocabulary produces a large situational one.
+
+**Do not add dozens of core action verbs to make menus look varied.** A new verb
+is still justified only when parameters cannot express the behaviour.
+
+### Feedback over time
+
+Three horizons, which need not all appear at once. Feedback should emerge as the
+causal chain develops.
+
+**Immediate — what objectively happened.**
+
+```text
+RAIN FALLS ON WESTFIELD
+The dry fields begin to recover.
+```
+
+**Reaction — how important mortals responded.**
+
+```text
+Mara: "He heard us."
+The King remains unconvinced.
+```
+
+**Legacy — what the event eventually became.**
+
+```text
+Years later, the rains of Year 22 are still remembered as the beginning of
+Westfield's recovery.
+```
+
+### Near-term emphasis, not a roadmap change
+
+The engine now contains many interacting systems whose depth the player cannot
+perceive. Before expanding into much more simulation breadth, the near-term
+execution priority should include **situational choices and causal, theatrical
+feedback** — making existing depth perceptible rather than adding more of it.
+
+This is an emphasis in HOW the roadmap is executed, not a change to it.
+Section 41's order and Section 71 stand exactly as written; nothing here
+reorders, replaces or reprioritises a simulation milestone.
+
+### Presentation guardrails
+
+Do not use this direction to introduce religion systems, factions, politics,
+procedural generation, new divine powers, new core intents, dozens of new action
+primitives, unrestricted generated dialogue, long dialogue scenes, or a raw
+debug view as normal gameplay.
 
 ---
 

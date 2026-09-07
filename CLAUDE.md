@@ -19,7 +19,7 @@ The user retains authority over game design, project direction, and GitHub publi
 ## Project reference
 
 - Repository: `kangyl1/worldsim`
-- Current important commit: `PENDING_BELIEF_COMMIT` — `Add Belief Formation v1`, where repeated conclusions become durable convictions
+- Current important commit: `c7f2571306313e4ce781d2fe09cc037d73f3b840` — `Add Belief Formation v1`, where repeated conclusions become durable convictions
 
 The mortal causal chain, one commit per layer, oldest first:
 
@@ -36,7 +36,7 @@ The mortal causal chain, one commit per layer, oldest first:
 - `0f6cd1aa86b33ec18513e4c86731e201123dba45` — `Add Divine Actions in the shared causal pipeline v1` (the god acts, and mortals — not the act — decide what it was)
 - `a8037fc44678056d6b7f8c2e4b670fa9297990cc` — `Add Generic Divine Action Pipeline Foundation` (one road, registered in one place, that any power can walk)
 - `f382ad8ae2a58ff5f8b3fd196f9c86cf89ac25a8` — `Add Historical Selection and Chronicle v1` (of everything that happened, what shaped the world — and what caused what)
-- `PENDING_BELIEF_COMMIT` — `Add Belief Formation v1` (what one mortal came to accept, from their own repeated conclusions)
+- `c7f2571306313e4ce781d2fe09cc037d73f3b840` — `Add Belief Formation v1` (what one mortal came to accept, from their own repeated conclusions)
 
 - Local project path: `/Users/jamienfam/Documents/ChatGPT/worldsim`
 - Tested Godot version: `4.7.1`

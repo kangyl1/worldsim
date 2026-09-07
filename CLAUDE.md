@@ -19,7 +19,7 @@ The user retains authority over game design, project direction, and GitHub publi
 ## Project reference
 
 - Repository: `kangyl1/worldsim`
-- Current important commit: `Add Interpretation v1` — the first layer that decides what an occurrence MEANT
+- Current important commit: `00205742da26112ba9b36f9e534465f89b111246` — `Add Interpretation v1`, the first layer that decides what an occurrence MEANT
 
 The mortal causal chain, one commit per layer, oldest first:
 
@@ -32,7 +32,7 @@ The mortal causal chain, one commit per layer, oldest first:
 - `ddbde279d7140e7e4f3f2ce0107c0c8045485893` — `Add Selective Perception v1` (who could know any of it in the first place)
 - `2d503b95dc3bba4149453ae5b1361d6b369f1434` — `Add Minimal Settlement State v1` (where any of it is happening)
 - `8f97dd72ea5b996b2977cccf6632b145aa2b551a` — `Add Consequence Engine v1` (what changed in the world, and nothing about what it meant)
-- `Add Interpretation v1` (what one mortal decided it meant, and how that changes what they want next)
+- `00205742da26112ba9b36f9e534465f89b111246` — `Add Interpretation v1` (what one mortal decided it meant, and how that changes what they want next)
 
 - Local project path: `/Users/jamienfam/Documents/ChatGPT/worldsim`
 - Tested Godot version: `4.7.1`

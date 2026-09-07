@@ -19,7 +19,7 @@ The user retains authority over game design, project direction, and GitHub publi
 ## Project reference
 
 - Repository: `kangyl1/worldsim`
-- Current important commit: `PENDING_DIVINE_COMMIT` — `Add Divine Actions in the shared causal pipeline v1`, the first divine power to stop deciding its own meaning
+- Current important commit: `0f6cd1aa86b33ec18513e4c86731e201123dba45` — `Add Divine Actions in the shared causal pipeline v1`, the first divine power to stop deciding its own meaning
 
 The mortal causal chain, one commit per layer, oldest first:
 
@@ -33,7 +33,7 @@ The mortal causal chain, one commit per layer, oldest first:
 - `2d503b95dc3bba4149453ae5b1361d6b369f1434` — `Add Minimal Settlement State v1` (where any of it is happening)
 - `8f97dd72ea5b996b2977cccf6632b145aa2b551a` — `Add Consequence Engine v1` (what changed in the world, and nothing about what it meant)
 - `00205742da26112ba9b36f9e534465f89b111246` — `Add Interpretation v1` (what one mortal decided it meant, and how that changes what they want next)
-- `PENDING_DIVINE_COMMIT` — `Add Divine Actions in the shared causal pipeline v1` (the god acts, and mortals — not the act — decide what it was)
+- `0f6cd1aa86b33ec18513e4c86731e201123dba45` — `Add Divine Actions in the shared causal pipeline v1` (the god acts, and mortals — not the act — decide what it was)
 
 - Local project path: `/Users/jamienfam/Documents/ChatGPT/worldsim`
 - Tested Godot version: `4.7.1`

@@ -35,6 +35,21 @@ const SOCIAL_TOPICS := [
 	"request_accepted", "request_refused", "support_given", "opposition_given"
 ]
 
+# Occurrences with no second mortal in them. Rain does not happen BETWEEN two
+# people, so there is no role to take and no relationship for the conclusion to
+# land on — what changes is what the observer now thinks the world is like.
+#
+# The engine knows the god sent it. The mortal does not, and nothing here may
+# tell them: "it rained" is the fact, and "someone sent it" is one of several
+# things a person might make of that. Being wrong is allowed and expected.
+const WORLD_TOPICS := ["weather_rain"]
+
+# Where the observer stood in relation to a world occurrence. Not a role in the
+# social sense — nobody did this to anybody — but it still matters enormously
+# whether you watched your own wells fill or heard about it later.
+const STANCE_WITNESS := "witness"
+const STANCE_DISTANT := "distant"
+
 # Where the observer stood in the occurrence. Roles come from the claim itself:
 # the participants list names two people, and which one the observer is decides
 # what the occurrence was like to live through.
@@ -241,6 +256,80 @@ const CANDIDATES := {
 	}
 }
 
+# What a mortal can make of something that happened to the WORLD rather than
+# between people. Keyed by topic, then by whether they saw it themselves.
+#
+# Deliberately four readings and no theology. "Something beyond us acted" is a
+# conclusion ONE person reached. It is stored, and nothing else happens to it:
+# it founds no shared creed, writes no settled teaching, and raises nobody up.
+# Whether such conclusions ever add up to a faith is a later system's question,
+# and that system must be able to answer NO.
+#
+# The naturalistic reading is not a wrong answer the simulation tolerates: for
+# a mortal with no history of divine events it is the SENSIBLE one, and it wins
+# on score. The god must be able to act and go unnoticed as a cause.
+const WORLD_CANDIDATES := {
+	"weather_rain": {
+		STANCE_WITNESS: [
+			{
+				"id": "rain_natural_weather",
+				"meaning": "The rain came as rain does.",
+				"effect": {},
+				"base_score": 50,
+				"factors": [
+					{"kind": "trait", "value": "cautious", "score": 12},
+					{"kind": "no_prior_divine_reading", "value": true, "score": 14}
+				]
+			},
+			{
+				"id": "rain_divine_help",
+				"meaning": "Something beyond us answered when the wells were dry.",
+				"effect": {},
+				"base_score": 34,
+				"factors": [
+					{"kind": "trait", "value": "compassionate", "score": 10},
+					{"kind": "trait", "value": "gullible", "score": 16},
+					{"kind": "prior_divine_reading", "value": true, "score": 20},
+					{"kind": "home_was_helped", "value": true, "score": 14}
+				]
+			},
+			{
+				"id": "rain_divine_favour",
+				"meaning": "%s is being favoured over the rest of us.",
+				"effect": {},
+				"base_score": 30,
+				"factors": [
+					{"kind": "trait", "value": "ambitious", "score": 16},
+					{"kind": "elsewhere", "value": true, "score": 18},
+					{"kind": "prior_divine_reading", "value": true, "score": 10}
+				]
+			}
+		],
+		STANCE_DISTANT: [
+			{
+				"id": "rain_natural_weather",
+				"meaning": "Rain fell somewhere else, as rain does.",
+				"effect": {},
+				"base_score": 50,
+				"factors": [
+					{"kind": "trait", "value": "cautious", "score": 12},
+					{"kind": "no_prior_divine_reading", "value": true, "score": 10}
+				]
+			},
+			{
+				"id": "rain_divine_favour",
+				"meaning": "%s is being favoured over the rest of us.",
+				"effect": {},
+				"base_score": 36,
+				"factors": [
+					{"kind": "trait", "value": "ambitious", "score": 18},
+					{"kind": "prior_divine_reading", "value": true, "score": 14}
+				]
+			}
+		]
+	}
+}
+
 # Available whatever the occurrence and whatever the role. It only wins when the
 # mortal's confidence in the underlying report is genuinely poor, which is how a
 # distorted rumor stops short of moving a relationship.
@@ -259,6 +348,14 @@ func is_social_topic(topic: String) -> bool:
 	return topic in SOCIAL_TOPICS
 
 
+func is_world_topic(topic: String) -> bool:
+	return topic in WORLD_TOPICS
+
+
+func is_interpretable(topic: String) -> bool:
+	return is_social_topic(topic) or is_world_topic(topic)
+
+
 func pending_for(state: WorldState, observer_id: String) -> Array[Dictionary]:
 	# Everything this mortal currently believes about a social occurrence and
 	# has not yet drawn a conclusion from.
@@ -274,7 +371,7 @@ func pending_for(state: WorldState, observer_id: String) -> Array[Dictionary]:
 	for knowledge_id_value in knowledge_ids:
 		var knowledge_id := str(knowledge_id_value)
 		var record: Dictionary = held[knowledge_id]
-		if not is_social_topic(str(record.get("topic", ""))):
+		if not is_interpretable(str(record.get("topic", ""))):
 			continue
 		if bool(record.get("invalidated", false)):
 			continue
@@ -310,16 +407,28 @@ func other_party(observer_id: String, knowledge: Dictionary) -> String:
 	return ""
 
 
+func stance_of(state: WorldState, observer_id: String, knowledge: Dictionary) -> String:
+	# Did they stand in it, or hear about it? For a world occurrence the honest
+	# divider is whether the place it happened is the place they live.
+	var subject_id := str(knowledge.get("subject_id", ""))
+	if subject_id.is_empty():
+		return STANCE_DISTANT
+	return STANCE_WITNESS if state.get_home_location(observer_id) == subject_id else STANCE_DISTANT
+
+
 func interpret(state: WorldState, observer_id: String, knowledge: Dictionary) -> Dictionary:
 	# One mortal, one occurrence they already know about, one conclusion.
 	var topic := str(knowledge.get("topic", ""))
-	if not is_social_topic(topic):
+	if not is_interpretable(topic):
 		return {}
 	var observer := state.get_notable_entity(observer_id)
 	if observer.is_empty():
 		return {}
-	var role := role_of(observer_id, knowledge)
-	var by_role: Dictionary = CANDIDATES.get(topic, {})
+	# A world occurrence has no second party, so the axis is where they were
+	# standing rather than what they did to whom.
+	var world := is_world_topic(topic)
+	var role := stance_of(state, observer_id, knowledge) if world else role_of(observer_id, knowledge)
+	var by_role: Dictionary = (WORLD_CANDIDATES if world else CANDIDATES).get(topic, {})
 	var defined: Array = by_role.get(role, [])
 	var options: Array[Dictionary] = []
 	options.append_array(defined)
@@ -354,7 +463,20 @@ func _context(
 	# mortal's own state. Nothing about the world they were not told.
 	var other_id := other_party(observer_id, knowledge)
 	var relationship := state.get_relationship(observer_id, other_id) if not other_id.is_empty() else {}
+	# Has this mortal already decided, at some point, that something beyond the
+	# world acted in it? Their OWN past conclusions, never the engine's record of
+	# what the god actually did. Someone who has read a divine hand into events
+	# before reads one in more readily; someone who never has does not start now.
+	var prior_divine := false
+	for past: Dictionary in state.get_interpretations_for(observer_id):
+		if str(past["interpretation_type"]).begins_with("rain_divine"):
+			prior_divine = true
+			break
+	var subject_id := str(knowledge.get("subject_id", ""))
 	return {
+		"prior_divine_reading": prior_divine,
+		"subject_id": subject_id,
+		"home_was_subject": not subject_id.is_empty() and state.get_home_location(observer_id) == subject_id,
 		"observer_id": observer_id,
 		"other_id": other_id,
 		"role": role,
@@ -363,6 +485,7 @@ func _context(
 		# Whether they were there. Being told a thing is not the same as living
 		# it, and the record keeps the two apart.
 		"participated": str(knowledge.get("source_type", "")) == "direct",
+		"observer_home": state.get_home_location(observer_id),
 		"has_relationship": not relationship.is_empty(),
 		"trust": int(relationship.get("trust", 0)) if not relationship.is_empty() else 0,
 		"hostility": int(relationship.get("hostility", 0)) if not relationship.is_empty() else 0
@@ -406,6 +529,14 @@ func _factor_holds(factor: Dictionary, context: Dictionary) -> bool:
 			return bool(context["has_relationship"]) and int(context["hostility"]) >= int(factor["value"])
 		"confidence_below":
 			return int(context["confidence"]) < int(factor["value"])
+		"prior_divine_reading":
+			return bool(context["prior_divine_reading"])
+		"no_prior_divine_reading":
+			return not bool(context["prior_divine_reading"])
+		"home_was_helped":
+			return bool(context["home_was_subject"])
+		"elsewhere":
+			return not bool(context["home_was_subject"])
 		"participated":
 			return bool(context["participated"])
 	return false
@@ -482,7 +613,11 @@ func _meaning_text(
 	if slots == 0:
 		return template
 	if slots == 1:
+		# A social reading names the other person; a world reading names the
+		# place it happened, because there is no other person in it.
 		var subject := str(context["other_id"])
+		if subject.is_empty():
+			subject = str(context["subject_id"])
 		if subject.is_empty():
 			subject = actor_id
 		return template % _label_for(state, subject)

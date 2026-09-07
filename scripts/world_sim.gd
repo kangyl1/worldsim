@@ -132,6 +132,17 @@ const EVENT_KNOWLEDGE := {
 var state := WorldState.new()
 var divine_reception_system := DivineReceptionSystem.new()
 var interpretation_rules := InterpretationRules.new()
+
+# Divine powers that have moved to the shared causal pipeline: the act changes
+# the world, the consequence engine reports what changed, perception decides who
+# noticed, and every mortal decides for themselves what it meant.
+#
+# Everything NOT listed here still runs the legacy populace-level path in
+# `DivineReceptionSystem`, which reads one collective meaning out of the act and
+# writes belief, reputation and history from it. The two must never both run for
+# the same power, or the world reacts twice to one event. This is roadmap item
+# 12, migrating one power at a time.
+const MIGRATED_DIVINE_ACTIONS := ["send_rain"]
 var intent_rules := IntentRules.new()
 var action_rules := ActionRules.new()
 var execution_rules := ExecutionRules.new()
@@ -185,19 +196,83 @@ func resolve_action(action_id: String) -> Dictionary:
 	var divine_consequence := consequence_rules.plan_divine(
 		state, action_id, location_id, _settlement_changes(location_id, before)
 	)
-	state.record_consequence(consequence_rules.apply(state, divine_consequence))
+	# Read before applying: apply() hands the fact to perception and erases it
+	# from the record, so the claim has to be taken while it is still there.
+	var planned_fact: Dictionary = divine_consequence.get("pending_fact", {})
+	var occurrence_claim := str(planned_fact.get("claim", ""))
+	var applied_consequence := state.record_consequence(
+		consequence_rules.apply(state, divine_consequence)
+	)
+	# What the god did, kept apart from what it changed and from what anyone
+	# will make of it. Recorded for BOTH paths: the record is about the act.
+	var divine_record := state.record_divine_action({
+		"id": "divine_%04d_%s_%s" % [state.year, action_id, location_id],
+		"year": state.year,
+		"action_type": action_id,
+		"target_id": location_id,
+		"subject_id": state.current_event_id,
+		"parameters": {"event_id": state.current_event_id},
+		"power_cost": cost,
+		"result": immediate_result,
+		"consequence_id": str(applied_consequence.get("id", "")),
+		# Which road this power takes. The whole point of the flag is that both
+		# roads must never run for one act.
+		"pipeline": "shared" if action_id in MIGRATED_DIVINE_ACTIONS else "legacy"
+	})
+	state.previous_action_id = action_id
+	state.action_taken = true
+	state.last_result = immediate_result
+
+	if action_id in MIGRATED_DIVINE_ACTIONS:
+		# MIGRATED. Nothing here decides what the act meant. The consequence is
+		# already queued as a fact; perception will choose who notices it next
+		# tick, and each of them will reach their own conclusion — including the
+		# conclusion that it was only weather.
+		#
+		# No collective interpretation, no belief pressure, no reputation. The
+		# history line states the occurrence and stops, exactly as a mortal
+		# consequence claim does.
+		state.last_interpretation = ""
+		state.last_interpretation_id = ""
+		# States the occurrence and stops. "Rain fell on Aster" is what happened;
+		# "the god answered Aster" would be what somebody decided it meant, and
+		# the log is not the place that gets decided.
+		if not occurrence_claim.is_empty():
+			state.add_history(occurrence_claim)
+		state.clamp_values()
+		var shared_result := {
+			"ok": true,
+			"message": state.last_result,
+			"pipeline": "shared",
+			"divine_action_id": str(divine_record["id"]),
+			"consequence_id": str(applied_consequence.get("id", "")),
+			# Deliberately absent: interpretation, belief and reputation are not
+			# this layer's to report any more.
+			"interpretation": "",
+			"interpretation_id": "",
+			"belief_tag": "",
+			"belief_strength": 0,
+			"belief_formed": "",
+			"reputation_hint": "",
+			"reputation_changed": false,
+			"history_text": occurrence_claim,
+			"new_flags": [] as Array[String]
+		}
+		_log_divine_action(divine_record)
+		state_changed.emit()
+		return shared_result
+
+	# LEGACY, for every power not yet migrated. One collective meaning, read out
+	# of the act itself. Untouched on purpose; see MIGRATED_DIVINE_ACTIONS.
 	var interpretation := divine_reception_system.choose(state, action_id, state.current_event_id)
 	var previous_reputation := state.reputation
 	var new_flags := _apply_interpretation(interpretation)
 	var belief_formed := _apply_belief_pressure(interpretation)
 	_update_reputation(action_id, str(interpretation["reputation_hint"]))
 
-	state.last_result = immediate_result
 	state.last_interpretation = str(interpretation["interpretation"])
 	state.last_interpretation_id = str(interpretation["id"])
 	state.interpretation_history.append(state.last_interpretation_id)
-	state.previous_action_id = action_id
-	state.action_taken = true
 	state.add_history(str(interpretation["history_text"]))
 	if not belief_formed.is_empty():
 		state.add_history("From these events, a belief spread: \"%s\"" % belief_formed)
@@ -206,6 +281,9 @@ func resolve_action(action_id: String) -> Dictionary:
 	var result := {
 		"ok": true,
 		"message": state.last_result,
+		"pipeline": "legacy",
+		"divine_action_id": str(divine_record["id"]),
+		"consequence_id": str(applied_consequence.get("id", "")),
 		"interpretation": state.last_interpretation,
 		"interpretation_id": state.last_interpretation_id,
 		"belief_tag": str(interpretation["belief_tag"]),
@@ -219,6 +297,15 @@ func resolve_action(action_id: String) -> Dictionary:
 	_log_interpretation(action_id, interpretation, new_flags, previous_reputation, belief_formed)
 	state_changed.emit()
 	return result
+
+
+func _log_divine_action(record: Dictionary) -> void:
+	if not debug_logging_enabled:
+		return
+	print("[Worldsim][Year %d][Divine] %s -> %s via %s pipeline (cost %d) | %s" % [
+		int(record["year"]), str(record["action_type"]), str(record["target_id"]),
+		str(record["pipeline"]), int(record["power_cost"]), str(record["result"])
+	])
 
 
 func advance_year() -> Dictionary:
@@ -716,20 +803,26 @@ func _apply_immediate_action(action_id: String) -> String:
 # Divine acts land where the year's event is happening. A god who sends rain
 # during a drought in Westfield helps Westfield, not an average of the realm.
 # Faith and followers remain the whole kingdom's, because belief travels.
+# MIGRATED to the shared causal pipeline. Rain changes the world and nothing
+# else: no faith, no followers, no reputation, no belief. Those were the act
+# deciding that mortals believed in it, which is the thing this migration
+# exists to stop — belief now has to come from a mortal noticing the rain and
+# concluding something about it, and it may equally conclude the weather did it.
+#
+# Consequence: faith and followers no longer respond to rain at all, because no
+# route from a mortal's interpretation to kingdom faith exists yet. That is a
+# deliberate gap, recorded rather than papered over, and it closes when the
+# remaining powers migrate. The other three powers still move faith directly.
 func _resolve_send_rain() -> String:
 	var location_id := state.current_event_location_id
 	var place := state.location_name(location_id)
 	state.intervention_counts["rain_during_drought"] += int(state.current_event_id == "drought")
 	if state.current_event_id == "drought":
 		state.change_settlement_band(location_id, "food", 2)
-		state.faith += 5
-		state.followers += 16
 		if state.get_settlement_band(location_id, "food") <= 1:
 			state.change_settlement_band(location_id, "stability", 1)
 		return "Rain reaches %s and its empty wells begin to fill." % place
 	state.change_settlement_band(location_id, "food", 1)
-	state.faith += 2
-	state.followers += 6
 	return "Unexpected rain passes over %s and changes the season's course." % place
 
 

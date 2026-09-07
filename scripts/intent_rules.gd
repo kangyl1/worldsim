@@ -82,6 +82,27 @@ const DOCTRINE_TOPICS := ["claim", "faith", "doctrine", "ritual", "prophecy", "h
 # Traits weight intents; they never gate them. A cruel noble can still intend to
 # help, it simply costs points against a rival want. Traits must not decide HOW
 # an intent is pursued either — that is the Action layer's job (GDD section 32).
+# What a mortal's OWN past conclusions do to what they want next.
+#
+# This is the divine chain's last link. A social interpretation lands on a
+# relationship and reaches intent that way; a world occurrence has no second
+# party, so what changes is the person's sense of what the world is like, and
+# that has to reach intent directly or the divine act changes nothing.
+#
+# Read strictly as WEIGHT, never as a gate, in keeping with the gating law: no
+# interpretation makes an intent possible or impossible, it only makes it more
+# or less attractive. Each distinct conclusion counts ONCE however many times it
+# was reached, so a run of wet years cannot stack into an obsession.
+#
+# `rain_natural_weather` is listed with nothing on purpose. Deciding the weather
+# was just weather is a real conclusion, and its effect on what you want next is
+# genuinely none.
+const INTENT_INTERPRETATION_RULES := {
+	"rain_divine_help": {"learn": 12},
+	"rain_divine_favour": {"learn": 10},
+	"rain_natural_weather": {}
+}
+
 const INTENT_TRAIT_RULES := {
 	"compassionate": {
 		"help": 25, "resolve": 18, "connect": 12, "protect": 10,
@@ -362,6 +383,7 @@ func _evaluate_candidate(
 	var relationship_factors: Array[Dictionary] = []
 	var knowledge_used: Array[Dictionary] = []
 	var world_state_factors: Array[Dictionary] = []
+	var interpretation_factors: Array[Dictionary] = []
 	var reasons: Array[String] = []
 	var candidate := {
 		"intent_type": intent_type,
@@ -376,6 +398,7 @@ func _evaluate_candidate(
 		"relationship_factors": relationship_factors,
 		"knowledge_used": knowledge_used,
 		"world_state_factors": world_state_factors,
+		"interpretation_factors": interpretation_factors,
 		"reasons": reasons
 	}
 
@@ -488,6 +511,28 @@ func _evaluate_candidate(
 			trait_id, "favours" if trait_delta >= 0 else "resists"
 		])
 
+	# Their own interpretations, counted once per distinct conclusion.
+	var counted_interpretations: Array[String] = []
+	for past: Dictionary in state.get_interpretations_for(actor_id):
+		var reading := str(past["interpretation_type"])
+		if reading in counted_interpretations:
+			continue
+		var reading_rule: Dictionary = INTENT_INTERPRETATION_RULES.get(reading, {})
+		if not reading_rule.has(intent_type):
+			continue
+		counted_interpretations.append(reading)
+		var reading_delta := int(reading_rule[intent_type])
+		score += reading_delta
+		interpretation_factors.append({
+			"source": "interpretation",
+			"detail": reading,
+			"interpretation_id": str(past["id"]),
+			"delta": reading_delta
+		})
+		reasons.append("having concluded '%s', they %s this course" % [
+			reading, "lean toward" if reading_delta >= 0 else "lean away from"
+		])
+
 	var home_id := str(actor.get("home_location_id", ""))
 	for rule: Dictionary in template.get("world_state_rules", []):
 		if not _check_world_state(state, rule, home_id):
@@ -558,6 +603,7 @@ func _build_record(
 		"relationship_factors": candidate["relationship_factors"],
 		"knowledge_used": candidate["knowledge_used"],
 		"world_state_factors": candidate["world_state_factors"],
+		"interpretation_factors": candidate["interpretation_factors"],
 		"reasons": candidate["reasons"],
 		"considered": []
 	}

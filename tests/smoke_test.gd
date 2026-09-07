@@ -43,8 +43,11 @@ func _test_traits_and_relationships() -> void:
 func _test_mixed_divine_style() -> void:
 	var simulation = WorldSimulationScript.new()
 	simulation.debug_logging_enabled = false
+	# send_rain is deliberately absent. It has moved to the shared causal
+	# pipeline, where the act carries no meaning of its own and each mortal
+	# reaches their own conclusion later. The powers listed here are the ones
+	# still served by the legacy divine reader.
 	var interpretations_by_action := {
-		"send_rain": {},
 		"bless_harvest": {},
 		"speak_mortal": {},
 		"do_nothing": {}
@@ -56,9 +59,16 @@ func _test_mixed_divine_style() -> void:
 		var action_id := _mixed_action_for(simulation.state.current_event_id, turn)
 		var action_result: Dictionary = simulation.resolve_action(action_id)
 		assert(action_result["ok"], "Action failed on mixed turn %d" % turn)
-		assert(not str(action_result["interpretation"]).is_empty())
-		assert(not str(action_result["belief_tag"]).is_empty())
-		interpretations_by_action[action_id][action_result["interpretation_id"]] = true
+		if interpretations_by_action.has(action_id):
+			assert(not str(action_result["interpretation"]).is_empty())
+			assert(not str(action_result["belief_tag"]).is_empty())
+			interpretations_by_action[action_id][action_result["interpretation_id"]] = true
+		else:
+			# A migrated power reports what it did, never what it meant.
+			assert(str(action_result["pipeline"]) == "shared")
+			assert(str(action_result["interpretation"]).is_empty())
+			assert(str(action_result["belief_tag"]).is_empty())
+			assert(not str(action_result["divine_action_id"]).is_empty())
 		assert(not simulation.resolve_action("do_nothing")["ok"])
 		assert(simulation.state.population > 0)
 		assert(simulation.state.divine_power >= 0)

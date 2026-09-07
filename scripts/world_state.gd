@@ -18,6 +18,7 @@ const MAX_STORED_EXECUTIONS := 40
 const MAX_STORED_PERCEPTIONS := 40
 const MAX_STORED_CONSEQUENCES := 40
 const MAX_STORED_INTERPRETATIONS := 40
+const MAX_STORED_DIVINE_ACTIONS := 40
 # Selective memory (GDD section 36). Social occurrences accumulate one belief per
 # interaction, so a mortal cannot carry everything they ever learned. What goes
 # first is what could least change their behaviour: retracted claims, then stale
@@ -166,6 +167,12 @@ var execution_archive: Array[Dictionary] = []
 var last_perceptions: Array[Dictionary] = []
 var perceptions: Array[Dictionary] = []
 var perception_archive: Array[Dictionary] = []
+# What the GOD did, as an objective act. Deliberately separate from the
+# consequence it caused and from what any mortal made of it: the engine may
+# know the player's intent, and mortals may not.
+var last_divine_action: Dictionary = {}
+var divine_actions: Array[Dictionary] = []
+var divine_action_archive: Array[Dictionary] = []
 var last_interpretations: Array[Dictionary] = []
 var interpretations: Array[Dictionary] = []
 var interpretation_archive: Array[Dictionary] = []
@@ -711,6 +718,34 @@ func record_consequence(record: Dictionary) -> Dictionary:
 	if consequences.size() > MAX_STORED_CONSEQUENCES:
 		consequences = consequences.slice(consequences.size() - MAX_STORED_CONSEQUENCES)
 	return stored.duplicate(true)
+
+
+func record_divine_action(record: Dictionary) -> Dictionary:
+	# What the player did, and what it cost. NOT what it meant, and not what
+	# changed — the change is the consequence's business, and the meaning is
+	# every mortal's own.
+	#
+	# The game may hold this record in full while no mortal can read it. That
+	# gap is deliberate: a mortal sees rain, never "the god chose to send rain
+	# because Aster was starving".
+	if record.is_empty():
+		return {}
+	var stored := record.duplicate(true)
+	divine_actions.append(stored)
+	divine_action_archive.append(stored)
+	if divine_actions.size() > MAX_STORED_DIVINE_ACTIONS:
+		divine_actions = divine_actions.slice(
+			divine_actions.size() - MAX_STORED_DIVINE_ACTIONS
+		)
+	last_divine_action = stored.duplicate(true)
+	return stored.duplicate(true)
+
+
+func get_divine_action(record_id: String) -> Dictionary:
+	for record: Dictionary in divine_action_archive:
+		if str(record["id"]) == record_id:
+			return record.duplicate(true)
+	return {}
 
 
 func record_interpretation(record: Dictionary) -> Dictionary:

@@ -3,7 +3,7 @@ extends SceneTree
 # Developer Mode is an inspection tool. These tests hold it to two promises:
 # it shows the machine underneath, and it never touches the machine.
 
-const EXPECTED_TESTS := 19
+const EXPECTED_TESTS := 20
 const FALSE_BELIEF := {
 	"id": "king_divine_claim",
 	"subject_id": "aster_king",
@@ -55,6 +55,7 @@ func _process(_delta: float) -> bool:
 	_test_locations_section_shows_exact_local_state()
 	_test_consequence_section_stays_objective()
 	_test_interpretation_section_is_its_own()
+	_test_divine_section_is_its_own()
 	_test_actions_still_work_with_developer_mode_open()
 	_test_sections_all_render()
 
@@ -365,6 +366,33 @@ func _test_sections_all_render() -> void:
 	assert(main.developer_tabs.text.to_lower().contains("history"), "every section needs a tab")
 	completed += 1
 	print("  SECTIONS: all %d render content." % main.DEV_SECTIONS.size())
+
+
+func _test_divine_section_is_its_own() -> void:
+	# What the god DID is a sixth question, and it gets a sixth tab. Merging it
+	# into the consequence view would hide the exact gap this layer exists to
+	# show: the engine knows the player sent the rain, and no mortal record
+	# anywhere says so.
+	main.simulation.state.current_event_location_id = "aster"
+	main.simulation.resolve_action("send_rain")
+	var view := _section_text("divine")
+	assert(view.contains("DIVINE ACTIONS"))
+	for field: String in ["action_type", "target_id", "power_cost", "pipeline", "consequence_id"]:
+		assert(view.contains(field), "the divine section cannot explain '%s'" % field)
+	assert(view.contains("send_rain"), "the act just taken is not shown")
+	assert(view.contains("shared"), "the section does not say which road the act took")
+	for other: String in [
+		"consequences", "perceptions", "knowledge", "intents", "interpretations"
+	]:
+		assert(view != _section_text(other), "DIVINE ACTIONS was merged with %s" % other)
+	# It points at the rest of the chain rather than restating it.
+	assert(not view.contains("meaning"),
+		"the divine section decided what the act meant")
+	# The god may act once a year; hand the turn back so the tests after this
+	# one still have an action to spend.
+	main.simulation.advance_year()
+	completed += 1
+	print("  DIVINE: the act has its own section, and points at the rest.")
 
 
 func _section_text(section: String) -> String:

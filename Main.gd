@@ -8,7 +8,7 @@ const ACTION_ROW_WIDTH := 34
 const PERSON_META_PREFIX := "person:"
 const DEV_TAB_META := "dev_tab:"
 const DEV_PERSON_META := "dev_person:"
-const DEV_SECTIONS := ["world", "locations", "people", "perceptions", "knowledge", "intents", "actions", "executions", "consequences", "interpretations", "belief", "history"]
+const DEV_SECTIONS := ["world", "locations", "people", "perceptions", "knowledge", "intents", "actions", "executions", "divine", "consequences", "interpretations", "belief", "history"]
 const DEV_LIST_LIMIT := 24
 const BACK_META := "back"
 # Player-readable names for the broad intents the engine records. These name a
@@ -676,6 +676,8 @@ func _render_developer() -> void:
 			developer_text.text = "\n".join(_developer_action_lines())
 		"executions":
 			developer_text.text = "\n".join(_developer_execution_lines())
+		"divine":
+			developer_text.text = "\n".join(_developer_divine_lines())
 		"consequences":
 			developer_text.text = "\n".join(_developer_consequence_lines())
 		"interpretations":
@@ -849,6 +851,49 @@ func _developer_consequence_lines() -> Array[String]:
 	lines.append("")
 	lines.append("[color=#68757c]What any of it meant is not decided here.[/color]")
 	lines.append(_dev_field("consequences recorded", records.size()))
+	return lines
+
+
+func _developer_divine_lines() -> Array[String]:
+	# What the GOD did. Its own section on purpose: the act, what it changed,
+	# who noticed, what they learned and what they made of it are five questions,
+	# and merging them would hide exactly the gap this milestone exists to prove
+	# — the engine knows the player sent rain, and no mortal record says so.
+	var state := simulation.state
+	var lines: Array[String] = [_dev_heading("DIVINE ACTIONS  ·  NEWEST LAST")]
+	if state.divine_action_archive.is_empty():
+		lines.append("[color=#73627f]The god has done nothing yet.[/color]")
+		return lines
+	for record: Dictionary in _tail(state.divine_action_archive, DEV_LIST_LIMIT):
+		var entry: Dictionary = record
+		lines.append("[color=%s]  y%-4d %-14s -> %-10s %-7s cost %d[/color]" % [
+			"#76c8d5" if str(entry["pipeline"]) == "shared" else "#8d989d",
+			int(entry["year"]), str(entry["action_type"]), str(entry["target_id"]),
+			str(entry["pipeline"]), int(entry["power_cost"])
+		])
+	lines.append("")
+	var latest: Dictionary = state.divine_action_archive.back()
+	lines.append("[color=#76c8d5]latest[/color]")
+	for field: String in [
+		"id", "year", "action_type", "target_id", "subject_id",
+		"power_cost", "pipeline", "consequence_id", "result"
+	]:
+		lines.append(_dev_field("  %s" % field, _or_none(str(latest[field]))))
+	lines.append(_dev_field("  parameters", str(latest["parameters"])))
+	lines.append("")
+	# The trace, as pointers rather than as a merged record.
+	lines.append("[color=#76c8d5]where the rest of this chain lives[/color]")
+	lines.append("[color=#8d989d]  what objectively changed  ->  CONSEQUENCES  (%s)[/color]"
+		% _or_none(str(latest["consequence_id"])))
+	lines.append("[color=#8d989d]  who could notice it       ->  PERCEPTIONS[/color]")
+	lines.append("[color=#8d989d]  what they now believe     ->  KNOWLEDGE[/color]")
+	lines.append("[color=#8d989d]  what they took it to mean ->  INTERPRETATIONS[/color]")
+	lines.append("")
+	if str(latest["pipeline"]) == "shared":
+		lines.append("[color=#68757c]Shared pipeline: nothing here decided what it meant.[/color]")
+	else:
+		lines.append("[color=#68757c]Legacy pipeline: the populace read one meaning out of this act.[/color]")
+	lines.append(_dev_field("divine actions recorded", state.divine_action_archive.size()))
 	return lines
 
 

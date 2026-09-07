@@ -13,13 +13,13 @@ The user retains authority over game design, project direction, and GitHub publi
 3. If there is **ANY** design ambiguity, design problem, or architecture decision that could affect game behavior, scope, rules, simulation outcomes, or project direction, **STOP and ask the user before deciding**. Do not make autonomous game-design decisions.
 4. Small, purely mechanical implementation details may be handled without asking only when they cannot alter design intent. If uncertain, ask.
 5. GitHub repository `kangyl1/worldsim` is the source of truth when this document or any handoff summary conflicts with the current committed code. Inspect the repository and history when unsure.
-6. Minimal Settlement State v1, Selective Perception v1, Broad Intent v1, Action Selection v1, Action Execution v1 and Consequence Engine v1 are built. Mortals notice different things, want things, try things, attempts have results, and results objectively change the world. **Nothing yet decides what any of it MEANT.** Do not build interpretation of social or divine events, or History generation, until the user explicitly asks.
+6. Minimal Settlement State v1, Selective Perception v1, Broad Intent v1, Action Selection v1, Action Execution v1, Consequence Engine v1 and **Interpretation v1** are built. Mortals notice different things, want things, try things, attempts have results, results objectively change the world, and mortals now decide what those results MEANT — which changes what they want later. Interpretation v1 covers **social occurrences only**. Interpretation of DIVINE events beyond the existing populace-level `DivineReceptionSystem`, and History generation, must not be built until the user explicitly asks.
 7. The player-facing interface shows a mortal's perspective; Developer Mode shows the machine. Never merge the two. See "Interface rules".
 
 ## Project reference
 
 - Repository: `kangyl1/worldsim`
-- Current important commit: `8f97dd72ea5b996b2977cccf6632b145aa2b551a` — `Add Consequence Engine v1`
+- Current important commit: `Add Interpretation v1` — the first layer that decides what an occurrence MEANT
 
 The mortal causal chain, one commit per layer, oldest first:
 
@@ -32,6 +32,7 @@ The mortal causal chain, one commit per layer, oldest first:
 - `ddbde279d7140e7e4f3f2ce0107c0c8045485893` — `Add Selective Perception v1` (who could know any of it in the first place)
 - `2d503b95dc3bba4149453ae5b1361d6b369f1434` — `Add Minimal Settlement State v1` (where any of it is happening)
 - `8f97dd72ea5b996b2977cccf6632b145aa2b551a` — `Add Consequence Engine v1` (what changed in the world, and nothing about what it meant)
+- `Add Interpretation v1` (what one mortal decided it meant, and how that changes what they want next)
 
 - Local project path: `/Users/jamienfam/Documents/ChatGPT/worldsim`
 - Tested Godot version: `4.7.1`
@@ -50,19 +51,20 @@ The current foundation includes:
 - Knowledge and Rumors with confidence, truth, source, aging, distortion, and transmission
 - bounded yearly rumor spreading
 - trait and relationship effects
-- mortal interpretation of divine actions, feeding beliefs and reputation
+- populace-level reception of divine actions, feeding beliefs and reputation (`DivineReceptionSystem`)
 - Broad Intent Model v1: ten wants, deterministic argmax, full explainability records
 - Mortal Action Selection v1: seven parameterised verbs, capability-gated, selection only
 - Mortal Action Execution v1: success/failure/blocked, two-phase ticks, immediate results only
 - Selective Perception v1: events offer claims, only eligible mortals notice, no global teaching
 - Minimal Settlement State v1: settlements own food, stability, prosperity and population; the kingdom view derives from them
 - Consequence Engine v1: objective occurrence and state change only, routed back through events and perception
+- Interpretation v1: what one mortal decided a social occurrence meant, per observer, feeding a small directed relationship change and therefore later intents
 - knowledge generation from existing events, outcome-aware and refreshing stable ids
 - a world map interface with clickable settlements and crisis markers
 - world -> settlement -> person navigation in one reusable panel
 - in-game Developer Mode (DEV button, F1 secondary) exposing raw simulation values, read-only
 - a centralised presentation layer turning numbers into qualitative labels
-- deterministic tests across thirteen suites
+- deterministic tests across fourteen suites
 - a 72-turn regression suite
 
 Current core source files:
@@ -72,7 +74,8 @@ Current core source files:
 | `scripts/world_state.gd` | stored truth: settlement conditions, entities, relationships, knowledge, intents, actions |
 | `scripts/world_sim.gd` | simulation behaviour: actions, yearly ticks, event knowledge generation |
 | `scripts/knowledge_rules.gd` | rumor transfer scoring and trait effects on information |
-| `scripts/interpretation_system.gd` | how mortals interpret divine actions |
+| `scripts/divine_reception_system.gd` | how the POPULACE receives a divine act: one collective meaning, belief pressure, reputation |
+| `scripts/interpretation_rules.gd` | Interpretation v1: what ONE mortal decided a social occurrence meant |
 | `scripts/intent_rules.gd` | Broad Intent Model v1 scoring and explainability records |
 | `scripts/action_rules.gd` | Mortal Action Selection v1: intent -> viable attempt, never executed |
 | `scripts/execution_rules.gd` | Mortal Action Execution v1: attempt -> immediate result, no consequences |
@@ -99,6 +102,7 @@ Test suites, all deterministic:
 | `tests/person_view_test.gd` | person navigation and the mortal-perspective filter |
 | `tests/developer_mode_test.gd` | Developer Mode toggle, raw exposure, read-only guarantee |
 | `tests/presentation_test.gd` | qualitative band mappings |
+| `tests/interpretation_test.gd` | Interpretation v1: divergence, bounded effects, and everything the layer refuses to do |
 
 Do not assume this summary is exhaustive or newer than the code. Inspect the repository first, and use GitHub as the source of truth if anything conflicts.
 
@@ -106,8 +110,10 @@ Do not assume this summary is exhaustive or newer than the code. Inspect the rep
 
 `Settlement state -> Events -> Perception -> Knowledge/Rumors -> Broad Intents -> Action Selection -> Action Execution -> Consequences -> feedback into settlement state/relationships/knowledge`
 
-Everything in that chain is built. What is missing is the layer after it:
-nothing yet decides what any of it MEANT.
+Everything in that chain is built, and so is the layer after it: mortals now
+decide what an occurrence MEANT, and that decision changes what they want in
+later years. What remains unbuilt is History (roadmap item 13) and the migration
+of divine acts into the same per-mortal interpretation (roadmap item 12).
 
 `GDD.md` Part II (sections 29-43) revises this. Mortals should pass through a
 wider chain: world state -> pressures -> perception -> belief -> interpretation
@@ -126,13 +132,21 @@ Part III records three deliberate tensions with what is built, rather than
 silently resolving them: where interpretation sits in the chain (section 46
 against section 30), whether Divine Power or consequence is the primary
 constraint on intervention (section 56 against section 8), and how directly
-Divine Voice creates a prophet (section 50 against section 9). None of the three
-is a defect to fix now; each is a design task for whoever builds that layer.
+Divine Voice creates a prophet (section 50 against section 9).
 
-The next system is **Interpretation of social and divine events** — what a
-mortal decides an occurrence meant, and how that changes their relationships,
-beliefs and future wants. It must not begin until the user explicitly asks.
-Consequences now produce objective occurrences nobody has yet reacted to.
+The FIRST is now half-settled by construction, and only half. Interpretation v1
+implements section 30's placement — interpretation ON BELIEF, after a fact is
+held. Section 46's other moment, interpretation ON PERCEPTION (you cannot store
+"the god answered us" without having already interpreted the rain), remains
+unbuilt, and the GDD is deliberately not edited. Building it is the divine
+interpretation pass, not a correction to this one. The other two tensions are
+untouched.
+
+**Interpretation v1 is built, for SOCIAL occurrences only.** A mortal decides
+what an occurrence meant, and that decision moves one relationship axis, which
+later intents already read. What has NOT been built: interpretation of divine
+acts per mortal (the populace-level `DivineReceptionSystem` still owns those),
+and History generation. Neither may begin until the user explicitly asks.
 
 **Known issue, not yet addressed.** Ambient rumor spreading runs before intents
 form, so it usually carries a fact before anyone deliberately chooses to tell
@@ -160,7 +174,7 @@ would be derived one-to-one from the intent type and would duplicate what
 `knowledge_used` already records. Build it only if a later system needs one
 goal to produce several different intents.
 
-Interpretation of social events, and History generation, **MUST NOT be implemented until the user explicitly asks**.
+History generation, and per-mortal interpretation of DIVINE acts, **MUST NOT be implemented until the user explicitly asks**.
 
 Broad Intent Model v1 constraints, settled with the user and to be preserved:
 
@@ -264,6 +278,37 @@ Consequence Engine v1 constraints, settled with the user and to be preserved:
 - the divine layer still moves faith, followers and reputation directly inside `resolve_action`. That migration is deliberately deferred and needs its own pass
 - `MAX_KNOWLEDGE_PER_ENTITY` bounds what a mortal carries, since social occurrences accumulate one belief per interaction. Forgetting drops retracted claims first, then stale low-confidence ones, and never anything learned this year
 - the bounded ripple law holds: no automatic cascade from a refusal to hostility to rebellion. Each step needs a real system and a real condition
+
+Interpretation v1 constraints, settled with the user and to be preserved:
+
+- **a consequence says what happened; an interpretation says what one mortal took it to mean.** The relationship change belongs to the SECOND. `consequence_rules.gd` must never grow a `request_refused -> trust -10` table, and a test greps its executable lines for the axis names
+- interpretation reads the OBSERVER'S OWN knowledge record and their own state, and nothing else. It never touches `objective_truth_state`, never consults the consequence archive, and a test asserts the rules cannot even name them
+- a false or distorted belief produces a sincere interpretation of something that did not happen. The engine knowing better must never quietly correct the mortal, and a test proves a false belief reads identically to a true one
+- **the fact is never overwritten with its meaning.** They are two records in two stores: knowledge keeps the claim exactly as learned, `interpretation_archive` keeps what was made of it
+- v1 covers four social occurrences, all of which already existed as consequence topics: `request_accepted`, `request_refused`, `support_given`, `opposition_given`. No new occurrence, intent, or action verb was invented, and a test asserts the vocabularies are unchanged
+- selection is deterministic argmax over candidates keyed by **topic x role** (`actor` / `target` / `bystander`), role taken from the claim's own `participants`. Ties break by declaration order, so the plainer reading beats the dramatic one. No randomness — a test greps for `randi`, `randf` and `RandomNumberGenerator`
+- scoring factors may only read what the mortal legitimately has: their trust and hostility toward the other party, their traits, their confidence in the report, and whether they were present. Every point of the score names its source in `factors`, and `considered` keeps the rejected alternatives
+- **effects are bounded**: ONE axis, at most +/-3, clamped at apply time so no future table entry can exceed it, and one conclusion per mortal per occurrence. `has_interpretation()` is what stops a still-held belief being re-interpreted every year and grinding a relationship down forever
+- an interpretation moves only the OBSERVER'S OWN directed edge. Mara concluding something about the King says nothing about what he thinks of her; he was there too and reached his own conclusion
+- a bystander notes the occurrence and changes no relationship. Third-party politics is a later system, not a side effect of this one
+- a missing relationship edge means no relationship, not a neutral one, and yields `effect_reason: "no_relationship_edge"` — the same rule `ask` applies. An overheard quarrel must not invent a tie between strangers
+- low confidence in the underlying report reaches `unclear_what_happened` and moves nothing, which is how a distorted rumor stops short of changing a relationship
+- **interpretation runs LAST in the yearly tick**, after perception. A conclusion drawn this year changes what someone wants NEXT year and must never reach a want already formed. The order is asserted structurally AND behaviourally, because a behavioural test alone did not catch the tick being reordered
+- interpretations are stored as records only. They do not enter the knowledge system, so a MEANING cannot yet spread by rumor — only the fact can. Reconsider if a later system needs meanings to travel
+- anyone who newly holds a social fact interprets it, however it arrived. A third party who hears by rumor years later interprets then, at their own lower confidence
+- `scripts/divine_reception_system.gd` (formerly `interpretation_system.gd`) is NOT this layer. It is populace-level, divine-only, and still writes reputation and world effects straight from a divine action, which this architecture forbids. Migrating it is roadmap item 12 and needs its own pass. The state fields `last_interpretation`, `last_interpretation_id` and `interpretation_history` still belong to it, not to the mortal layer — a naming overlap left deliberately, because renaming them reaches into the player-facing panel and `smoke_test`
+
+**Known issue, not yet addressed.** A claim can read "The King refused Mara's
+request concerning The King" when the intent's subject happens to be the target.
+The wording comes from intent and action selection, not from interpretation, and
+was noticed while tracing a causal chain.
+
+**Observed, not a defect.** Relationship drift over a long run is dominated by
+the trait effects in `tick_relationships()`, not by interpretation. Control run
+across 24 autonomous years: Mara's trust toward the King reaches 93 with
+interpretation disabled and 87 with it enabled, because her readings of refusals
+pull against the drift. Interpretation is a bounded modifier on top of an
+existing trend.
 
 ## Design rules
 

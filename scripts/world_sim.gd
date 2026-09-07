@@ -130,7 +130,8 @@ const EVENT_KNOWLEDGE := {
 }
 
 var state := WorldState.new()
-var interpretation_system := InterpretationSystem.new()
+var divine_reception_system := DivineReceptionSystem.new()
+var interpretation_rules := InterpretationRules.new()
 var intent_rules := IntentRules.new()
 var action_rules := ActionRules.new()
 var execution_rules := ExecutionRules.new()
@@ -185,7 +186,7 @@ func resolve_action(action_id: String) -> Dictionary:
 		state, action_id, location_id, _settlement_changes(location_id, before)
 	)
 	state.record_consequence(consequence_rules.apply(state, divine_consequence))
-	var interpretation := interpretation_system.choose(state, action_id, state.current_event_id)
+	var interpretation := divine_reception_system.choose(state, action_id, state.current_event_id)
 	var previous_reputation := state.reputation
 	var new_flags := _apply_interpretation(interpretation)
 	var belief_formed := _apply_belief_pressure(interpretation)
@@ -241,6 +242,16 @@ func advance_year() -> Dictionary:
 	state.last_interpretation_id = ""
 	state.clamp_values()
 	state.last_perceptions = tick_perception()
+	# Interpretation runs AFTER perception and LAST in the year, and both halves
+	# of that matter.
+	#
+	# After perception, because a mortal cannot decide what an occurrence meant
+	# before they know it happened. Last in the year, because intents were
+	# formed near the top of this tick and must not be reachable from here: a
+	# conclusion drawn now changes what someone wants NEXT year, never what they
+	# already wanted this one. That is the existing one-step-per-year causal
+	# rule, and it is why nothing here creates an action.
+	state.last_interpretations = tick_interpretations()
 	state_changed.emit()
 	return {"ok": true, "message": state.last_result}
 
@@ -517,6 +528,53 @@ func tick_consequences() -> Array[Dictionary]:
 	for record: Dictionary in planned:
 		applied.append(state.record_consequence(consequence_rules.apply(state, record)))
 	return applied
+
+
+func tick_interpretations() -> Array[Dictionary]:
+	# What the year's occurrences MEANT to the people who know about them.
+	#
+	# Two phases, as everywhere else in this simulation: every mortal reaches
+	# their conclusion against the world as it stood, and only then does anyone's
+	# relationship move. Without that, whoever was iterated first would colour
+	# what the next one made of the same event.
+	var reached: Array[Dictionary] = []
+	var observer_ids: Array = state.notable_entities.keys()
+	observer_ids.sort()
+	for observer_id_value in observer_ids:
+		var observer_id := str(observer_id_value)
+		for knowledge: Dictionary in interpretation_rules.pending_for(state, observer_id):
+			var record := interpretation_rules.interpret(state, observer_id, knowledge)
+			if record.is_empty():
+				continue
+			reached.append(record)
+	var applied: Array[Dictionary] = []
+	for record: Dictionary in reached:
+		applied.append(state.record_interpretation(
+			interpretation_rules.apply(state, record)
+		))
+	_log_interpretations(applied)
+	return applied
+
+
+func _log_interpretations(records: Array[Dictionary]) -> void:
+	if not debug_logging_enabled or records.is_empty():
+		return
+	for record: Dictionary in records:
+		var effect: Dictionary = record["applied_effect"]
+		var effect_text := "none"
+		if not effect.is_empty():
+			effect_text = "%s->%s %s %+d" % [
+				str(effect["source_id"]), str(effect["target_id"]),
+				str(effect["axis"]), int(effect["amount"])
+			]
+		print("[Worldsim][Year %d][Interpretation] %s read %s as %s (score %d) | %s" % [
+			state.year,
+			str(record["observer_id"]),
+			str(record["source_knowledge_id"]),
+			str(record["interpretation_type"]),
+			int(record["score"]),
+			effect_text
+		])
 
 
 func tick_action_execution() -> Array[Dictionary]:

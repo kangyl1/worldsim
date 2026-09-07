@@ -8,7 +8,7 @@ const ACTION_ROW_WIDTH := 34
 const PERSON_META_PREFIX := "person:"
 const DEV_TAB_META := "dev_tab:"
 const DEV_PERSON_META := "dev_person:"
-const DEV_SECTIONS := ["world", "locations", "people", "perceptions", "knowledge", "intents", "actions", "executions", "consequences", "belief", "history"]
+const DEV_SECTIONS := ["world", "locations", "people", "perceptions", "knowledge", "intents", "actions", "executions", "consequences", "interpretations", "belief", "history"]
 const DEV_LIST_LIMIT := 24
 const BACK_META := "back"
 # Player-readable names for the broad intents the engine records. These name a
@@ -678,6 +678,8 @@ func _render_developer() -> void:
 			developer_text.text = "\n".join(_developer_execution_lines())
 		"consequences":
 			developer_text.text = "\n".join(_developer_consequence_lines())
+		"interpretations":
+			developer_text.text = "\n".join(_developer_interpretation_lines())
 		"belief":
 			developer_text.text = "\n".join(_developer_belief_lines())
 		"history":
@@ -847,6 +849,81 @@ func _developer_consequence_lines() -> Array[String]:
 	lines.append("")
 	lines.append("[color=#68757c]What any of it meant is not decided here.[/color]")
 	lines.append(_dev_field("consequences recorded", records.size()))
+	return lines
+
+
+func _developer_interpretation_lines() -> Array[String]:
+	# What mortals made of what they know. Kept apart from CONSEQUENCES and from
+	# KNOWLEDGE on purpose: what happened, what someone believes happened, and
+	# what they take it to mean are three questions, and only the last one is
+	# allowed to move a relationship.
+	var state := simulation.state
+	var lines: Array[String] = [_dev_heading("INTERPRETATIONS  ·  THIS YEAR")]
+	if state.last_interpretations.is_empty():
+		lines.append("[color=#73627f]Nobody drew a conclusion from anything this year.[/color]")
+	for record: Dictionary in state.last_interpretations:
+		var effect: Dictionary = record["applied_effect"]
+		var effect_text := "no relationship change"
+		if not effect.is_empty():
+			effect_text = "%s %s %+d  (%d -> %d)" % [
+				str(effect["target_id"]), str(effect["axis"]), int(effect["amount"]),
+				int(effect["before"]), int(effect["after"])
+			]
+		lines.append("[color=#8d989d]  %-12s %-30s %s[/color]" % [
+			str(record["observer_id"]), str(record["interpretation_type"]), effect_text
+		])
+	lines.append("")
+	lines.append("[color=#76c8d5]latest for %s[/color]" % _or_none(developer_person_id))
+	if developer_person_id.is_empty():
+		lines.append("[color=#73627f]  Select an entity in PEOPLE.[/color]")
+		return lines
+	var records: Array[Dictionary] = state.get_interpretations_for(developer_person_id)
+	if records.is_empty():
+		lines.append("[color=#73627f]  They have not concluded anything about anyone.[/color]")
+		return lines
+	var latest: Dictionary = records.back()
+	for field: String in [
+		"id", "year", "observer_id", "source_knowledge_id", "topic",
+		"actor_id", "target_id", "subject_id", "role",
+		"interpretation_type", "confidence", "score"
+	]:
+		lines.append(_dev_field("  %s" % field, _or_none(str(latest[field]))))
+	lines.append("")
+	lines.append("[color=#76c8d5]meaning[/color]")
+	lines.append("[color=#d7c8dc]  \"%s\"[/color]" % str(latest["meaning"]))
+	lines.append("")
+	# Why this reading and not another. Every point of the score names where it
+	# came from, so "why did Mara take it that way" has an answer rather than a
+	# number.
+	lines.append("[color=#76c8d5]factors[/color]")
+	if latest["factors"].is_empty():
+		lines.append("[color=#73627f]  (none — the plain reading, on its base score alone)[/color]")
+	for factor: Dictionary in latest["factors"]:
+		lines.append("[color=#8d989d]  %-20s %-12s %+d[/color]" % [
+			str(factor["kind"]), str(factor["value"]), int(factor["score"])
+		])
+	lines.append("")
+	lines.append("[color=#76c8d5]considered[/color]")
+	for option: Dictionary in latest["considered"]:
+		lines.append("[color=%s]  %-34s %4d %s[/color]" % [
+			"#e8be63" if bool(option["chosen"]) else "#8d989d",
+			str(option["id"]), int(option["score"]),
+			"<- chosen" if bool(option["chosen"]) else ""
+		])
+	lines.append("")
+	lines.append("[color=#76c8d5]effect[/color]")
+	lines.append(_dev_field("  reason", _or_none(str(latest["effect_reason"]))))
+	var applied: Dictionary = latest["applied_effect"]
+	if applied.is_empty():
+		lines.append("[color=#73627f]  (no relationship moved)[/color]")
+	else:
+		lines.append("[color=#8d989d]  %s -> %s  %s  %+d  (%d -> %d)[/color]" % [
+			str(applied["source_id"]), str(applied["target_id"]), str(applied["axis"]),
+			int(applied["amount"]), int(applied["before"]), int(applied["after"])
+		])
+	lines.append("")
+	lines.append("[color=#68757c]The occurrence itself is unchanged; this is only what they made of it.[/color]")
+	lines.append(_dev_field("interpretations recorded", records.size()))
 	return lines
 
 

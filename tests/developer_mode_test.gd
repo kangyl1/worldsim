@@ -3,7 +3,7 @@ extends SceneTree
 # Developer Mode is an inspection tool. These tests hold it to two promises:
 # it shows the machine underneath, and it never touches the machine.
 
-const EXPECTED_TESTS := 18
+const EXPECTED_TESTS := 19
 const FALSE_BELIEF := {
 	"id": "king_divine_claim",
 	"subject_id": "aster_king",
@@ -54,6 +54,7 @@ func _process(_delta: float) -> bool:
 	_test_perception_section_shows_who_noticed()
 	_test_locations_section_shows_exact_local_state()
 	_test_consequence_section_stays_objective()
+	_test_interpretation_section_is_its_own()
 	_test_actions_still_work_with_developer_mode_open()
 	_test_sections_all_render()
 
@@ -152,6 +153,12 @@ func _test_world_section_shows_exact_values() -> void:
 
 func _test_people_section_shows_exact_directed_values() -> void:
 	var state = main.simulation.state
+	# Pinned rather than inherited from the run. This test is about how the
+	# panel RENDERS two directed edges, so it must not depend on whatever
+	# arithmetic the simulation happened to land on: interpretation now moves
+	# relationships too, and the two directions briefly coincided by accident.
+	state.set_relationship("mara", "aster_king", {"trust": 44, "fear": 10, "respect": 15, "hostility": 10})
+	state.set_relationship("aster_king", "mara", {"trust": 31, "fear": 0, "respect": 20, "hostility": 5})
 	var outward: Dictionary = state.get_relationship("mara", "aster_king")
 	var inward: Dictionary = state.get_relationship("aster_king", "mara")
 	assert(int(outward["trust"]) != int(inward["trust"]), "the fixture needs differing directions")
@@ -310,6 +317,26 @@ func _test_consequence_section_stays_objective() -> void:
 	for other: String in ["executions", "intents", "actions"]:
 		assert(view != _section_text(other), "the records must not be merged")
 	completed += 1
+
+
+func _test_interpretation_section_is_its_own() -> void:
+	# The fifth question, and its own tab. What happened and what someone took
+	# it to mean must never share a panel: the whole point of the layer is that
+	# the second one is disputable and the first is not.
+	main.developer_person_id = "mara"
+	var view := _section_text("interpretations")
+	assert(view.contains("INTERPRETATIONS"))
+	for other: String in ["consequences", "perceptions", "knowledge", "intents", "actions", "executions"]:
+		assert(view != _section_text(other),
+			"INTERPRETATIONS was merged with %s" % other)
+	# Enough to debug WHY, not merely what: the reading, its score, what fed it,
+	# and what it did to a relationship.
+	for field: String in ["meaning", "factors", "considered", "effect"]:
+		assert(view.contains(field), "the section cannot explain itself without '%s'" % field)
+	# Developer Mode may show raw numbers; that is the whole point of it.
+	assert(view.contains("score") or view.contains("confidence"))
+	completed += 1
+	print("  INTERPRETATIONS: a section of its own, and it explains itself.")
 
 
 func _test_actions_still_work_with_developer_mode_open() -> void:

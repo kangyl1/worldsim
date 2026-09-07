@@ -1,5 +1,16 @@
-class_name InterpretationSystem
+class_name DivineReceptionSystem
 extends RefCounted
+
+# How the POPULACE receives a divine act: one collective meaning per divine
+# action, chosen by seeded weight, feeding belief pressure and reputation.
+#
+# This is NOT the mortal interpretation layer. That is
+# `scripts/interpretation_rules.gd`, which asks what one named mortal made of
+# one social occurrence, and produces a per-observer record rather than a
+# populace-wide verdict. The two answer different questions and must not be
+# merged without a design pass: this one still writes reputation and world
+# effects straight from a divine action, which the newer architecture forbids.
+# Migrating it is roadmap item 12, not this milestone.
 
 const ACTION_ORDER := ["send_rain", "bless_harvest", "speak_mortal", "do_nothing"]
 const EVENT_ORDER := ["drought", "good_harvest", "unrest"]

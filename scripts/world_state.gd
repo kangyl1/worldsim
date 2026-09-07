@@ -17,6 +17,7 @@ const MAX_STORED_ACTIONS := 40
 const MAX_STORED_EXECUTIONS := 40
 const MAX_STORED_PERCEPTIONS := 40
 const MAX_STORED_CONSEQUENCES := 40
+const MAX_STORED_INTERPRETATIONS := 40
 # Selective memory (GDD section 36). Social occurrences accumulate one belief per
 # interaction, so a mortal cannot carry everything they ever learned. What goes
 # first is what could least change their behaviour: retracted claims, then stale
@@ -81,6 +82,9 @@ var current_event_id: String = "drought"
 var current_event_location_id: String = "aster"
 var action_taken: bool = false
 var last_result: String = ""
+# The POPULACE's reading of a divine act, owned by DivineReceptionSystem. Not
+# the mortal interpretation layer: that is `interpretations` below, and the two
+# are deliberately separate stores answering different questions.
 var last_interpretation: String = ""
 var last_interpretation_id: String = ""
 var population_growth_bonus: int = 0
@@ -162,6 +166,9 @@ var execution_archive: Array[Dictionary] = []
 var last_perceptions: Array[Dictionary] = []
 var perceptions: Array[Dictionary] = []
 var perception_archive: Array[Dictionary] = []
+var last_interpretations: Array[Dictionary] = []
+var interpretations: Array[Dictionary] = []
+var interpretation_archive: Array[Dictionary] = []
 var last_consequences: Array[Dictionary] = []
 var consequences: Array[Dictionary] = []
 var consequence_archive: Array[Dictionary] = []
@@ -706,6 +713,57 @@ func record_consequence(record: Dictionary) -> Dictionary:
 	return stored.duplicate(true)
 
 
+func record_interpretation(record: Dictionary) -> Dictionary:
+	# What ONE mortal made of ONE occurrence they already knew about.
+	#
+	# Kept apart from knowledge on purpose. A fact and what someone takes it to
+	# mean are two records: "the King refused Mara's request" stays exactly as
+	# it was learned, and "the King is unwilling to help Westfield" lives here.
+	# Overwriting the first with the second would destroy the only copy of what
+	# actually happened, and the engine knowing the truth must never quietly
+	# correct the mortal.
+	if record.is_empty():
+		return {}
+	var stored := record.duplicate(true)
+	interpretations.append(stored)
+	interpretation_archive.append(stored)
+	if interpretations.size() > MAX_STORED_INTERPRETATIONS:
+		interpretations = interpretations.slice(
+			interpretations.size() - MAX_STORED_INTERPRETATIONS
+		)
+	return stored.duplicate(true)
+
+
+func interpretation_id(observer_id: String, knowledge_id: String) -> String:
+	return "interpretation_%s_%s" % [observer_id, knowledge_id]
+
+
+func has_interpretation(observer_id: String, knowledge_id: String) -> bool:
+	# One mortal reaches one conclusion about one occurrence, once. Without this
+	# a fact still believed next year would be re-interpreted every year, and a
+	# single refusal would grind a relationship down forever.
+	var wanted := interpretation_id(observer_id, knowledge_id)
+	for record: Dictionary in interpretation_archive:
+		if str(record["id"]) == wanted:
+			return true
+	return false
+
+
+func get_interpretation(record_id: String) -> Dictionary:
+	for record: Dictionary in interpretation_archive:
+		if str(record["id"]) == record_id:
+			return record.duplicate(true)
+	return {}
+
+
+func get_interpretations_for(observer_id: String) -> Array[Dictionary]:
+	var matches: Array[Dictionary] = []
+	for record: Dictionary in interpretation_archive:
+		if str(record["observer_id"]) == observer_id:
+			matches.append(record.duplicate(true))
+	return matches
+
+
 func get_consequence(consequence_id: String) -> Dictionary:
 	for record: Dictionary in consequence_archive:
 		if str(record["id"]) == consequence_id:
@@ -833,6 +891,13 @@ func _normalise_knowledge_record(
 		"subject_id": str(knowledge_data.get("subject_id", existing.get("subject_id", ""))),
 		"topic": str(knowledge_data.get("topic", existing.get("topic", "unknown"))),
 		"claim": str(knowledge_data.get("claim", existing.get("claim", ""))),
+		# Who a social occurrence was between, carried as ids so the reader does
+		# not have to parse the claim's prose for names it already states.
+		# Preserved across updates like subject_id: a rumor that refreshes this
+		# record must not strip who it was about.
+		"participants": (knowledge_data.get(
+			"participants", existing.get("participants", [])
+		) as Array).duplicate(),
 		"confidence": clampi(
 			int(knowledge_data.get("confidence", existing.get("confidence", 50))),
 			KNOWLEDGE_CONFIDENCE_MIN,

@@ -90,6 +90,12 @@ func _test_person_detail_uses_existing_entity_data() -> void:
 
 func _test_relationships_stay_directional() -> void:
 	var state = main.simulation.state
+	# Pinned rather than inherited from the run. This test is about how the
+	# panel RENDERS two directed edges, so it must not depend on whatever
+	# arithmetic the simulation happened to land on: interpretation now moves
+	# relationships too, and the two directions briefly coincided by accident.
+	state.set_relationship("mara", "aster_king", {"trust": 44, "fear": 10, "respect": 15, "hostility": 10})
+	state.set_relationship("aster_king", "mara", {"trust": 31, "fear": 0, "respect": 20, "hostility": 5})
 	var outward: Dictionary = state.get_relationship("mara", "aster_king")
 	var inward: Dictionary = state.get_relationship("aster_king", "mara")
 	assert(int(outward["trust"]) != int(inward["trust"]),

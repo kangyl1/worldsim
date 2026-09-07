@@ -149,7 +149,18 @@ func perceived_claim(fact: Dictionary, opportunity: Dictionary) -> Dictionary:
 		"confidence": int(opportunity["confidence"]),
 		"truth_state": str(fact.get("truth_state", "unknown")),
 		"objective_truth_state": str(fact.get("objective_truth_state", fact.get("truth_state", "unknown"))),
-		"fresh_for_years": int(fact.get("fresh_for_years", WorldState.DEFAULT_KNOWLEDGE_FRESH_YEARS))
+		"fresh_for_years": int(fact.get("fresh_for_years", WorldState.DEFAULT_KNOWLEDGE_FRESH_YEARS)),
+		# Who it was between. This widens nothing knowable: a social claim
+		# already names both parties in its text ("The King refused Mara's
+		# request"), so carrying them as ids only spares whoever reads the
+		# record from parsing prose. It is the same category of field as
+		# subject_id, which this claim has always carried.
+		#
+		# It exists so the interpretation layer can read the observer's OWN
+		# belief and nothing else. Without it, working out who was involved
+		# would mean reaching back into the consequence archive, which is a
+		# record the mortal has no part in.
+		"participants": (fact.get("participants", []) as Array).duplicate()
 	}
 
 

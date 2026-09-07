@@ -1,0 +1,547 @@
+class_name InterpretationRules
+extends RefCounted
+
+# Interpretation v1 — what a mortal decided an occurrence MEANT.
+#
+# The layer that was missing. Consequences say what objectively happened,
+# perception says who could notice, knowledge says what they now hold, and
+# nothing until now asked what any of it meant to them.
+#
+# The boundary this exists to protect:
+#
+#   Consequence      what happened
+#   Perception       who could notice
+#   Knowledge        what they believe happened
+#   Interpretation   what they think it meant      <- here
+#   Relationship     the downstream result of that meaning
+#
+# A refusal does not lower trust. A refusal is an occurrence; a mortal decides
+# it means the other party is unwilling to help; THAT is what lowers trust, and
+# only for the mortal who reached it. Someone else holding the same fact may
+# decide it meant something else, or nothing worth changing their mind over.
+# `scripts/consequence_rules.gd` must never grow a `request_refused -> trust -10`
+# table, because that would be this layer's job done in the wrong place.
+#
+# Everything here reads the OBSERVER'S OWN knowledge record and their existing
+# state. It never reads `objective_truth_state`, never consults the consequence
+# archive, and never learns anything the mortal was not told. A false or
+# distorted belief therefore produces a sincere interpretation of something that
+# did not happen, which is correct: the engine knowing better must not quietly
+# correct them.
+
+# The social occurrences v1 understands. These are the topics
+# `consequence_rules.gd` already emits; no new occurrence is invented here.
+const SOCIAL_TOPICS := [
+	"request_accepted", "request_refused", "support_given", "opposition_given"
+]
+
+# Where the observer stood in the occurrence. Roles come from the claim itself:
+# the participants list names two people, and which one the observer is decides
+# what the occurrence was like to live through.
+const ROLE_ACTOR := "actor"
+const ROLE_TARGET := "target"
+const ROLE_BYSTANDER := "bystander"
+
+# For an ASK the actor is the one who asked and the target is the one who
+# answered; for SUPPORT and OPPOSITION the actor is the one who spoke and the
+# target is the one it was about. `consequence_rules.gd` builds the claim from
+# the same two ids, so these stay in step by construction.
+
+# Below the floor a mortal does not trust the report enough to draw a conclusion
+# from it. Rumor distortion is what usually puts them here.
+const UNCERTAIN_CONFIDENCE := 40
+
+# The bounded-ripple rule in numbers. One interpretation moves ONE axis by at
+# most this much, and a mortal reaches one conclusion per occurrence. Roughly
+# ten similar occurrences to cross a relationship band, which keeps a single
+# refusal from becoming a feud (GDD section 35).
+const MAX_EFFECT_MAGNITUDE := 3
+
+# What a mortal can conclude, per occurrence and per role.
+#
+# Several candidates may fit; the one with the highest score wins, and the score
+# is built from the observer's own state. That is what makes the same fact mean
+# different things to different people: Mara, who already trusts the King, and
+# Mara, who already does not, are not looking at the same refusal.
+#
+# `effect` is the observer's relationship TOWARD the other party. An empty
+# effect is a real and common answer — plenty of things are noted and change
+# nothing.
+const CANDIDATES := {
+	"request_refused": {
+		ROLE_ACTOR: [
+			{
+				"id": "refusal_confirms_distrust",
+				"meaning": "%s would not help, which is what I already expected of them.",
+				"effect": {"axis": "trust", "amount": -3},
+				"base_score": 30,
+				"factors": [
+					{"kind": "trust_below", "value": 35, "score": 25},
+					{"kind": "hostility_at_least", "value": 20, "score": 10}
+				]
+			},
+			{
+				"id": "refusal_unwilling_to_help",
+				"meaning": "%s is unwilling to help.",
+				"effect": {"axis": "trust", "amount": -2},
+				"base_score": 50,
+				"factors": [
+					{"kind": "trait", "value": "compassionate", "score": 8}
+				]
+			},
+			{
+				"id": "refusal_had_their_reasons",
+				"meaning": "%s must have had reasons I do not know.",
+				"effect": {},
+				"base_score": 30,
+				"factors": [
+					{"kind": "trust_at_least", "value": 60, "score": 25},
+					{"kind": "trait", "value": "cautious", "score": 10},
+					{"kind": "trait", "value": "loyal", "score": 8}
+				]
+			}
+		],
+		ROLE_TARGET: [
+			{
+				"id": "refusal_being_pressured",
+				"meaning": "%s is pressing me over something I have already answered.",
+				"effect": {"axis": "hostility", "amount": 1},
+				"base_score": 40,
+				"factors": [
+					{"kind": "trait", "value": "ambitious", "score": 15},
+					{"kind": "hostility_at_least", "value": 20, "score": 10}
+				]
+			},
+			{
+				"id": "refusal_gave_the_only_answer",
+				"meaning": "I gave %s the answer the situation allowed.",
+				"effect": {},
+				"base_score": 45,
+				"factors": [
+					{"kind": "trust_at_least", "value": 50, "score": 10}
+				]
+			}
+		],
+		ROLE_BYSTANDER: [
+			{
+				"id": "bystander_dispute_noted",
+				"meaning": "Things between %s and %s are not going well.",
+				"effect": {},
+				"base_score": 40,
+				"factors": []
+			}
+		]
+	},
+	"request_accepted": {
+		ROLE_ACTOR: [
+			{
+				"id": "acceptance_confirms_trust",
+				"meaning": "%s stands by me, as I believed they would.",
+				"effect": {"axis": "trust", "amount": 3},
+				"base_score": 30,
+				"factors": [
+					{"kind": "trust_at_least", "value": 60, "score": 25}
+				]
+			},
+			{
+				"id": "acceptance_willing_to_help",
+				"meaning": "%s was willing to help.",
+				"effect": {"axis": "trust", "amount": 2},
+				"base_score": 50,
+				"factors": []
+			}
+		],
+		ROLE_TARGET: [
+			{
+				"id": "acceptance_took_on_a_burden",
+				"meaning": "I have taken on what %s asked of me.",
+				"effect": {},
+				"base_score": 45,
+				"factors": []
+			}
+		],
+		ROLE_BYSTANDER: [
+			{
+				"id": "bystander_accord_noted",
+				"meaning": "%s and %s are working together.",
+				"effect": {},
+				"base_score": 40,
+				"factors": []
+			}
+		]
+	},
+	"support_given": {
+		ROLE_TARGET: [
+			{
+				"id": "support_stood_with_me",
+				"meaning": "%s stood with me when it counted.",
+				"effect": {"axis": "trust", "amount": 2},
+				"base_score": 50,
+				"factors": [
+					{"kind": "trait", "value": "loyal", "score": 8}
+				]
+			}
+		],
+		ROLE_ACTOR: [
+			{
+				"id": "support_tied_myself_to_them",
+				"meaning": "I have tied myself to %s by saying so aloud.",
+				"effect": {},
+				"base_score": 45,
+				"factors": []
+			}
+		],
+		ROLE_BYSTANDER: [
+			{
+				"id": "bystander_accord_noted",
+				"meaning": "%s and %s are working together.",
+				"effect": {},
+				"base_score": 40,
+				"factors": []
+			}
+		]
+	},
+	"opposition_given": {
+		ROLE_TARGET: [
+			{
+				"id": "opposition_from_a_rival",
+				"meaning": "%s opposes me, as rivals do.",
+				"effect": {"axis": "hostility", "amount": 3},
+				"base_score": 30,
+				"factors": [
+					{"kind": "hostility_at_least", "value": 25, "score": 25}
+				]
+			},
+			{
+				"id": "opposition_stood_against_me",
+				"meaning": "%s stood against me.",
+				"effect": {"axis": "hostility", "amount": 2},
+				"base_score": 50,
+				"factors": []
+			}
+		],
+		ROLE_ACTOR: [
+			{
+				"id": "opposition_said_what_i_had_to",
+				"meaning": "I said what I could not leave unsaid about %s.",
+				"effect": {},
+				"base_score": 45,
+				"factors": []
+			}
+		],
+		ROLE_BYSTANDER: [
+			{
+				"id": "bystander_dispute_noted",
+				"meaning": "Things between %s and %s are not going well.",
+				"effect": {},
+				"base_score": 40,
+				"factors": []
+			}
+		]
+	}
+}
+
+# Available whatever the occurrence and whatever the role. It only wins when the
+# mortal's confidence in the underlying report is genuinely poor, which is how a
+# distorted rumor stops short of moving a relationship.
+const UNCERTAIN_CANDIDATE := {
+	"id": "unclear_what_happened",
+	"meaning": "I am not sure what really passed between %s and %s.",
+	"effect": {},
+	"base_score": 0,
+	"factors": [
+		{"kind": "confidence_below", "value": UNCERTAIN_CONFIDENCE, "score": 60}
+	]
+}
+
+
+func is_social_topic(topic: String) -> bool:
+	return topic in SOCIAL_TOPICS
+
+
+func pending_for(state: WorldState, observer_id: String) -> Array[Dictionary]:
+	# Everything this mortal currently believes about a social occurrence and
+	# has not yet drawn a conclusion from.
+	#
+	# Deliberately not gated on the year it arrived. A fact reaching someone by
+	# rumor three years later is still new TO THEM, and they interpret it when
+	# they get it. `has_interpretation()` is what stops a still-held belief being
+	# re-interpreted every year.
+	var pending: Array[Dictionary] = []
+	var held := state.get_all_knowledge(observer_id)
+	var knowledge_ids: Array = held.keys()
+	knowledge_ids.sort()
+	for knowledge_id_value in knowledge_ids:
+		var knowledge_id := str(knowledge_id_value)
+		var record: Dictionary = held[knowledge_id]
+		if not is_social_topic(str(record.get("topic", ""))):
+			continue
+		if bool(record.get("invalidated", false)):
+			continue
+		if state.has_interpretation(observer_id, knowledge_id):
+			continue
+		pending.append(record)
+	return pending
+
+
+func role_of(observer_id: String, knowledge: Dictionary) -> String:
+	var participants: Array = knowledge.get("participants", [])
+	if participants.size() < 2:
+		return ROLE_BYSTANDER
+	if observer_id == str(participants[0]):
+		return ROLE_ACTOR
+	if observer_id == str(participants[1]):
+		return ROLE_TARGET
+	return ROLE_BYSTANDER
+
+
+func other_party(observer_id: String, knowledge: Dictionary) -> String:
+	# Who the interpretation is ABOUT, from this observer's side. A bystander has
+	# no single other party, which is exactly why they change no relationship.
+	var participants: Array = knowledge.get("participants", [])
+	if participants.size() < 2:
+		return ""
+	var actor_id := str(participants[0])
+	var target_id := str(participants[1])
+	if observer_id == actor_id:
+		return target_id
+	if observer_id == target_id:
+		return actor_id
+	return ""
+
+
+func interpret(state: WorldState, observer_id: String, knowledge: Dictionary) -> Dictionary:
+	# One mortal, one occurrence they already know about, one conclusion.
+	var topic := str(knowledge.get("topic", ""))
+	if not is_social_topic(topic):
+		return {}
+	var observer := state.get_notable_entity(observer_id)
+	if observer.is_empty():
+		return {}
+	var role := role_of(observer_id, knowledge)
+	var by_role: Dictionary = CANDIDATES.get(topic, {})
+	var defined: Array = by_role.get(role, [])
+	var options: Array[Dictionary] = []
+	options.append_array(defined)
+	options.append(UNCERTAIN_CANDIDATE)
+	if options.is_empty():
+		return {}
+
+	var context := _context(state, observer_id, observer, knowledge, role)
+	var scored: Array[Dictionary] = []
+	for candidate: Dictionary in options:
+		scored.append(_score(candidate, context))
+
+	# Deterministic argmax, ties broken by declaration order: the first
+	# candidate written for a role is the plainer reading, so a tie resolves
+	# toward the ordinary conclusion rather than the dramatic one. No dice.
+	var best: Dictionary = scored[0]
+	for index in range(1, scored.size()):
+		if int(scored[index]["score"]) > int(best["score"]):
+			best = scored[index]
+
+	return _build_record(state, observer_id, knowledge, role, context, best, scored)
+
+
+func _context(
+	state: WorldState,
+	observer_id: String,
+	observer: Dictionary,
+	knowledge: Dictionary,
+	role: String
+) -> Dictionary:
+	# Everything scoring is allowed to see: this mortal's own belief, and this
+	# mortal's own state. Nothing about the world they were not told.
+	var other_id := other_party(observer_id, knowledge)
+	var relationship := state.get_relationship(observer_id, other_id) if not other_id.is_empty() else {}
+	return {
+		"observer_id": observer_id,
+		"other_id": other_id,
+		"role": role,
+		"traits": (observer.get("traits", []) as Array).duplicate(),
+		"confidence": int(knowledge.get("confidence", 0)),
+		# Whether they were there. Being told a thing is not the same as living
+		# it, and the record keeps the two apart.
+		"participated": str(knowledge.get("source_type", "")) == "direct",
+		"has_relationship": not relationship.is_empty(),
+		"trust": int(relationship.get("trust", 0)) if not relationship.is_empty() else 0,
+		"hostility": int(relationship.get("hostility", 0)) if not relationship.is_empty() else 0
+	}
+
+
+func _score(candidate: Dictionary, context: Dictionary) -> Dictionary:
+	# Explicit, inspectable, and deterministic. Every point of the final score
+	# names where it came from, so Developer Mode can answer "why did Mara read
+	# it that way" without guessing.
+	var score := int(candidate["base_score"])
+	var applied: Array[Dictionary] = []
+	for factor: Dictionary in candidate["factors"]:
+		if not _factor_holds(factor, context):
+			continue
+		score += int(factor["score"])
+		applied.append({
+			"kind": str(factor["kind"]),
+			"value": factor["value"],
+			"score": int(factor["score"])
+		})
+	return {
+		"id": str(candidate["id"]),
+		"meaning": str(candidate["meaning"]),
+		"effect": (candidate["effect"] as Dictionary).duplicate(true),
+		"base_score": int(candidate["base_score"]),
+		"score": score,
+		"factors": applied
+	}
+
+
+func _factor_holds(factor: Dictionary, context: Dictionary) -> bool:
+	match str(factor["kind"]):
+		"trait":
+			return str(factor["value"]) in (context["traits"] as Array)
+		"trust_at_least":
+			return bool(context["has_relationship"]) and int(context["trust"]) >= int(factor["value"])
+		"trust_below":
+			return bool(context["has_relationship"]) and int(context["trust"]) < int(factor["value"])
+		"hostility_at_least":
+			return bool(context["has_relationship"]) and int(context["hostility"]) >= int(factor["value"])
+		"confidence_below":
+			return int(context["confidence"]) < int(factor["value"])
+		"participated":
+			return bool(context["participated"])
+	return false
+
+
+func _build_record(
+	state: WorldState,
+	observer_id: String,
+	knowledge: Dictionary,
+	role: String,
+	context: Dictionary,
+	chosen: Dictionary,
+	scored: Array[Dictionary]
+) -> Dictionary:
+	var knowledge_id := str(knowledge["id"])
+	var other_id := str(context["other_id"])
+	var participants: Array = knowledge.get("participants", [])
+	var actor_id := str(participants[0]) if participants.size() > 0 else ""
+	var target_id := str(participants[1]) if participants.size() > 1 else ""
+	var considered: Array[Dictionary] = []
+	for option: Dictionary in scored:
+		considered.append({
+			"id": option["id"],
+			"score": option["score"],
+			"chosen": option["id"] == chosen["id"]
+		})
+	var effect: Dictionary = chosen["effect"]
+	var planned: Dictionary = {}
+	if not effect.is_empty() and not other_id.is_empty():
+		planned = {
+			"target_id": other_id,
+			"axis": str(effect["axis"]),
+			# Clamped here rather than trusted from the table, so no future
+			# candidate can quietly exceed the bounded-ripple limit.
+			"amount": clampi(
+				int(effect["amount"]), -MAX_EFFECT_MAGNITUDE, MAX_EFFECT_MAGNITUDE
+			)
+		}
+	return {
+		"id": state.interpretation_id(observer_id, knowledge_id),
+		"year": state.year,
+		"observer_id": observer_id,
+		# The belief this was drawn from. The fact itself is untouched and stays
+		# exactly where it was learned.
+		"source_knowledge_id": knowledge_id,
+		"topic": str(knowledge.get("topic", "")),
+		"subject_id": str(knowledge.get("subject_id", "")),
+		"actor_id": actor_id,
+		"target_id": target_id,
+		"role": role,
+		"interpretation_type": str(chosen["id"]),
+		"meaning": _meaning_text(state, chosen, context, actor_id, target_id),
+		# How firmly it is held: no interpretation is surer than the report it
+		# came from, and hearsay is held a little less firmly than being there.
+		"confidence": _confidence(context),
+		"score": int(chosen["score"]),
+		"factors": chosen["factors"],
+		"considered": considered,
+		"planned_effect": planned,
+		"applied_effect": {},
+		"effect_reason": ""
+	}
+
+
+func _meaning_text(
+	state: WorldState,
+	chosen: Dictionary,
+	context: Dictionary,
+	actor_id: String,
+	target_id: String
+) -> String:
+	var template := str(chosen["meaning"])
+	var slots := template.count("%s")
+	if slots == 0:
+		return template
+	if slots == 1:
+		var subject := str(context["other_id"])
+		if subject.is_empty():
+			subject = actor_id
+		return template % _label_for(state, subject)
+	return template % [_label_for(state, actor_id), _label_for(state, target_id)]
+
+
+func _confidence(context: Dictionary) -> int:
+	var confidence := int(context["confidence"])
+	if not bool(context["participated"]):
+		# Heard about rather than lived through. Held a little more loosely, and
+		# that gap is what lets a witness and a listener differ.
+		confidence = int(float(confidence) * 0.9)
+	return clampi(confidence, 0, 100)
+
+
+func _label_for(state: WorldState, entity_id: String) -> String:
+	if entity_id.is_empty():
+		return "someone"
+	var entity := state.get_notable_entity(entity_id)
+	if not entity.is_empty():
+		return str(entity.get("name", entity_id))
+	if state.locations.has(entity_id):
+		return state.location_name(entity_id)
+	return entity_id
+
+
+func apply(state: WorldState, record: Dictionary) -> Dictionary:
+	# The one place an interpretation is allowed to touch the world, and it may
+	# only move the observer's own view of the other party.
+	#
+	# The change is directed and one-sided on purpose: Mara concluding something
+	# about the King changes what MARA thinks of him, and nothing about what he
+	# thinks of her. He was there too, and reached his own conclusion.
+	var applied := record.duplicate(true)
+	var planned: Dictionary = applied["planned_effect"]
+	if planned.is_empty():
+		applied["effect_reason"] = "no_effect_from_this_meaning"
+		return applied
+	var observer_id := str(applied["observer_id"])
+	var other_id := str(planned["target_id"])
+	var relationship := state.get_relationship(observer_id, other_id)
+	if relationship.is_empty():
+		# A missing edge means no relationship, not a neutral one — the same
+		# rule Action Execution applies to ASK. Inventing one here would create
+		# a tie out of a single overheard occurrence.
+		applied["effect_reason"] = "no_relationship_edge"
+		return applied
+	var axis := str(planned["axis"])
+	var before := int(relationship.get(axis, 0))
+	var after_record := state.change_relationship(
+		observer_id, other_id, {axis: int(planned["amount"])}
+	)
+	applied["applied_effect"] = {
+		"source_id": observer_id,
+		"target_id": other_id,
+		"axis": axis,
+		"amount": int(planned["amount"]),
+		"before": before,
+		"after": int(after_record.get(axis, before))
+	}
+	applied["effect_reason"] = "applied"
+	return applied

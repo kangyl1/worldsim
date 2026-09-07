@@ -13,13 +13,13 @@ The user retains authority over game design, project direction, and GitHub publi
 3. If there is **ANY** design ambiguity, design problem, or architecture decision that could affect game behavior, scope, rules, simulation outcomes, or project direction, **STOP and ask the user before deciding**. Do not make autonomous game-design decisions.
 4. Small, purely mechanical implementation details may be handled without asking only when they cannot alter design intent. If uncertain, ask.
 5. GitHub repository `kangyl1/worldsim` is the source of truth when this document or any handoff summary conflicts with the current committed code. Inspect the repository and history when unsure.
-6. Minimal Settlement State v1, Selective Perception v1, Broad Intent v1, Action Selection v1, Action Execution v1, Consequence Engine v1, **Interpretation v1** and **Divine Actions in the shared causal pipeline v1** are built. Mortals notice different things, want things, try things, attempts have results, results objectively change the world, and mortals now decide what those results MEANT — which changes what they want later. **Exactly ONE divine power, Send Rain, has been migrated onto that same road**, and the road itself is now generic: `scripts/divine_action_rules.gd` is the single surface that registers how any power enters the world. Bless Harvest and Divine Voice still get one collective meaning from the populace-level `DivineReceptionSystem`. **Historical Selection + Chronicle v1** is also built: the simulation now decides which occurrences mattered enough to become history, and links them causally. **Belief Formation v1** is built on top of that: mortals accumulate durable, revisable, per-mortal beliefs from their own repeated interpretations, and the first divine belief can now bootstrap organically. Migrating any further power, designing what its occurrence could MEAN, religion in any form, and the later history systems (myth, decay, competing accounts) must not be built until the user explicitly asks.
+6. Minimal Settlement State v1, Selective Perception v1, Broad Intent v1, Action Selection v1, Action Execution v1, Consequence Engine v1, **Interpretation v1** and **Divine Actions in the shared causal pipeline v1** are built. Mortals notice different things, want things, try things, attempts have results, results objectively change the world, and mortals now decide what those results MEANT — which changes what they want later. **Exactly ONE divine power, Send Rain, has been migrated onto that same road**, and the road itself is now generic: `scripts/divine_action_rules.gd` is the single surface that registers how any power enters the world. Bless Harvest and Divine Voice still get one collective meaning from the populace-level `DivineReceptionSystem`. **Historical Selection + Chronicle v1** is also built: the simulation now decides which occurrences mattered enough to become history, and links them causally. **Belief Formation v1** is built on top of that: mortals accumulate durable, revisable, per-mortal beliefs from their own repeated interpretations, and the first divine belief can now bootstrap organically. **Population & Locality Coverage Foundation v1** made the rules generic around the seeded fixtures: no rules file names a settlement or a mortal, so generated places and people can take part by existing in state. Migrating any further power, designing what its occurrence could MEAN, religion in any form, world generation itself, and the later history systems (myth, decay, competing accounts) must not be built until the user explicitly asks.
 7. The player-facing interface shows a mortal's perspective; Developer Mode shows the machine. Never merge the two. See "Interface rules".
 
 ## Project reference
 
 - Repository: `kangyl1/worldsim`
-- Current important commit: `c7f2571306313e4ce781d2fe09cc037d73f3b840` — `Add Belief Formation v1`, where repeated conclusions become durable convictions
+- Current important commit: `PENDING_LOCALITY_COMMIT` — `Add Population and Locality Coverage Foundation v1`, which removed the fixture assumptions
 
 The mortal causal chain, one commit per layer, oldest first:
 
@@ -37,6 +37,7 @@ The mortal causal chain, one commit per layer, oldest first:
 - `a8037fc44678056d6b7f8c2e4b670fa9297990cc` — `Add Generic Divine Action Pipeline Foundation` (one road, registered in one place, that any power can walk)
 - `f382ad8ae2a58ff5f8b3fd196f9c86cf89ac25a8` — `Add Historical Selection and Chronicle v1` (of everything that happened, what shaped the world — and what caused what)
 - `c7f2571306313e4ce781d2fe09cc037d73f3b840` — `Add Belief Formation v1` (what one mortal came to accept, from their own repeated conclusions)
+- `PENDING_LOCALITY_COMMIT` — `Add Population and Locality Coverage Foundation v1` (the rules stopped knowing which settlements and people happen to exist)
 
 - Local project path: `/Users/jamienfam/Documents/ChatGPT/worldsim`
 - Tested Godot version: `4.7.1`
@@ -67,12 +68,13 @@ The current foundation includes:
 - Generic Divine Action Pipeline Foundation: one registration surface decides how any divine power enters the world, so migrating the next one is a flag and an effect rather than new plumbing
 - Historical Selection + Chronicle v1: deterministic importance scoring over records the world already wrote, keeping a small fraction as objective history with causal links between entries
 - Belief Formation v1: durable per-mortal propositions accumulated from a mortal's own interpretations, revisable by contradiction, biasing later interpretation and intent without forcing either
+- Population & Locality Coverage Foundation v1: a small locality API, no rules file naming a settlement or a mortal, and empty locations represented honestly rather than filled in
 - knowledge generation from existing events, outcome-aware and refreshing stable ids
 - a world map interface with clickable settlements and crisis markers
 - world -> settlement -> person navigation in one reusable panel
 - in-game Developer Mode (DEV button, F1 secondary) exposing raw simulation values, read-only
 - a centralised presentation layer turning numbers into qualitative labels
-- deterministic tests across eighteen suites
+- deterministic tests across nineteen suites
 - a 72-turn regression suite
 
 Current core source files:
@@ -118,6 +120,7 @@ Test suites, all deterministic:
 | `tests/divine_pipeline_test.gd` | the road is generic: one routing surface, and an unforeseen power can walk it |
 | `tests/chronicle_test.gd` | historical selection, causal links, and the Autonomous Story Test (GDD 42) |
 | `tests/belief_test.gd` | the divine bootstrap, gradual formation, contradiction, and everything belief must not do |
+| `tests/locality_test.gd` | invented settlements and mortals take part; empty places stay empty and stay valid |
 
 Do not assume this summary is exhaustive or newer than the code. Inspect the repository first, and use GitHub as the source of truth if anything conflicts.
 
@@ -186,10 +189,13 @@ next. A mortal can therefore forget something that mattered. The cap is tuned,
 not derived, and the rule has no notion of significance beyond confidence and
 age.
 
-**Known issue, not yet addressed.** Only two of the three settlements host
-events across a long run, because an event goes where its condition is thinnest
-and that tends to settle on the same place. The Frontier is quiet. Nothing is
-wrong with the rule; the world is simply small.
+**Not a defect — a represented world state.** Only two of the three settlements
+host events a mortal ever notices, because the Frontier has no notable resident.
+An event there is real, is recorded, and is witnessed by nobody. Locality v1
+made that visible rather than mysterious: the Developer Mode LOCALITY section
+names dead zones, and nothing redirects events away from them or invents people
+to fill them. It still limits how often the divine bootstrap can occur, which is
+a world-SIZE question for world generation rather than a rules problem.
 
 **Goal is a conceptual layer only.** GDD Part II lists Goal between
 interpretation and intent. v1 deliberately does not implement it: a goal field
@@ -566,6 +572,61 @@ Belief Formation v1 constraints, settled with the user and to be preserved:
   individual people accept. They must never be joined
 - tick order is `... perception -> interpretation -> BELIEF -> chronicle`. A
   belief formed this year reaches next year's wants and never one already chosen
+
+Population & Locality Coverage Foundation v1 constraints, settled with the user
+and to be preserved:
+
+- **no rules file may name a settlement or a mortal.** A test greps the
+  executable lines of all ten rules files, plus `world_sim.gd`, for the literal
+  ids of the seeded fixtures. Seed data, tests and presentation are judged
+  separately; anything that decides what the simulation DOES is not
+- the seeded laboratory stays: Aster, Westfield, Frontier, the King and Mara are
+  deterministic test content and are not to be deleted. The milestone made the
+  rules generic AROUND them
+- the locality API is six helpers on `world_state.gd`: `resident_count`,
+  `has_residents`, `locations_with_residents`, `locations_without_residents`,
+  `has_local_perception_coverage`, `locality_coverage`, beside the existing
+  `residents_of` and `get_home_location`. **Do not grow this into a location ECS
+  or a world-query framework** — if a few helpers remove the assumption, that is
+  the whole job
+- **"resident" means a NOTABLE entity**, one the simulation holds a record for.
+  A settlement's `population` is a count of people it does not model
+  individually, and the two are deliberately different questions. A place with
+  four hundred people and no notable resident has nobody who can perceive, want,
+  act or believe
+- **every settlement does NOT need a notable mortal.** An empty location keeps
+  its conditions and its place in the world; a local event there produces a
+  divine record and a consequence, reaches nobody, and generates no knowledge
+  and no interpretation. That is a legitimate world state, not a fault
+- **nothing redirects events away from empty places, and nothing invents people
+  to fill them.** No `ensure_resident`, `spawn_notable` or `generate_person`,
+  and the event selector must never consult who lives where — a test asserts
+  both, because either would be forcing a story the world did not produce
+- `LOCATION_ORDER` is gone; `get_location_ids()` returns insertion order. This
+  is not cosmetic: `settlement_with_lowest()` breaks ties by taking the first it
+  meets, so ordering decides where events land. It must stay stable and
+  deterministic
+- `home_location_id` remains an ASSOCIATION and not a position. No travel, no
+  coordinates, no current-position state, and a test greps for `current_location`,
+  `travel_to`, `move_entity` and `distance_between`
+- presentation may still key on a location's `kind`. `_location_is_holy()` now
+  tests for `kind == "capital"` rather than the literal id `aster`, so a world
+  assembled differently has a capital too — and one assembled with none simply
+  has no holy site
+
+**Known limitation for world generation.** `scripts/world_map.gd` holds
+hand-authored anchors and a `DRAW_ORDER` for the three seeded settlements, so a
+generated settlement would be invisible and unclickable on the map. This is the
+one subsystem that cannot yet consume generated locations. Where settlements sit
+on a hand-drawn coastline is a design question, not a refactor, and it was left
+alone deliberately.
+
+**What world generation will need to populate**, and nothing more from the
+simulation layer: locations, settlement state, entities, `home_location_id`,
+traits and relationships — all through the existing public calls
+`add_location()`, `add_notable_entity()` and `set_relationship()`, which is
+exactly what `locality_test.gd` does. Beyond that it needs a map placement
+decision (above) and a choice of which settlement carries `kind: "capital"`.
 
 **Known issue, not yet addressed.** The divine bootstrap needs a famine a
 notable mortal actually lives through, and the autonomous world rarely produces

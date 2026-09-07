@@ -31,7 +31,6 @@ const MAX_KNOWLEDGE_PER_ENTITY := 12
 # scope. Locations carry identity only: no statistics are stored here, because
 # the simulation still tracks kingdom-wide values. Per-settlement state can be
 # added later without the interface changing shape.
-const LOCATION_ORDER := ["aster", "westfield", "frontier"]
 # Local conditions a settlement carries. Every one of them exists because a god
 # can notice it, understand it, and eventually do something about it. Anything
 # that fails those three tests does not belong here, and this list must not grow
@@ -83,7 +82,10 @@ var reputation: String = "Unknown"
 var current_event_id: String = "drought"
 # Which settlement this year's event is about. Events are local now, and so is
 # the divine response to them.
-var current_event_location_id: String = "aster"
+# Set by the seed to the first location that exists, and by the event selector
+# every year after. Deliberately not a named settlement: a world assembled
+# differently should not have to edit this line.
+var current_event_location_id: String = ""
 var action_taken: bool = false
 var last_result: String = ""
 # The POPULACE's reading of a divine act, owned by DivineReceptionSystem. Not
@@ -243,6 +245,10 @@ var history_archive: Array[String] = [
 
 
 func _init() -> void:
+	# Seed content, and only seed content. Everything below names the three
+	# settlements and two mortals the simulation is currently exercised with;
+	# no RULE anywhere may name them. A generated world populates the same
+	# structures through the same calls.
 	add_location("aster", "Aster", "capital", "Seat of the kingdom", {
 		"food": 0, "stability": 1, "prosperity": 2, "population": 240
 	})
@@ -255,6 +261,10 @@ func _init() -> void:
 	# These IDs are stable handles for later knowledge, rumor, and consequence data.
 	add_notable_entity("aster_king", "The King", "person", ["ambitious"], {}, "aster")
 	add_notable_entity("mara", "Mara", "person", ["compassionate", "loyal"], {}, "westfield")
+	# Where the first year's event lands, taken from what exists rather than
+	# named. The event selector replaces it every year from then on.
+	var seeded := get_location_ids()
+	current_event_location_id = seeded[0] if not seeded.is_empty() else ""
 	set_relationship("aster_king", "mara", {
 		"trust": 35,
 		"fear": 0,
@@ -337,6 +347,27 @@ func get_home_location(entity_id: String) -> String:
 	return str(notable_entities.get(entity_id, {}).get("home_location_id", ""))
 
 
+# --- Locality ---------------------------------------------------------------
+#
+# The questions any system should ask about a place, phrased so that a location
+# nobody wrote by hand can answer them: who lives here, is anyone here at all,
+# and could an event here be noticed by anybody?
+#
+# `home_location_id` is an ASSOCIATION, not a position. There is no travel and
+# no current-position state, and none may be built on these without a design
+# pass. For v1, where a mortal is associated is what decides whether a local
+# occurrence is theirs to notice.
+#
+# Note what "resident" means here: a NOTABLE entity, one the simulation holds a
+# record for. A settlement's `population` is a count of people the simulation
+# does not model individually, and it is deliberately not the same question. A
+# place with a population of four hundred and no notable resident has nobody who
+# can perceive, want, act or believe — and that is a legitimate world state, not
+# a gap to be filled.
+
+
+# Notable entities associated with this place. Sorted, so callers are
+# deterministic without each having to sort.
 func residents_of(location_id: String) -> Array[String]:
 	var residents: Array[String] = []
 	for entity_id_value in notable_entities:
@@ -345,6 +376,61 @@ func residents_of(location_id: String) -> Array[String]:
 			residents.append(entity_id)
 	residents.sort()
 	return residents
+
+
+func resident_count(location_id: String) -> int:
+	return residents_of(location_id).size()
+
+
+func has_residents(location_id: String) -> bool:
+	return not residents_of(location_id).is_empty()
+
+
+# Places somebody is actually associated with. Not every location has anyone,
+# and nothing here creates one to fix that.
+func locations_with_residents() -> Array[String]:
+	var found: Array[String] = []
+	for location_id: String in get_location_ids():
+		if has_residents(location_id):
+			found.append(location_id)
+	return found
+
+
+# Places where an event could happen and nobody would be there to notice it.
+# A real world state, and worth being able to see rather than wonder about.
+func locations_without_residents() -> Array[String]:
+	var found: Array[String] = []
+	for location_id: String in get_location_ids():
+		if not has_residents(location_id):
+			found.append(location_id)
+	return found
+
+
+# Could a LOCAL occurrence here be perceived by anybody at all?
+#
+# Answered from association alone, which is what Selective Perception uses for
+# `local` observability. It is not a promise that any particular event will be
+# noticed: the perception rules still decide that, event by event.
+func has_local_perception_coverage(location_id: String) -> bool:
+	return has_residents(location_id)
+
+
+# One row per place, for diagnostics. Says what is true, and says plainly where
+# nobody is — a dead zone should be visible rather than mysterious.
+func locality_coverage() -> Array[Dictionary]:
+	var rows: Array[Dictionary] = []
+	for location_id: String in get_location_ids():
+		var residents := residents_of(location_id)
+		rows.append({
+			"location_id": location_id,
+			"name": location_name(location_id),
+			"has_settlement_state": locations.has(location_id),
+			"population": get_settlement_population(location_id),
+			"resident_count": residents.size(),
+			"residents": residents,
+			"local_events_perceivable": has_local_perception_coverage(location_id)
+		})
+	return rows
 
 
 func add_location(
@@ -464,18 +550,21 @@ func get_location(location_id: String) -> Dictionary:
 	return locations.get(location_id, {}).duplicate(true)
 
 
+# Every location, in the order they were added.
+#
+# There used to be a hardcoded `LOCATION_ORDER` naming the three seeded
+# settlements, with anything else appended alphabetically after them. Insertion
+# order gives the identical sequence for the seeded world and needs no list to
+# maintain, so a settlement that did not exist when this file was written takes
+# its place in the world like any other.
+#
+# The order is not cosmetic: `settlement_with_lowest()` breaks ties by taking
+# the first it meets, so event placement depends on it. It must stay stable and
+# deterministic, which insertion order is.
 func get_location_ids() -> Array[String]:
 	var ordered: Array[String] = []
-	for location_id: String in LOCATION_ORDER:
-		if locations.has(location_id):
-			ordered.append(location_id)
-	var extra: Array[String] = []
 	for location_id_value in locations.keys():
-		var location_id := str(location_id_value)
-		if location_id not in ordered:
-			extra.append(location_id)
-	extra.sort()
-	ordered.append_array(extra)
+		ordered.append(str(location_id_value))
 	return ordered
 
 

@@ -8,7 +8,7 @@ const ACTION_ROW_WIDTH := 34
 const PERSON_META_PREFIX := "person:"
 const DEV_TAB_META := "dev_tab:"
 const DEV_PERSON_META := "dev_person:"
-const DEV_SECTIONS := ["world", "locations", "people", "perceptions", "knowledge", "intents", "actions", "executions", "divine", "consequences", "interpretations", "mortal_beliefs", "chronicle", "belief", "history"]
+const DEV_SECTIONS := ["world", "locations", "locality", "people", "perceptions", "knowledge", "intents", "actions", "executions", "divine", "consequences", "interpretations", "mortal_beliefs", "chronicle", "belief", "history"]
 const DEV_LIST_LIMIT := 24
 const BACK_META := "back"
 # Player-readable names for the broad intents the engine records. These name a
@@ -68,7 +68,8 @@ var simulation := WorldSimulation.new()
 var action_buttons: Array[Button] = []
 # Selection is interface state. It deliberately does not live in WorldState,
 # so looking at a place can never change what is true about the world.
-var selected_location_id: String = "aster"
+# Filled from whatever the world actually contains once the simulation exists.
+var selected_location_id: String = ""
 var hovered_action_index: int = -1
 var hovered_person_id: String = ""
 var selected_person_id: String = ""
@@ -109,6 +110,10 @@ func _ready() -> void:
 	developer_tabs.meta_clicked.connect(_on_developer_meta)
 	developer_text.meta_clicked.connect(_on_developer_meta)
 	simulation.state_changed.connect(_render)
+	# Whatever the world starts with, rather than a settlement named here.
+	var world_locations := simulation.state.get_location_ids()
+	if selected_location_id.is_empty() and not world_locations.is_empty():
+		selected_location_id = world_locations[0]
 	var map_locations := {}
 	for location_id: String in simulation.state.get_location_ids():
 		var location := simulation.state.get_location(location_id)
@@ -296,7 +301,10 @@ func _location_in_crisis(location_id: String) -> bool:
 
 
 func _location_is_holy(location_id: String) -> bool:
-	if location_id != "aster":
+	# The realm's seat, whichever settlement that is. Used to be a test against
+	# the literal id "aster"; a world assembled differently has a capital too,
+	# and one assembled with none simply has no holy site.
+	if str(simulation.state.get_location(location_id).get("kind", "")) != "capital":
 		return false
 	return not simulation.state.beliefs.is_empty()
 
@@ -664,6 +672,8 @@ func _render_developer() -> void:
 			developer_text.text = "\n".join(_developer_world_lines())
 		"locations":
 			developer_text.text = "\n".join(_developer_location_lines())
+		"locality":
+			developer_text.text = "\n".join(_developer_locality_lines())
 		"people":
 			developer_text.text = "\n".join(_developer_people_lines())
 		"perceptions":
@@ -861,6 +871,61 @@ func _developer_consequence_lines() -> Array[String]:
 # Named apart from `_developer_belief_lines`, which renders the LEGACY realm
 # belief pressure the old divine path writes. Two different things called
 # belief: one is a kingdom-wide number, this is what individual people accept.
+func _developer_locality_lines() -> Array[String]:
+	# Who is where, and — the point of the section — where nobody is.
+	#
+	# A local event in a place with no notable resident is perceived by nobody,
+	# produces no knowledge and is interpreted by nobody. That is a legitimate
+	# world state rather than a fault, and the simulation must not quietly move
+	# the event somewhere populated to avoid it. What it should do is make the
+	# dead zone visible, so a story that never happened is explainable instead
+	# of mysterious.
+	var state := simulation.state
+	var coverage := state.locality_coverage()
+	var lines: Array[String] = [
+		_dev_heading("LOCALITY  ·  %d locations, %d with anybody in them" % [
+			coverage.size(), state.locations_with_residents().size()
+		])
+	]
+	for record: Dictionary in coverage:
+		var row: Dictionary = record
+		var covered: bool = bool(row["local_events_perceivable"])
+		lines.append("")
+		lines.append("[color=%s]  %s  (%s)[/color]" % [
+			"#d8c98a" if covered else "#73627f",
+			str(row["name"]), str(row["location_id"])
+		])
+		lines.append(_dev_field("    settlement state", "yes" if bool(row["has_settlement_state"]) else "no"))
+		# Population is a number the simulation does not model as people.
+		# Notable residents are the ones who can actually perceive and act, and
+		# the two are deliberately different questions.
+		lines.append(_dev_field("    population", row["population"]))
+		lines.append(_dev_field("    notable residents", "%d  %s" % [
+			int(row["resident_count"]),
+			str(row["residents"]) if int(row["resident_count"]) > 0 else "(nobody)"
+		]))
+		lines.append(_dev_field("    local events perceivable",
+			"yes" if covered else "NO — anything here is seen by nobody"))
+		if str(state.current_event_location_id) == str(row["location_id"]):
+			lines.append("[color=#76c8d5]    this year's event is here: %s[/color]"
+				% str(state.current_event_id))
+			var perceivers: Array[String] = []
+			for perception: Dictionary in state.last_perceptions:
+				if bool(perception.get("perceived", false)):
+					perceivers.append(str(perception.get("observer_id", "")))
+			lines.append("[color=#8d989d]    perceived this year by: %s[/color]"
+				% ("nobody" if perceivers.is_empty() else ", ".join(perceivers)))
+
+	var empty := state.locations_without_residents()
+	lines.append("")
+	if empty.is_empty():
+		lines.append("[color=#68757c]Every location has somebody in it. That is not a requirement.[/color]")
+	else:
+		lines.append("[color=#8d989d]Dead zones: %s[/color]" % ", ".join(empty))
+		lines.append("[color=#68757c]Events there are real and are witnessed by no one. Nothing redirects them.[/color]")
+	return lines
+
+
 func _developer_mortal_belief_lines() -> Array[String]:
 	# What each mortal has come to accept, and on what evidence. Its own section
 	# because a belief is not a fact and not a reading: INTERPRETATIONS shows

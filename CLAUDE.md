@@ -19,7 +19,7 @@ The user retains authority over game design, project direction, and GitHub publi
 ## Project reference
 
 - Repository: `kangyl1/worldsim`
-- Current important commit: `PENDING_CHRONICLE_COMMIT` — `Add Historical Selection and Chronicle v1`, the layer that decides what mattered
+- Current important commit: `f382ad8ae2a58ff5f8b3fd196f9c86cf89ac25a8` — `Add Historical Selection and Chronicle v1`, the layer that decides what mattered
 
 The mortal causal chain, one commit per layer, oldest first:
 
@@ -35,7 +35,7 @@ The mortal causal chain, one commit per layer, oldest first:
 - `00205742da26112ba9b36f9e534465f89b111246` — `Add Interpretation v1` (what one mortal decided it meant, and how that changes what they want next)
 - `0f6cd1aa86b33ec18513e4c86731e201123dba45` — `Add Divine Actions in the shared causal pipeline v1` (the god acts, and mortals — not the act — decide what it was)
 - `a8037fc44678056d6b7f8c2e4b670fa9297990cc` — `Add Generic Divine Action Pipeline Foundation` (one road, registered in one place, that any power can walk)
-- `PENDING_CHRONICLE_COMMIT` — `Add Historical Selection and Chronicle v1` (of everything that happened, what shaped the world — and what caused what)
+- `f382ad8ae2a58ff5f8b3fd196f9c86cf89ac25a8` — `Add Historical Selection and Chronicle v1` (of everything that happened, what shaped the world — and what caused what)
 
 - Local project path: `/Users/jamienfam/Documents/ChatGPT/worldsim`
 - Tested Godot version: `4.7.1`

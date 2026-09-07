@@ -8,7 +8,7 @@ const ACTION_ROW_WIDTH := 34
 const PERSON_META_PREFIX := "person:"
 const DEV_TAB_META := "dev_tab:"
 const DEV_PERSON_META := "dev_person:"
-const DEV_SECTIONS := ["world", "locations", "locality", "people", "perceptions", "knowledge", "intents", "actions", "executions", "divine", "consequences", "interpretations", "mortal_beliefs", "chronicle", "belief", "history"]
+const DEV_SECTIONS := ["world", "locations", "locality", "people", "perceptions", "knowledge", "intents", "actions", "executions", "divine", "consequences", "interpretations", "mortal_beliefs", "chronicle", "feedback", "belief", "history"]
 const DEV_LIST_LIMIT := 24
 const BACK_META := "back"
 # Player-readable names for the broad intents the engine records. These name a
@@ -70,6 +70,11 @@ var action_buttons: Array[Button] = []
 # so looking at a place can never change what is true about the world.
 # Filled from whatever the world actually contains once the simulation exists.
 var selected_location_id: String = ""
+# The last divine act's immediate feedback, and the developments the year that
+# followed produced. Presentation state, held in the interface where interface
+# state belongs — `WorldState` never learns what the player has been shown.
+var last_divine_feedback: Dictionary = {}
+var last_developments: Array[Dictionary] = []
 var hovered_action_index: int = -1
 var hovered_person_id: String = ""
 var selected_person_id: String = ""
@@ -155,12 +160,20 @@ func choose_action(index: int) -> void:
 	var result := simulation.resolve_action(ACTION_KEYS[index])
 	if not result["ok"]:
 		result_text.text = str(result["message"])
+		return
+	last_divine_feedback = simulation.feedback_rules.divine_feedback(simulation.state, result)
+	last_developments = []
 
 
 func advance_year() -> void:
 	var result := simulation.advance_year()
 	if not result["ok"]:
 		result_text.text = str(result["message"])
+		return
+	# What the year that just passed is worth telling the player about. At most
+	# three things, and a quiet year legitimately produces none.
+	last_developments = simulation.feedback_rules.developments(simulation.state)
+	last_divine_feedback = {}
 
 
 func _render() -> void:
@@ -176,16 +189,7 @@ func _render() -> void:
 
 	event_title.text = str(event["title"])
 	event_description.text = str(event["description"])
-	if state.last_result.is_empty():
-		result_text.text = "[color=#7f898b]Awaiting divine input.[/color]"
-	elif state.last_interpretation.is_empty():
-		result_text.text = "[color=#9ca5a4]%s[/color]" % state.last_result
-	else:
-		result_text.text = (
-			"[color=#9ca5a4]%s[/color]\n\n" % state.last_result
-			+ "[color=#b38bc4]INTERPRETATION[/color]\n"
-			+ "[color=#d7c8dc]\"%s\"[/color]" % state.last_interpretation
-		)
+	result_text.text = _feedback_text(state)
 
 	_render_actions()
 	_render_map()
@@ -194,6 +198,54 @@ func _render() -> void:
 	_render_beliefs()
 	_render_developer()
 	advance_button.disabled = not state.action_taken
+
+
+# The central text region: what just happened, and what the world made of it.
+#
+# Three horizons, in order and only when they exist. IMMEDIATE is the player's
+# own act. REACTION is what the year produced — conclusions, convictions,
+# relationships, refusals. A year with neither says so plainly rather than
+# manufacturing drama, because the quiet years are what make the loud ones land.
+func _feedback_text(state: WorldState) -> String:
+	var blocks: Array[String] = []
+
+	# IMMEDIATE — the god's own act, in qualitative terms.
+	if not last_divine_feedback.is_empty():
+		var act: Array[String] = [
+			"[color=#e8be63]%s[/color]" % str(last_divine_feedback["headline"]),
+			"[color=#cfd6d8]%s[/color]" % str(last_divine_feedback["body"])
+		]
+		for line: String in last_divine_feedback["changes"]:
+			act.append("[color=#9ca5a4]%s[/color]" % line)
+		blocks.append("\n".join(act))
+	elif not state.last_result.is_empty() and last_developments.is_empty():
+		blocks.append("[color=#9ca5a4]%s[/color]" % state.last_result)
+
+	# The legacy divine path still reads one collective meaning for the powers
+	# that have not migrated. Shown as it always was, for those powers only.
+	if not state.last_interpretation.is_empty():
+		blocks.append(
+			"[color=#b38bc4]INTERPRETATION[/color]\n"
+			+ "[color=#d7c8dc]\"%s\"[/color]" % state.last_interpretation
+		)
+
+	# REACTION — what the year made of itself.
+	for development: Dictionary in last_developments:
+		var colour := "#e8be63" if int(development["priority"]) == FeedbackRules.PRIORITY_HIGH \
+			else "#76c8d5"
+		var body_colour := "#d7c8dc" if str(development["voice"]) == FeedbackRules.VOICE_CHARACTER \
+			else "#cfd6d8"
+		blocks.append(
+			"[color=%s]%s[/color]\n[color=%s]%s[/color]"
+				% [colour, str(development["headline"]), body_colour, str(development["body"])]
+		)
+
+	if blocks.is_empty():
+		if state.last_result.is_empty():
+			return "[color=#7f898b]Awaiting divine input.[/color]"
+		return "[color=#9ca5a4]%s[/color]\n\n[color=#68757c]No major development.[/color]" \
+			% state.last_result
+	return "\n\n".join(blocks)
 
 
 func _render_actions() -> void:
@@ -690,6 +742,8 @@ func _render_developer() -> void:
 			developer_text.text = "\n".join(_developer_divine_lines())
 		"mortal_beliefs":
 			developer_text.text = "\n".join(_developer_mortal_belief_lines())
+		"feedback":
+			developer_text.text = "\n".join(_developer_feedback_lines())
 		"chronicle":
 			developer_text.text = "\n".join(_developer_chronicle_lines())
 		"consequences":
@@ -979,6 +1033,54 @@ func _developer_mortal_belief_lines() -> Array[String]:
 	lines.append("")
 	lines.append(_dev_field("established at", BeliefRules.ESTABLISHED_CONFIDENCE))
 	lines.append("[color=#68757c]A belief is what one mortal accepts. It is not a religion, and it is nobody else's.[/color]")
+	return lines
+
+
+func _developer_feedback_lines() -> Array[String]:
+	# Why the player was told what they were told.
+	#
+	# The theatrical layer is the one most able to drift away from the
+	# simulation, so this section exists to keep it checkable: every surfaced
+	# item names the record it came from and the flags that justified its
+	# wording. A headline claiming a bond has broken should be traceable to a
+	# band crossing, and if it is not, that is a bug this section will show.
+	var state := simulation.state
+	var lines: Array[String] = [
+		_dev_heading("FEEDBACK  ·  %d surfaced this year, cap %d" % [
+			last_developments.size(), FeedbackRules.MAX_DEVELOPMENTS
+		])
+	]
+	if not last_divine_feedback.is_empty():
+		lines.append("")
+		lines.append("[color=#e8be63]  IMMEDIATE  (%s pipeline)[/color]"
+			% str(last_divine_feedback["pipeline"]))
+		lines.append(_dev_field("    headline", str(last_divine_feedback["headline"])))
+		for line: String in last_divine_feedback["changes"]:
+			lines.append("[color=#8d989d]    %s[/color]" % line)
+	if last_developments.is_empty():
+		lines.append("")
+		lines.append("[color=#73627f]Nothing was surfaced. A quiet year is allowed to stay quiet.[/color]")
+	for record: Dictionary in last_developments:
+		var item: Dictionary = record
+		lines.append("")
+		lines.append("[color=#d8c98a]  [p%d]  %s[/color]" % [
+			int(item["priority"]), str(item["headline"])
+		])
+		for line: String in str(item["body"]).split("\n"):
+			lines.append("[color=#cfd6d8]    %s[/color]" % line)
+		lines.append(_dev_field("    voice", str(item["voice"])))
+		lines.append(_dev_field("    category", str(item["category"])))
+		# The record it was drawn from. Presentation points BACK at the
+		# simulation and never replaces it.
+		lines.append(_dev_field("    source", "%s  %s" % [
+			str(item["source_record_type"]), str(item["source_record_id"])
+		]))
+		for key_value in item["context"].keys():
+			lines.append("[color=#8d989d]    %-26s %s[/color]" % [
+				str(key_value), str(item["context"][key_value])
+			])
+	lines.append("")
+	lines.append("[color=#68757c]Presentation reads records and writes nothing. Scores stay in the sections above.[/color]")
 	return lines
 
 

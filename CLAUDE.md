@@ -13,13 +13,13 @@ The user retains authority over game design, project direction, and GitHub publi
 3. If there is **ANY** design ambiguity, design problem, or architecture decision that could affect game behavior, scope, rules, simulation outcomes, or project direction, **STOP and ask the user before deciding**. Do not make autonomous game-design decisions.
 4. Small, purely mechanical implementation details may be handled without asking only when they cannot alter design intent. If uncertain, ask.
 5. GitHub repository `kangyl1/worldsim` is the source of truth when this document or any handoff summary conflicts with the current committed code. Inspect the repository and history when unsure.
-6. Minimal Settlement State v1, Selective Perception v1, Broad Intent v1, Action Selection v1, Action Execution v1, Consequence Engine v1, **Interpretation v1** and **Divine Actions in the shared causal pipeline v1** are built. Mortals notice different things, want things, try things, attempts have results, results objectively change the world, and mortals now decide what those results MEANT — which changes what they want later. **Exactly ONE divine power, Send Rain, has been migrated onto that same road**, and the road itself is now generic: `scripts/divine_action_rules.gd` is the single surface that registers how any power enters the world. Bless Harvest and Divine Voice still get one collective meaning from the populace-level `DivineReceptionSystem`. **Historical Selection + Chronicle v1** is also built: the simulation now decides which occurrences mattered enough to become history, and links them causally. **Belief Formation v1** is built on top of that: mortals accumulate durable, revisable, per-mortal beliefs from their own repeated interpretations, and the first divine belief can now bootstrap organically. **Population & Locality Coverage Foundation v1** made the rules generic around the seeded fixtures: no rules file names a settlement or a mortal, so generated places and people can take part by existing in state. **Broader Interpretation Coverage v1** widened what mortals can conclude: the three settlement-condition topics the event cycle produces every year are now interpreted, per observer, by where they live and who they are. Migrating any further power, designing what its occurrence could MEAN, religion in any form, world generation itself, and the later history systems (myth, decay, competing accounts) must not be built until the user explicitly asks.
+6. Minimal Settlement State v1, Selective Perception v1, Broad Intent v1, Action Selection v1, Action Execution v1, Consequence Engine v1, **Interpretation v1** and **Divine Actions in the shared causal pipeline v1** are built. Mortals notice different things, want things, try things, attempts have results, results objectively change the world, and mortals now decide what those results MEANT — which changes what they want later. **Exactly ONE divine power, Send Rain, has been migrated onto that same road**, and the road itself is now generic: `scripts/divine_action_rules.gd` is the single surface that registers how any power enters the world. Bless Harvest and Divine Voice still get one collective meaning from the populace-level `DivineReceptionSystem`. **Historical Selection + Chronicle v1** is also built: the simulation now decides which occurrences mattered enough to become history, and links them causally. **Belief Formation v1** is built on top of that: mortals accumulate durable, revisable, per-mortal beliefs from their own repeated interpretations, and the first divine belief can now bootstrap organically. **Population & Locality Coverage Foundation v1** made the rules generic around the seeded fixtures: no rules file names a settlement or a mortal, so generated places and people can take part by existing in state. **Broader Interpretation Coverage v1** widened what mortals can conclude: the three settlement-condition topics the event cycle produces every year are now interpreted, per observer, by where they live and who they are. **Situational Choices & Theatrical Feedback v1** made that depth visible: a presentation-only layer decides what the player is told each year and how it is worded, reading records and writing nothing. Migrating any further power, designing what its occurrence could MEAN, religion in any form, world generation itself, and the later history systems (myth, decay, competing accounts) must not be built until the user explicitly asks.
 7. The player-facing interface shows a mortal's perspective; Developer Mode shows the machine. Never merge the two. See "Interface rules".
 
 ## Project reference
 
 - Repository: `kangyl1/worldsim`
-- Current important commit: `da5abee821793741e9b9d636bb2102e8e5dd71bd` — `Add Broader Interpretation Coverage v1`, which made the world's own conditions mean something
+- Current important commit: `PENDING_FEEDBACK_COMMIT` — `Add Situational Choices and Theatrical Feedback v1`, which made the simulation visible in normal play
 
 The mortal causal chain, one commit per layer, oldest first:
 
@@ -39,6 +39,7 @@ The mortal causal chain, one commit per layer, oldest first:
 - `c7f2571306313e4ce781d2fe09cc037d73f3b840` — `Add Belief Formation v1` (what one mortal came to accept, from their own repeated conclusions)
 - `0529b3543f1aac1e98ba353ef7f8334076af23b6` — `Add Population and Locality Coverage Foundation v1` (the rules stopped knowing which settlements and people happen to exist)
 - `da5abee821793741e9b9d636bb2102e8e5dd71bd` — `Add Broader Interpretation Coverage v1` (the world's own conditions became things a mortal can have an opinion about)
+- `PENDING_FEEDBACK_COMMIT` — `Add Situational Choices and Theatrical Feedback v1` (the player can finally see what the simulation had been doing all along)
 
 - Local project path: `/Users/jamienfam/Documents/ChatGPT/worldsim`
 - Tested Godot version: `4.7.1`
@@ -71,12 +72,13 @@ The current foundation includes:
 - Belief Formation v1: durable per-mortal propositions accumulated from a mortal's own interpretations, revisable by contradiction, biasing later interpretation and intent without forcing either
 - Population & Locality Coverage Foundation v1: a small locality API, no rules file naming a settlement or a mortal, and empty locations represented honestly rather than filled in
 - Broader Interpretation Coverage v1: the yearly settlement conditions are interpreted per observer by locality, traits, confidence and belief, with a coverage diagnostic naming the topics nobody has designed meanings for
+- Situational Choices & Theatrical Feedback v1: deterministic templates turn existing records into at most three player-facing developments a year, in three voices, with every line grounded in state the simulation actually holds
 - knowledge generation from existing events, outcome-aware and refreshing stable ids
 - a world map interface with clickable settlements and crisis markers
 - world -> settlement -> person navigation in one reusable panel
 - in-game Developer Mode (DEV button, F1 secondary) exposing raw simulation values, read-only
 - a centralised presentation layer turning numbers into qualitative labels
-- deterministic tests across twenty suites
+- deterministic tests across twenty-one suites
 - a 72-turn regression suite
 
 Current core source files:
@@ -96,6 +98,7 @@ Current core source files:
 | `scripts/consequence_rules.gd` | Consequence Engine v1: what objectively happened, never what it meant |
 | `scripts/chronicle_rules.gd` | Chronicle v1: which occurrences mattered enough to become history, and why |
 | `scripts/belief_rules.gd` | Belief Formation v1: what one mortal came to accept, and on what evidence |
+| `scripts/feedback_rules.gd` | presentation only: what the player is told each year, in which voice, and why |
 | `scripts/world_map.gd` | map presentation and click hit-testing; reads nothing from the simulation |
 | `scripts/presentation_rules.gd` | number -> label bands for the player-facing interface |
 | `Main.gd` / `Main.tscn` | interface and player interaction only |
@@ -124,6 +127,7 @@ Test suites, all deterministic:
 | `tests/belief_test.gd` | the divine bootstrap, gradual formation, contradiction, and everything belief must not do |
 | `tests/locality_test.gd` | invented settlements and mortals take part; empty places stay empty and stay valid |
 | `tests/interpretation_coverage_test.gd` | the yearly conditions mean something, differently to different people, without inventing motive |
+| `tests/feedback_test.gd` | the player is told the truth, theatrically, boundedly, and presentation changes nothing |
 
 Do not assume this summary is exhaustive or newer than the code. Inspect the repository first, and use GitHub as the source of truth if anything conflicts.
 
@@ -621,6 +625,76 @@ preserved:
 - tests must name the topic and settlement they mean. Selecting a reading by
   position was unambiguous when a mortal interpreted one thing per tick, and two
   existing tests had to be made more precise when that stopped being true
+
+Situational Choices & Theatrical Feedback v1 constraints, settled with the user
+and to be preserved:
+
+- **`scripts/feedback_rules.gd` is presentation and nothing else.** It reads
+  records the simulation already wrote and decides only WHAT to show and HOW to
+  word it. It writes no state, and a test runs five full passes and asserts the
+  world is byte-for-byte identical. A mutation that made it call `add_history()`
+  is caught
+- the governing rules are GDD Section 40 (**hide machinery, not drama**) and
+  Section 97 (**a legend being written in real time**). Exact trust values,
+  belief arithmetic, intent weights and interpretation scores stay in Developer
+  Mode; what a mortal CONCLUDED, came to believe, or changed their mind about
+  goes in front of the player
+- **it is not a second decision engine.** Two identical worlds behave
+  identically whether or not anybody asks what to show, and a test asserts the
+  intent archives match
+- **it is not a second history.** It may READ the Chronicle to judge
+  significance and writes nothing back. Chronicle asks "was this historically
+  important"; feedback asks "should the player notice this now", and the two are
+  allowed to disagree
+- **deterministic templates only.** No randomness, no generated prose, no LLM. A
+  line the state does not support must not exist: a test asserts every character
+  line maps to a reading the world can actually produce, every belief sentence
+  to a real proposition, and every "notable" reading to a line it can say
+- **exaggeration may amplify; it may never fabricate.** The load-bearing case is
+  "%s no longer expects his help", which appears ONLY when that mortal holds
+  `is_unreliable` about that person at established confidence. A test runs the
+  identical refusal history with and without the belief
+- **the feed is capped at three a year**, deduped one item per subject per
+  category, and a quiet year is allowed to produce nothing. The bound is
+  asserted against a LITERAL as well as the constant — checking only
+  `<= MAX_DEVELOPMENTS` is self-referential, and a mutation raising the constant
+  proved it
+- relationship news requires crossing an existing `PresentationRules` band.
+  A movement inside a band is noise; a test asserts 50 -> 52 stays silent, and a
+  mutation surfacing every tick is caught
+- belief news requires crossing `BeliefRules.ESTABLISHED_CONFIDENCE` in either
+  direction. Drift within the band is not news
+- **no score, delta or truth flag may reach the player.** Divine feedback is
+  qualitative — a test rejects any digit in it — and a grep asserts the layer
+  cannot even name `objective_truth_state`, `truth_state`, the divine action
+  archive or the intent archive
+- three voices, all presentation: CHARACTER (one mortal's own words, keyed by
+  interpretation type so no mortal is hardcoded as believer or sceptic),
+  CHRONICLER (short narration), WORLD (collective texture). **World Voice is
+  declared and deliberately unused** — nothing models collective knowledge, and
+  inventing crowd opinion would be the fabrication this layer forbids
+- `label_for_action()` phrases a primitive without adding one. The seven verbs
+  are unchanged, and a test asserts the presentation table names no verb the
+  simulation lacks. Repetition wording comes from counting real executions in
+  the archive — no arbitrary stages
+- **identical parameters must produce identical wording.** Different words must
+  mean a different world, or the variety is cosmetic
+- the player-facing surface is the existing central text region. No new panels,
+  no fake-phone work, and the prose History Log and Developer-Mode-only
+  Chronicle are both untouched
+
+**Known limitation.** The LEGACY feedback horizon of GDD Section 97 is not
+built. Nothing models an event's later reputation — the Chronicle has
+`caused_by`/`led_to` but no notion of what an event came to be remembered AS —
+so "the rains of Year 22 are still remembered as…" has no state behind it and
+was not faked.
+
+**Known limitation.** World Voice has no data source, as above. Refusals are
+also rare in autonomous runs, so the repeated-refusal escalation almost never
+fires on its own and the tests construct it. And only about one year in thirty
+is quiet, because the seeded world is in near-constant crisis — the contrast GDD
+Section 37 wants is thinner than intended, which is a world-size question rather
+than a feedback one.
 
 Population & Locality Coverage Foundation v1 constraints, settled with the user
 and to be preserved:

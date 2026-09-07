@@ -155,6 +155,8 @@ var perception_rules := PerceptionRules.new()
 var consequence_rules := ConsequenceRules.new()
 var chronicle_rules := ChronicleRules.new()
 var belief_rules := BeliefRules.new()
+# Presentation only. It reads records and writes nothing; see feedback_rules.gd.
+var feedback_rules := FeedbackRules.new()
 var knowledge_rules := KnowledgeRules.new()
 var debug_logging_enabled: bool = true
 

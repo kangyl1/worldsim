@@ -377,7 +377,10 @@ func _test_divine_section_is_its_own() -> void:
 	main.simulation.resolve_action("send_rain")
 	var view := _section_text("divine")
 	assert(view.contains("DIVINE ACTIONS"))
-	for field: String in ["action_type", "target_id", "power_cost", "pipeline", "consequence_id"]:
+	for field: String in [
+		"action_type", "target_id", "power_cost", "pipeline",
+		"occurrence_topic", "consequence_id"
+	]:
 		assert(view.contains(field), "the divine section cannot explain '%s'" % field)
 	assert(view.contains("send_rain"), "the act just taken is not shown")
 	assert(view.contains("shared"), "the section does not say which road the act took")

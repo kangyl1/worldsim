@@ -876,7 +876,7 @@ func _developer_divine_lines() -> Array[String]:
 	lines.append("[color=#76c8d5]latest[/color]")
 	for field: String in [
 		"id", "year", "action_type", "target_id", "subject_id",
-		"power_cost", "pipeline", "consequence_id", "result"
+		"power_cost", "pipeline", "occurrence_topic", "consequence_id", "result"
 	]:
 		lines.append(_dev_field("  %s" % field, _or_none(str(latest[field]))))
 	lines.append(_dev_field("  parameters", str(latest["parameters"])))
@@ -885,6 +885,8 @@ func _developer_divine_lines() -> Array[String]:
 	lines.append("[color=#76c8d5]where the rest of this chain lives[/color]")
 	lines.append("[color=#8d989d]  what objectively changed  ->  CONSEQUENCES  (%s)[/color]"
 		% _or_none(str(latest["consequence_id"])))
+	lines.append("[color=#8d989d]  what mortals were offered ->  KNOWLEDGE topic '%s'[/color]"
+		% _or_none(str(latest["occurrence_topic"])))
 	lines.append("[color=#8d989d]  who could notice it       ->  PERCEPTIONS[/color]")
 	lines.append("[color=#8d989d]  what they now believe     ->  KNOWLEDGE[/color]")
 	lines.append("[color=#8d989d]  what they took it to mean ->  INTERPRETATIONS[/color]")

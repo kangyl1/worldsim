@@ -133,16 +133,21 @@ var state := WorldState.new()
 var divine_reception_system := DivineReceptionSystem.new()
 var interpretation_rules := InterpretationRules.new()
 
-# Divine powers that have moved to the shared causal pipeline: the act changes
-# the world, the consequence engine reports what changed, perception decides who
-# noticed, and every mortal decides for themselves what it meant.
+# Which road a divine act takes is registered in `divine_action_rules.gd` and
+# asked for here. Nothing in this file may branch on an action id to decide it:
+# one power's migration must not mean hunting for `if action_id == ...` across
+# the simulation. This is roadmap item 12, one power at a time.
+var divine_action_rules := DivineActionRules.new()
+
+# What the player is offered, and what it costs them. Separate from the causal
+# registry on purpose: how a power is presented and priced is an economy and
+# interface question, while `divine_action_rules.gd` answers only how the act
+# enters the world. A power needs an entry in both, and neither belongs in the
+# other.
 #
-# Everything NOT listed here still runs the legacy populace-level path in
-# `DivineReceptionSystem`, which reads one collective meaning out of the act and
-# writes belief, reputation and history from it. The two must never both run for
-# the same power, or the world reacts twice to one event. This is roadmap item
-# 12, migrating one power at a time.
-const MIGRATED_DIVINE_ACTIONS := ["send_rain"]
+# A var rather than a const for the same narrow reason the registry is: a test
+# can offer a power the catalogue was not written with.
+var actions: Dictionary = ACTIONS.duplicate(true)
 var intent_rules := IntentRules.new()
 var action_rules := ActionRules.new()
 var execution_rules := ExecutionRules.new()
@@ -164,28 +169,36 @@ func get_current_event() -> Dictionary:
 
 
 func get_action(action_id: String) -> Dictionary:
-	return ACTIONS[action_id]
+	return actions[action_id]
+
+
+func offer_action(action_id: String, entry: Dictionary) -> void:
+	# Put a power in front of the player. Its causal handling is registered
+	# separately, in `divine_action_rules.gd`.
+	actions[action_id] = entry.duplicate(true)
 
 
 func can_resolve(action_id: String) -> bool:
-	if state.action_taken or not ACTIONS.has(action_id):
+	if state.action_taken or not actions.has(action_id):
 		return false
-	return state.divine_power >= int(ACTIONS[action_id]["cost"])
+	return state.divine_power >= int(actions[action_id]["cost"])
 
 
 func resolve_action(action_id: String) -> Dictionary:
 	if state.action_taken:
 		return {"ok": false, "message": "The world is already interpreting your choice."}
-	if not ACTIONS.has(action_id):
+	if not actions.has(action_id):
 		return {"ok": false, "message": "That action is unknown."}
 
-	var action: Dictionary = ACTIONS[action_id]
+	var action: Dictionary = actions[action_id]
 	var cost := int(action["cost"])
 	if state.divine_power < cost:
 		return {"ok": false, "message": "Insufficient Divine Power. Choose another response."}
 
 	state.divine_power -= cost
-	state.action_counts[action_id] += 1
+	# Tolerant of a power the tally was not written with, so registering one does
+	# not mean editing a counter dictionary in `world_state.gd` as well.
+	state.action_counts[action_id] = int(state.action_counts.get(action_id, 0)) + 1
 	var location_id := state.current_event_location_id
 	var before := _settlement_snapshot(location_id)
 	var immediate_result := _apply_immediate_action(action_id)
@@ -194,7 +207,8 @@ func resolve_action(action_id: String) -> Dictionary:
 	# notice. No motive is attached: "rain fell" is the fact, and what it means
 	# is theirs to decide.
 	var divine_consequence := consequence_rules.plan_divine(
-		state, action_id, location_id, _settlement_changes(location_id, before)
+		state, action_id, location_id, _settlement_changes(location_id, before),
+		divine_action_rules.occurrence_for(action_id)
 	)
 	# Read before applying: apply() hands the fact to perception and erases it
 	# from the record, so the claim has to be taken while it is still there.
@@ -217,13 +231,16 @@ func resolve_action(action_id: String) -> Dictionary:
 		"consequence_id": str(applied_consequence.get("id", "")),
 		# Which road this power takes. The whole point of the flag is that both
 		# roads must never run for one act.
-		"pipeline": "shared" if action_id in MIGRATED_DIVINE_ACTIONS else "legacy"
+		"pipeline": divine_action_rules.pipeline_for(action_id),
+		# What mortals were offered, if anything. Named here so the record can
+		# point at the rest of the chain without absorbing it.
+		"occurrence_topic": divine_action_rules.topic_for(action_id)
 	})
 	state.previous_action_id = action_id
 	state.action_taken = true
 	state.last_result = immediate_result
 
-	if action_id in MIGRATED_DIVINE_ACTIONS:
+	if divine_action_rules.is_shared_pipeline(action_id):
 		# MIGRATED. Nothing here decides what the act meant. The consequence is
 		# already queued as a fact; perception will choose who notices it next
 		# tick, and each of them will reach their own conclusion — including the
@@ -243,7 +260,7 @@ func resolve_action(action_id: String) -> Dictionary:
 		var shared_result := {
 			"ok": true,
 			"message": state.last_result,
-			"pipeline": "shared",
+			"pipeline": DivineActionRules.PIPELINE_SHARED,
 			"divine_action_id": str(divine_record["id"]),
 			"consequence_id": str(applied_consequence.get("id", "")),
 			# Deliberately absent: interpretation, belief and reputation are not
@@ -263,7 +280,7 @@ func resolve_action(action_id: String) -> Dictionary:
 		return shared_result
 
 	# LEGACY, for every power not yet migrated. One collective meaning, read out
-	# of the act itself. Untouched on purpose; see MIGRATED_DIVINE_ACTIONS.
+	# of the act itself. Untouched on purpose; see `divine_action_rules.gd`.
 	var interpretation := divine_reception_system.choose(state, action_id, state.current_event_id)
 	var previous_reputation := state.reputation
 	var new_flags := _apply_interpretation(interpretation)
@@ -281,7 +298,7 @@ func resolve_action(action_id: String) -> Dictionary:
 	var result := {
 		"ok": true,
 		"message": state.last_result,
-		"pipeline": "legacy",
+		"pipeline": DivineActionRules.PIPELINE_LEGACY,
 		"divine_action_id": str(divine_record["id"]),
 		"consequence_id": str(applied_consequence.get("id", "")),
 		"interpretation": state.last_interpretation,

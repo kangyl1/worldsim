@@ -91,30 +91,6 @@ const EXECUTION_CONSEQUENCES := {
 # and resolve to a no-effect: the effect happened, and it happened once.
 const ALREADY_APPLIED := ["claim_delivered", "observation_made"]
 
-# What a divine act objectively does to the world someone can look at. No motive
-# is recorded: mortals get "rain fell", never "the god chose to help you". What
-# it meant is theirs to decide, and two of them may decide differently.
-const DIVINE_CONSEQUENCES := {
-	"send_rain": {
-		"topic": "weather_rain",
-		"claim": "Rain fell on %s",
-		"observability": "local",
-		"confidence": 90
-	},
-	"bless_harvest": {
-		"topic": "harvest_yield",
-		"claim": "%s's fields yielded more than their soil should allow",
-		"observability": "local",
-		"confidence": 90
-	},
-	"speak_mortal": {
-		"topic": "mortal_speech",
-		"claim": "A voice in %s spoke with an unfamiliar certainty",
-		"observability": "local",
-		"confidence": 90
-	}
-}
-
 
 # What objectively came of one execution. Reads the world and changes nothing,
 # so every execution in a year can be judged against the same snapshot before
@@ -150,13 +126,24 @@ func plan_execution(state: WorldState, execution: Dictionary) -> Dictionary:
 # The objective side of a divine act. What it changed is already in the world by
 # the time this runs; this records that it happened and gives mortals something
 # to notice.
+# The contract between a divine act and this layer. The caller supplies what
+# objectively changed and, if the act left anything anyone could see, the
+# occurrence template describing it — both from `divine_action_rules.gd`, which
+# is where a power is registered.
+#
+# This layer answers ONE question, the same one it answers for a mortal act:
+# what objectively changed or occurred? It is not told, and must never be told,
+# whether mortals liked it, whether they will think a god caused it, whether
+# faith should rise, or whether it was mercy or punishment. Those are questions
+# for a mortal, several layers downstream.
 func plan_divine(
 	state: WorldState,
 	action_id: String,
 	location_id: String,
-	state_changes: Array
+	state_changes: Array,
+	occurrence: Dictionary = {}
 ) -> Dictionary:
-	var template: Dictionary = DIVINE_CONSEQUENCES.get(action_id, {})
+	var template: Dictionary = occurrence
 	var record := _new_record(state, SOURCE_DIVINE, action_id, {
 		"actor_id": "",
 		"target_id": "",
@@ -167,8 +154,10 @@ func plan_divine(
 	for change_value in state_changes:
 		record["state_changes"].append(change_value)
 	if template.is_empty():
-		record["consequence_type"] = TYPE_NO_EFFECT
-		reasons.append("silence changes nothing anyone can point at")
+		# The act left nothing to notice. It may still have changed the world;
+		# what it did not do is give anybody something to point at.
+		record["consequence_type"] = TYPE_STATE_CHANGE if not state_changes.is_empty() else TYPE_NO_EFFECT
+		reasons.append("nothing happened that anyone there could see")
 		return record
 	record["consequence_type"] = TYPE_STATE_CHANGE if not state_changes.is_empty() else TYPE_SOCIAL
 	record["pending_fact"] = {

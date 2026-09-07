@@ -42,7 +42,14 @@ const SOCIAL_TOPICS := [
 # The engine knows the god sent it. The mortal does not, and nothing here may
 # tell them: "it rained" is the fact, and "someone sent it" is one of several
 # things a person might make of that. Being wrong is allowed and expected.
-const WORLD_TOPICS := ["weather_rain"]
+#
+# The list is not written here. `divine_action_rules.gd` registers the powers,
+# and a topic becomes a world topic the moment an act can be seen — which is not
+# the same as its meaning having been designed. A registered topic with no
+# entry in WORLD_CANDIDATES is held as a fact and left uninterpreted, because
+# reaching for `unclear_what_happened` there would be inventing a conclusion to
+# fill a gap in the design rather than because a mortal was actually unsure.
+var divine_action_rules := DivineActionRules.new()
 
 # Where the observer stood in relation to a world occurrence. Not a role in the
 # social sense — nobody did this to anybody — but it still matters enormously
@@ -349,11 +356,20 @@ func is_social_topic(topic: String) -> bool:
 
 
 func is_world_topic(topic: String) -> bool:
-	return topic in WORLD_TOPICS
+	return topic in divine_action_rules.occurrence_topics()
+
+
+# Whether anybody has yet decided what this KIND of occurrence could mean. A
+# power can enter the pipeline before its meanings are designed; until they are,
+# mortals hold the fact and draw nothing from it.
+func has_candidates(topic: String) -> bool:
+	if is_social_topic(topic):
+		return CANDIDATES.has(topic)
+	return WORLD_CANDIDATES.has(topic)
 
 
 func is_interpretable(topic: String) -> bool:
-	return is_social_topic(topic) or is_world_topic(topic)
+	return (is_social_topic(topic) or is_world_topic(topic)) and has_candidates(topic)
 
 
 func pending_for(state: WorldState, observer_id: String) -> Array[Dictionary]:

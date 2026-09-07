@@ -13,13 +13,13 @@ The user retains authority over game design, project direction, and GitHub publi
 3. If there is **ANY** design ambiguity, design problem, or architecture decision that could affect game behavior, scope, rules, simulation outcomes, or project direction, **STOP and ask the user before deciding**. Do not make autonomous game-design decisions.
 4. Small, purely mechanical implementation details may be handled without asking only when they cannot alter design intent. If uncertain, ask.
 5. GitHub repository `kangyl1/worldsim` is the source of truth when this document or any handoff summary conflicts with the current committed code. Inspect the repository and history when unsure.
-6. Minimal Settlement State v1, Selective Perception v1, Broad Intent v1, Action Selection v1, Action Execution v1, Consequence Engine v1, **Interpretation v1** and **Divine Actions in the shared causal pipeline v1** are built. Mortals notice different things, want things, try things, attempts have results, results objectively change the world, and mortals now decide what those results MEANT — which changes what they want later. **Exactly ONE divine power, Send Rain, has been migrated onto that same road.** Bless Harvest and Divine Voice still get one collective meaning from the populace-level `DivineReceptionSystem`. Migrating any further power, and History generation, must not be built until the user explicitly asks.
+6. Minimal Settlement State v1, Selective Perception v1, Broad Intent v1, Action Selection v1, Action Execution v1, Consequence Engine v1, **Interpretation v1** and **Divine Actions in the shared causal pipeline v1** are built. Mortals notice different things, want things, try things, attempts have results, results objectively change the world, and mortals now decide what those results MEANT — which changes what they want later. **Exactly ONE divine power, Send Rain, has been migrated onto that same road**, and the road itself is now generic: `scripts/divine_action_rules.gd` is the single surface that registers how any power enters the world. Bless Harvest and Divine Voice still get one collective meaning from the populace-level `DivineReceptionSystem`. Migrating any further power, designing what its occurrence could MEAN, and History generation, must not be built until the user explicitly asks.
 7. The player-facing interface shows a mortal's perspective; Developer Mode shows the machine. Never merge the two. See "Interface rules".
 
 ## Project reference
 
 - Repository: `kangyl1/worldsim`
-- Current important commit: `0f6cd1aa86b33ec18513e4c86731e201123dba45` — `Add Divine Actions in the shared causal pipeline v1`, the first divine power to stop deciding its own meaning
+- Current important commit: `PENDING_FOUNDATION_COMMIT` — `Add Generic Divine Action Pipeline Foundation`, which makes the second migration cheap
 
 The mortal causal chain, one commit per layer, oldest first:
 
@@ -34,6 +34,7 @@ The mortal causal chain, one commit per layer, oldest first:
 - `8f97dd72ea5b996b2977cccf6632b145aa2b551a` — `Add Consequence Engine v1` (what changed in the world, and nothing about what it meant)
 - `00205742da26112ba9b36f9e534465f89b111246` — `Add Interpretation v1` (what one mortal decided it meant, and how that changes what they want next)
 - `0f6cd1aa86b33ec18513e4c86731e201123dba45` — `Add Divine Actions in the shared causal pipeline v1` (the god acts, and mortals — not the act — decide what it was)
+- `PENDING_FOUNDATION_COMMIT` — `Add Generic Divine Action Pipeline Foundation` (one road, registered in one place, that any power can walk)
 
 - Local project path: `/Users/jamienfam/Documents/ChatGPT/worldsim`
 - Tested Godot version: `4.7.1`
@@ -61,12 +62,13 @@ The current foundation includes:
 - Consequence Engine v1: objective occurrence and state change only, routed back through events and perception
 - Interpretation v1: what one mortal decided a social occurrence meant, per observer, feeding a small directed relationship change and therefore later intents
 - Divine Actions in the shared causal pipeline v1: Send Rain records what the god DID, changes the world objectively, and lets each mortal reach their own conclusion — including that it was only weather
+- Generic Divine Action Pipeline Foundation: one registration surface decides how any divine power enters the world, so migrating the next one is a flag and an effect rather than new plumbing
 - knowledge generation from existing events, outcome-aware and refreshing stable ids
 - a world map interface with clickable settlements and crisis markers
 - world -> settlement -> person navigation in one reusable panel
 - in-game Developer Mode (DEV button, F1 secondary) exposing raw simulation values, read-only
 - a centralised presentation layer turning numbers into qualitative labels
-- deterministic tests across fifteen suites
+- deterministic tests across sixteen suites
 - a 72-turn regression suite
 
 Current core source files:
@@ -76,6 +78,7 @@ Current core source files:
 | `scripts/world_state.gd` | stored truth: settlement conditions, entities, relationships, knowledge, intents, actions |
 | `scripts/world_sim.gd` | simulation behaviour: actions, yearly ticks, event knowledge generation, divine action records |
 | `scripts/knowledge_rules.gd` | rumor transfer scoring and trait effects on information |
+| `scripts/divine_action_rules.gd` | THE registration surface: which road each divine power takes, and what anyone present could see |
 | `scripts/divine_reception_system.gd` | how the POPULACE receives a divine act: one collective meaning, belief pressure, reputation |
 | `scripts/interpretation_rules.gd` | Interpretation v1: what ONE mortal decided a social occurrence meant |
 | `scripts/intent_rules.gd` | Broad Intent Model v1 scoring and explainability records |
@@ -106,6 +109,7 @@ Test suites, all deterministic:
 | `tests/presentation_test.gd` | qualitative band mappings |
 | `tests/interpretation_test.gd` | Interpretation v1: divergence, bounded effects, and everything the layer refuses to do |
 | `tests/divine_action_test.gd` | Send Rain end to end, and the twelve things a divine act must no longer do |
+| `tests/divine_pipeline_test.gd` | the road is generic: one routing surface, and an unforeseen power can walk it |
 
 Do not assume this summary is exhaustive or newer than the code. Inspect the repository first, and use GitHub as the source of truth if anything conflicts.
 
@@ -116,7 +120,9 @@ Do not assume this summary is exhaustive or newer than the code. Inspect the rep
 Everything in that chain is built, and so is the layer after it: mortals now
 decide what an occurrence MEANT, and that decision changes what they want in
 later years. Roadmap item 12 is PARTLY done — Send Rain travels the mortal road,
-three other powers do not. History (roadmap item 13) remains unbuilt.
+three other powers do not — but the road is now generic, so the remaining
+migrations are design work rather than plumbing. History (roadmap item 13)
+remains unbuilt.
 
 `GDD.md` Part II (sections 29-43) revises this. Mortals should pass through a
 wider chain: world state -> pressures -> perception -> belief -> interpretation
@@ -320,9 +326,9 @@ user and to be preserved:
 - **God controls what happens. Mortals decide what it means.** A divine act
   records WHAT was done; every question about what it MEANT belongs to a mortal,
   later, and may be answered differently by two people or not at all
-- the migration surface is exactly one constant: `MIGRATED_DIVINE_ACTIONS` in
-  `world_sim.gd`, currently `["send_rain"]`. Adding a power to that list is a
-  design decision and needs its own approved pass
+- the migration surface is exactly one file: `scripts/divine_action_rules.gd`.
+  Flipping a power's `pipeline` there is a design decision and needs its own
+  approved pass
 - **both roads must never run for one act.** `resolve_action` branches: a
   migrated power returns with empty `interpretation`, `belief_tag` and
   `reputation_hint` and never reaches `divine_reception_system`; an unmigrated
@@ -364,12 +370,58 @@ user and to be preserved:
   which is asserted rather than assumed
 - Developer Mode keeps **six** separate sections: DIVINE ACTIONS, CONSEQUENCES,
   PERCEPTIONS, KNOWLEDGE, INTERPRETATIONS and the rest. The divine section points
-  at the other four rather than restating them. Merging them would hide the exact
-  gap this layer exists to show
+  at the other four rather than restating them, and names the `occurrence_topic`
+  that links the act to what mortals were offered. Merging them would hide the
+  exact gap this layer exists to show
 - divine acts land on `current_event_location_id`, so a test that wants the act
   observed must aim it at a settlement somebody lives in. Aimed at the Frontier,
   nobody perceives it and nobody interprets it — that is the observability rules
   working, not a defect
+
+Generic Divine Action Pipeline Foundation constraints, settled with the user and
+to be preserved:
+
+- **`scripts/divine_action_rules.gd` is the ONE place that says how a divine
+  power enters the world.** No other file may branch on an action id to decide
+  which road it takes, and a test greps `consequence_rules.gd`,
+  `perception_rules.gd` and `interpretation_rules.gd` for every power's name
+- a registry entry holds a `pipeline` and, if the act leaves anything to notice,
+  an `occurrence` (`topic`, `claim`, `observability`, `confidence`). There is
+  deliberately NO field for faith, belief, reputation or meaning: an entry that
+  wanted one would be a power deciding its own reception again
+- an UNREGISTERED power answers `legacy`. Legacy is the behaviour that already
+  existed, and an unknown power must never be silently granted the new road
+- **an act may register no occurrence at all.** `do_nothing` does: it changes
+  nothing anyone can point at and offers nobody anything. That is a real option,
+  not a missing template
+- the divine action record and the mortal-facing fact are two records with two
+  wordings. The record may say the god caused rain in Aster; the fact says rain
+  fell on Aster. **Mortals must not learn the actor was God unless the
+  occurrence itself makes that objectively observable**
+- `consequence_rules.plan_divine()` is handed the occurrence rather than looking
+  the power up. The consequence layer no longer knows any divine power exists,
+  and must not learn again
+- interpretation derives its world topics from the registry instead of keeping a
+  second list. **A registered topic with no candidates designed yet is held as a
+  fact and left uninterpreted** — reaching for `unclear_what_happened` there
+  would be inventing a conclusion to fill a gap in the DESIGN rather than
+  because a mortal was actually unsure. `harvest_yield` and `mortal_speech` are
+  observable and uninterpreted today, and that is correct
+- **two tables describe a power, on purpose.** `world_sim.ACTIONS` holds title,
+  cost and hint — how the power is offered and priced, an economy and interface
+  question. The registry holds pipeline and occurrence — how the act enters the
+  world. Neither belongs in the other. Consequence: MIGRATING a power touches
+  the registry alone; adding a BRAND NEW one touches both. If that split ever
+  stops earning its keep, merging them is a design decision, not a tidy-up
+- `DivineActionRules.register()` and `WorldSimulation.offer_action()` exist so a
+  test can send a power the simulation has never heard of down the road and
+  prove no branch names it. **They are test seams, not a plugin system**, and
+  must not grow into one — a real power belongs in the declared table
+- migrating a power should cost TWO files: flip `pipeline` in the registry, and
+  strip the faith/follower writes from that power's own resolver in
+  `world_sim.gd`. Interpretation candidates are optional and come later. If a
+  migration ever needs edits across five unrelated files again, the abstraction
+  has come undone
 
 ## Design rules
 

@@ -19,7 +19,7 @@ The user retains authority over game design, project direction, and GitHub publi
 ## Project reference
 
 - Repository: `kangyl1/worldsim`
-- Current important commit: `PENDING_FOUNDATION_COMMIT` — `Add Generic Divine Action Pipeline Foundation`, which makes the second migration cheap
+- Current important commit: `a8037fc44678056d6b7f8c2e4b670fa9297990cc` — `Add Generic Divine Action Pipeline Foundation`, which makes the second migration cheap
 
 The mortal causal chain, one commit per layer, oldest first:
 
@@ -34,7 +34,7 @@ The mortal causal chain, one commit per layer, oldest first:
 - `8f97dd72ea5b996b2977cccf6632b145aa2b551a` — `Add Consequence Engine v1` (what changed in the world, and nothing about what it meant)
 - `00205742da26112ba9b36f9e534465f89b111246` — `Add Interpretation v1` (what one mortal decided it meant, and how that changes what they want next)
 - `0f6cd1aa86b33ec18513e4c86731e201123dba45` — `Add Divine Actions in the shared causal pipeline v1` (the god acts, and mortals — not the act — decide what it was)
-- `PENDING_FOUNDATION_COMMIT` — `Add Generic Divine Action Pipeline Foundation` (one road, registered in one place, that any power can walk)
+- `a8037fc44678056d6b7f8c2e4b670fa9297990cc` — `Add Generic Divine Action Pipeline Foundation` (one road, registered in one place, that any power can walk)
 
 - Local project path: `/Users/jamienfam/Documents/ChatGPT/worldsim`
 - Tested Godot version: `4.7.1`

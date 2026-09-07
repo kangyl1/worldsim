@@ -103,6 +103,27 @@ const INTENT_INTERPRETATION_RULES := {
 	"rain_natural_weather": {}
 }
 
+# What an ESTABLISHED belief does to what someone wants. Deliberately smaller
+# than the interpretation weights above, and for a reason worth stating.
+#
+# The two channels can describe the SAME evidence. A mortal who read one rain as
+# divine help has both the reading and the belief it fed, and counting both at
+# full strength would let one occurrence pay twice. The rule below is the
+# smallest fix that keeps both channels meaningful: a reading contributes only
+# while no belief it supports has become established, and once one has, the
+# belief takes over. Recent conclusion or settled conviction — never both for
+# the same proposition.
+#
+# The belief outlasts the reading, which is the point of having it: the
+# interpretation archive is capped and the conclusion will age out, while what
+# the mortal came to accept does not.
+const INTENT_BELIEF_RULES := {
+	BeliefRules.DIVINE_HELP_FOLLOWS_NEED: {"learn": 10, "preserve": 6},
+	BeliefRules.DIVINE_INTERVENTION_EXISTS: {"learn": 8},
+	BeliefRules.IS_SUPPORTIVE: {"connect": 8},
+	BeliefRules.IS_UNRELIABLE: {"distance": 8}
+}
+
 const INTENT_TRAIT_RULES := {
 	"compassionate": {
 		"help": 25, "resolve": 18, "connect": 12, "protect": 10,
@@ -384,6 +405,7 @@ func _evaluate_candidate(
 	var knowledge_used: Array[Dictionary] = []
 	var world_state_factors: Array[Dictionary] = []
 	var interpretation_factors: Array[Dictionary] = []
+	var belief_factors: Array[Dictionary] = []
 	var reasons: Array[String] = []
 	var candidate := {
 		"intent_type": intent_type,
@@ -399,6 +421,7 @@ func _evaluate_candidate(
 		"knowledge_used": knowledge_used,
 		"world_state_factors": world_state_factors,
 		"interpretation_factors": interpretation_factors,
+		"belief_factors": belief_factors,
 		"reasons": reasons
 	}
 
@@ -511,6 +534,33 @@ func _evaluate_candidate(
 			trait_id, "favours" if trait_delta >= 0 else "resists"
 		])
 
+	# What they have come to accept, where it is firm enough to reason from.
+	# Established beliefs only: a notion held at 20 is recorded and changes
+	# nothing about what its holder wants.
+	var belief_logic := BeliefRules.new()
+	var settled_propositions: Array[String] = []
+	for held: Dictionary in state.get_beliefs_for(actor_id):
+		var proposition := str(held["proposition"])
+		if not belief_logic.is_established(held):
+			continue
+		settled_propositions.append(proposition)
+		var belief_rule: Dictionary = INTENT_BELIEF_RULES.get(proposition, {})
+		if not belief_rule.has(intent_type):
+			continue
+		var belief_delta := int(belief_rule[intent_type])
+		score += belief_delta
+		belief_factors.append({
+			"source": "belief",
+			"detail": proposition,
+			"belief_id": str(held["id"]),
+			"subject_id": str(held["subject_id"]),
+			"confidence": int(held["confidence"]),
+			"delta": belief_delta
+		})
+		reasons.append("believing '%s', they %s this course" % [
+			proposition, "lean toward" if belief_delta >= 0 else "lean away from"
+		])
+
 	# Their own interpretations, counted once per distinct conclusion.
 	var counted_interpretations: Array[String] = []
 	for past: Dictionary in state.get_interpretations_for(actor_id):
@@ -519,6 +569,16 @@ func _evaluate_candidate(
 			continue
 		var reading_rule: Dictionary = INTENT_INTERPRETATION_RULES.get(reading, {})
 		if not reading_rule.has(intent_type):
+			continue
+		# The double-count guard. If this reading is evidence for something the
+		# mortal has already settled into a belief, the belief above has spoken
+		# for it and the reading stays quiet.
+		var superseded := false
+		for proposition: String in belief_logic.propositions_supported_by(reading):
+			if proposition in settled_propositions:
+				superseded = true
+				break
+		if superseded:
 			continue
 		counted_interpretations.append(reading)
 		var reading_delta := int(reading_rule[intent_type])
@@ -604,6 +664,7 @@ func _build_record(
 		"knowledge_used": candidate["knowledge_used"],
 		"world_state_factors": candidate["world_state_factors"],
 		"interpretation_factors": candidate["interpretation_factors"],
+		"belief_factors": candidate["belief_factors"],
 		"reasons": candidate["reasons"],
 		"considered": []
 	}

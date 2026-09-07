@@ -19,6 +19,9 @@ const MAX_STORED_PERCEPTIONS := 40
 const MAX_STORED_CONSEQUENCES := 40
 const MAX_STORED_INTERPRETATIONS := 40
 const MAX_STORED_DIVINE_ACTIONS := 40
+# How many interpretation ids a belief keeps for inspection. The links explain a
+# belief; they are not what makes it one, so a bound costs nothing.
+const MAX_BELIEF_SOURCES := 8
 # Selective memory (GDD section 36). Social occurrences accumulate one belief per
 # interaction, so a mortal cannot carry everything they ever learned. What goes
 # first is what could least change their behaviour: retracted claims, then stale
@@ -198,6 +201,33 @@ var pending_perception_facts: Array[Dictionary] = []
 # Entries are immutable once written, with ONE exception: `led_to` grows as
 # later records name an earlier one as their cause. Nothing else may change.
 var chronicle: Array[Dictionary] = []
+
+# What each mortal has come to accept about the world, across years.
+#
+# Kept apart from `knowledge` for a reason that matters: knowledge is capped and
+# pruned, so the FACTS a belief grew from will eventually be forgotten. The
+# belief must not go with them. Somebody who concluded that something intervenes
+# when people are in need does not stop believing it because they can no longer
+# recall which particular year it rained.
+#
+# Per-mortal, always. There is no realm belief, no shared creed and no
+# membership here, and two mortals living through the same decade are expected
+# to end up disagreeing.
+# Named `mortal_beliefs` and not `beliefs`, because `beliefs` above is the
+# LEGACY realm-level doctrine list that `DivineReceptionSystem` writes. The two
+# are unrelated and must stay that way: one is a kingdom-wide string the old
+# divine path appends to, this one is what individual people accept. Belief
+# Formation v1 neither reads nor writes the legacy list, nor `faith`, nor
+# `followers`.
+var mortal_beliefs: Array[Dictionary] = []
+# What this year's readings did to them. Current year only — a debugging view,
+# not a second archive.
+var last_belief_updates: Array[Dictionary] = []
+# The world as mortals last lived it, before the god's current turn. A mortal's
+# own settlement is directly-lived context, so remembering whether their own
+# wells were dry is theirs to have — and it must be the state BEFORE any divine
+# act relieved it, or nobody could ever notice that relief arrived.
+var conditions_before_turn: Dictionary = {}
 # Why something did NOT become history. Current year only, on purpose: this is
 # a debugging aid, and keeping it forever would rebuild the exhaustive event log
 # the Chronicle exists to avoid.
@@ -1059,3 +1089,60 @@ func chronicle_for_location(location_id: String) -> Array[Dictionary]:
 		if str(record["location_id"]) == location_id:
 			found.append(record)
 	return found
+
+
+# --- Beliefs ---------------------------------------------------------------
+
+func belief_id(holder_id: String, proposition: String, subject_id: String) -> String:
+	if subject_id.is_empty():
+		return "belief_%s_%s" % [holder_id, proposition]
+	return "belief_%s_%s_%s" % [holder_id, proposition, subject_id]
+
+
+# One belief per holder per proposition per subject. Repeated evidence updates
+# the belief that already exists rather than stacking another copy of it: a
+# mortal does not hold the same conviction twice.
+func record_belief(entry: Dictionary) -> Dictionary:
+	var record_id := belief_id(
+		str(entry["holder_id"]), str(entry["proposition"]), str(entry["subject_id"])
+	)
+	for index in range(mortal_beliefs.size()):
+		if str(mortal_beliefs[index]["id"]) == record_id:
+			var existing: Dictionary = mortal_beliefs[index]
+			for field: String in [
+				"confidence", "support", "contradiction", "last_updated_year",
+				"source_interpretation_ids", "status"
+			]:
+				existing[field] = entry[field]
+			return existing
+	var stored := entry.duplicate(true)
+	stored["id"] = record_id
+	mortal_beliefs.append(stored)
+	return stored
+
+
+func get_belief(holder_id: String, proposition: String, subject_id: String = "") -> Dictionary:
+	var record_id := belief_id(holder_id, proposition, subject_id)
+	for record: Dictionary in mortal_beliefs:
+		if str(record["id"]) == record_id:
+			return record
+	return {}
+
+
+func has_belief(holder_id: String, proposition: String, subject_id: String = "") -> bool:
+	return not get_belief(holder_id, proposition, subject_id).is_empty()
+
+
+func get_beliefs_for(holder_id: String) -> Array[Dictionary]:
+	var found: Array[Dictionary] = []
+	for record: Dictionary in mortal_beliefs:
+		if str(record["holder_id"]) == holder_id:
+			found.append(record)
+	return found
+
+
+# What a settlement's condition was before the current turn. Empty before the
+# first year turns, which callers must read as "no memory of it", not as zero.
+func condition_before_turn(location_id: String, band: String) -> int:
+	var bands: Dictionary = conditions_before_turn.get(location_id, {})
+	return int(bands.get(band, -1))

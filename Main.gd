@@ -8,7 +8,7 @@ const ACTION_ROW_WIDTH := 34
 const PERSON_META_PREFIX := "person:"
 const DEV_TAB_META := "dev_tab:"
 const DEV_PERSON_META := "dev_person:"
-const DEV_SECTIONS := ["world", "locations", "people", "perceptions", "knowledge", "intents", "actions", "executions", "divine", "consequences", "interpretations", "chronicle", "belief", "history"]
+const DEV_SECTIONS := ["world", "locations", "people", "perceptions", "knowledge", "intents", "actions", "executions", "divine", "consequences", "interpretations", "mortal_beliefs", "chronicle", "belief", "history"]
 const DEV_LIST_LIMIT := 24
 const BACK_META := "back"
 # Player-readable names for the broad intents the engine records. These name a
@@ -678,6 +678,8 @@ func _render_developer() -> void:
 			developer_text.text = "\n".join(_developer_execution_lines())
 		"divine":
 			developer_text.text = "\n".join(_developer_divine_lines())
+		"mortal_beliefs":
+			developer_text.text = "\n".join(_developer_mortal_belief_lines())
 		"chronicle":
 			developer_text.text = "\n".join(_developer_chronicle_lines())
 		"consequences":
@@ -853,6 +855,65 @@ func _developer_consequence_lines() -> Array[String]:
 	lines.append("")
 	lines.append("[color=#68757c]What any of it meant is not decided here.[/color]")
 	lines.append(_dev_field("consequences recorded", records.size()))
+	return lines
+
+
+# Named apart from `_developer_belief_lines`, which renders the LEGACY realm
+# belief pressure the old divine path writes. Two different things called
+# belief: one is a kingdom-wide number, this is what individual people accept.
+func _developer_mortal_belief_lines() -> Array[String]:
+	# What each mortal has come to accept, and on what evidence. Its own section
+	# because a belief is not a fact and not a reading: INTERPRETATIONS shows
+	# what somebody made of one occurrence, and this shows what they now hold
+	# about the world regardless of any particular occurrence.
+	var state := simulation.state
+	var lines: Array[String] = [
+		_dev_heading("BELIEFS  ·  %d held across %d mortals" % [
+			state.mortal_beliefs.size(), state.notable_entities.size()
+		])
+	]
+	if state.mortal_beliefs.is_empty():
+		lines.append("[color=#73627f]Nobody has concluded anything about the world yet.[/color]")
+	for record: Dictionary in state.mortal_beliefs:
+		var belief: Dictionary = record
+		var established: bool = int(belief["confidence"]) >= BeliefRules.ESTABLISHED_CONFIDENCE
+		lines.append("")
+		lines.append("[color=%s]  %s  believes  %s%s[/color]" % [
+			"#d8c98a" if established else "#8d989d",
+			str(belief["holder_id"]), str(belief["proposition"]),
+			"  of %s" % str(belief["subject_id"]) if not str(belief["subject_id"]).is_empty() else ""
+		])
+		lines.append(_dev_field("    confidence", "%d  (%s%s)" % [
+			int(belief["confidence"]), str(belief["status"]),
+			", reasoned from" if established else ", not yet reasoned from"
+		]))
+		# The evidence, both ways. This is the answer to "why does this mortal
+		# believe this" and "what weakened it".
+		lines.append(_dev_field("    support", belief["support"]))
+		lines.append(_dev_field("    contradiction", belief["contradiction"]))
+		lines.append(_dev_field("    first formed", "year %d" % int(belief["first_year"])))
+		lines.append(_dev_field("    last updated", "year %d" % int(belief["last_updated_year"])))
+		lines.append("[color=#8d989d]    from  %s[/color]"
+			% ", ".join(belief["source_interpretation_ids"]))
+
+	lines.append("")
+	lines.append(_dev_heading("THIS YEAR  ·  WHAT MOVED AND WHY"))
+	if state.last_belief_updates.is_empty():
+		lines.append("[color=#73627f]No conclusion this year changed what anybody accepts.[/color]")
+	for record: Dictionary in _tail(state.last_belief_updates, DEV_LIST_LIMIT):
+		var update: Dictionary = record
+		lines.append("[color=#cfd6d8]  %-10s %s  %s  %d -> %d[/color]" % [
+			str(update["change"]), str(update["holder_id"]),
+			str(update["proposition"]), int(update["before"]), int(update["after"])
+		])
+		for factor_value in update["factors"]:
+			var factor: Dictionary = factor_value
+			lines.append("[color=#8d989d]      %-30s %s[/color]" % [
+				str(factor["kind"]), str(factor["detail"])
+			])
+	lines.append("")
+	lines.append(_dev_field("established at", BeliefRules.ESTABLISHED_CONFIDENCE))
+	lines.append("[color=#68757c]A belief is what one mortal accepts. It is not a religion, and it is nobody else's.[/color]")
 	return lines
 
 

@@ -154,6 +154,7 @@ var execution_rules := ExecutionRules.new()
 var perception_rules := PerceptionRules.new()
 var consequence_rules := ConsequenceRules.new()
 var chronicle_rules := ChronicleRules.new()
+var belief_rules := BeliefRules.new()
 var knowledge_rules := KnowledgeRules.new()
 var debug_logging_enabled: bool = true
 
@@ -362,6 +363,15 @@ func advance_year() -> Dictionary:
 	# already wanted this one. That is the existing one-step-per-year causal
 	# rule, and it is why nothing here creates an action.
 	state.last_interpretations = tick_interpretations()
+	# Belief updates on this year's readings, and only on them.
+	#
+	# After interpretation, because a belief is built from conclusions and there
+	# are none until they are drawn. Before the chronicle, because a belief
+	# becoming established is the kind of thing history may care about. And far
+	# enough down the tick that nothing formed here can reach an intent already
+	# chosen near the top of it: a belief formed now changes what someone wants
+	# NEXT year, which is the same one-step-per-year rule interpretation follows.
+	state.last_belief_updates = tick_beliefs()
 	# History runs LAST, after everything it reads has settled.
 	#
 	# It is a record layer, not an actor. Nothing it writes is read by anything
@@ -370,6 +380,12 @@ func advance_year() -> Dictionary:
 	# last is what makes that easy to keep true — by the time it runs, every
 	# decision the year contained has already been made.
 	state.last_chronicle_entries = tick_chronicle(conditions_before)
+	# The world as mortals have just finished living it, kept for the turn that
+	# follows. The god acts BEFORE the year turns, so a snapshot taken at the top
+	# of this function would already contain the relief the god just provided —
+	# which is how the first version of this silently never fired. Taken here, it
+	# is the shortage people actually lived through before anything answered it.
+	state.conditions_before_turn = _settlement_conditions()
 	state_changed.emit()
 	return {"ok": true, "message": state.last_result}
 
@@ -696,6 +712,28 @@ func tick_chronicle(conditions_before: Dictionary) -> Array[Dictionary]:
 # for "acts stamped with this year" therefore finds nothing, which is how the
 # first version of this silently chronicled no divine action at all. Asking what
 # has not been considered yet has no such edge.
+# What this year's conclusions did to what their holders accept.
+#
+# Reads interpretation records and nothing else. It does not see the divine
+# action archive, objective truth, or the realm's faith — a belief founded on
+# any of those would be the engine's conclusion wearing a mortal's name.
+func tick_beliefs() -> Array[Dictionary]:
+	var updates := belief_rules.update_from_interpretations(state, state.last_interpretations)
+	_log_beliefs(updates)
+	return updates
+
+
+func _log_beliefs(updates: Array[Dictionary]) -> void:
+	if not debug_logging_enabled or updates.is_empty():
+		return
+	print("[BELIEF %d] %d update(s)" % [state.year, updates.size()])
+	for update: Dictionary in updates:
+		print("  %-9s %-14s %-28s %d -> %d" % [
+			str(update["change"]), str(update["holder_id"]),
+			str(update["proposition"]), int(update["before"]), int(update["after"])
+		])
+
+
 func _divine_actions_this_year() -> Array[Dictionary]:
 	var found: Array[Dictionary] = []
 	for record: Dictionary in state.divine_action_archive:

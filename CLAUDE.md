@@ -13,13 +13,13 @@ The user retains authority over game design, project direction, and GitHub publi
 3. If there is **ANY** design ambiguity, design problem, or architecture decision that could affect game behavior, scope, rules, simulation outcomes, or project direction, **STOP and ask the user before deciding**. Do not make autonomous game-design decisions.
 4. Small, purely mechanical implementation details may be handled without asking only when they cannot alter design intent. If uncertain, ask.
 5. GitHub repository `kangyl1/worldsim` is the source of truth when this document or any handoff summary conflicts with the current committed code. Inspect the repository and history when unsure.
-6. Minimal Settlement State v1, Selective Perception v1, Broad Intent v1, Action Selection v1, Action Execution v1, Consequence Engine v1, **Interpretation v1** and **Divine Actions in the shared causal pipeline v1** are built. Mortals notice different things, want things, try things, attempts have results, results objectively change the world, and mortals now decide what those results MEANT — which changes what they want later. **Exactly ONE divine power, Send Rain, has been migrated onto that same road**, and the road itself is now generic: `scripts/divine_action_rules.gd` is the single surface that registers how any power enters the world. Bless Harvest and Divine Voice still get one collective meaning from the populace-level `DivineReceptionSystem`. **Historical Selection + Chronicle v1** is also built: the simulation now decides which occurrences mattered enough to become history, and links them causally. Migrating any further power, designing what its occurrence could MEAN, and the later history systems (myth, decay, competing accounts) must not be built until the user explicitly asks.
+6. Minimal Settlement State v1, Selective Perception v1, Broad Intent v1, Action Selection v1, Action Execution v1, Consequence Engine v1, **Interpretation v1** and **Divine Actions in the shared causal pipeline v1** are built. Mortals notice different things, want things, try things, attempts have results, results objectively change the world, and mortals now decide what those results MEANT — which changes what they want later. **Exactly ONE divine power, Send Rain, has been migrated onto that same road**, and the road itself is now generic: `scripts/divine_action_rules.gd` is the single surface that registers how any power enters the world. Bless Harvest and Divine Voice still get one collective meaning from the populace-level `DivineReceptionSystem`. **Historical Selection + Chronicle v1** is also built: the simulation now decides which occurrences mattered enough to become history, and links them causally. **Belief Formation v1** is built on top of that: mortals accumulate durable, revisable, per-mortal beliefs from their own repeated interpretations, and the first divine belief can now bootstrap organically. Migrating any further power, designing what its occurrence could MEAN, religion in any form, and the later history systems (myth, decay, competing accounts) must not be built until the user explicitly asks.
 7. The player-facing interface shows a mortal's perspective; Developer Mode shows the machine. Never merge the two. See "Interface rules".
 
 ## Project reference
 
 - Repository: `kangyl1/worldsim`
-- Current important commit: `f382ad8ae2a58ff5f8b3fd196f9c86cf89ac25a8` — `Add Historical Selection and Chronicle v1`, the layer that decides what mattered
+- Current important commit: `PENDING_BELIEF_COMMIT` — `Add Belief Formation v1`, where repeated conclusions become durable convictions
 
 The mortal causal chain, one commit per layer, oldest first:
 
@@ -36,6 +36,7 @@ The mortal causal chain, one commit per layer, oldest first:
 - `0f6cd1aa86b33ec18513e4c86731e201123dba45` — `Add Divine Actions in the shared causal pipeline v1` (the god acts, and mortals — not the act — decide what it was)
 - `a8037fc44678056d6b7f8c2e4b670fa9297990cc` — `Add Generic Divine Action Pipeline Foundation` (one road, registered in one place, that any power can walk)
 - `f382ad8ae2a58ff5f8b3fd196f9c86cf89ac25a8` — `Add Historical Selection and Chronicle v1` (of everything that happened, what shaped the world — and what caused what)
+- `PENDING_BELIEF_COMMIT` — `Add Belief Formation v1` (what one mortal came to accept, from their own repeated conclusions)
 
 - Local project path: `/Users/jamienfam/Documents/ChatGPT/worldsim`
 - Tested Godot version: `4.7.1`
@@ -65,12 +66,13 @@ The current foundation includes:
 - Divine Actions in the shared causal pipeline v1: Send Rain records what the god DID, changes the world objectively, and lets each mortal reach their own conclusion — including that it was only weather
 - Generic Divine Action Pipeline Foundation: one registration surface decides how any divine power enters the world, so migrating the next one is a flag and an effect rather than new plumbing
 - Historical Selection + Chronicle v1: deterministic importance scoring over records the world already wrote, keeping a small fraction as objective history with causal links between entries
+- Belief Formation v1: durable per-mortal propositions accumulated from a mortal's own interpretations, revisable by contradiction, biasing later interpretation and intent without forcing either
 - knowledge generation from existing events, outcome-aware and refreshing stable ids
 - a world map interface with clickable settlements and crisis markers
 - world -> settlement -> person navigation in one reusable panel
 - in-game Developer Mode (DEV button, F1 secondary) exposing raw simulation values, read-only
 - a centralised presentation layer turning numbers into qualitative labels
-- deterministic tests across seventeen suites
+- deterministic tests across eighteen suites
 - a 72-turn regression suite
 
 Current core source files:
@@ -89,6 +91,7 @@ Current core source files:
 | `scripts/perception_rules.gd` | Selective Perception v1: who could notice an event, and how clearly |
 | `scripts/consequence_rules.gd` | Consequence Engine v1: what objectively happened, never what it meant |
 | `scripts/chronicle_rules.gd` | Chronicle v1: which occurrences mattered enough to become history, and why |
+| `scripts/belief_rules.gd` | Belief Formation v1: what one mortal came to accept, and on what evidence |
 | `scripts/world_map.gd` | map presentation and click hit-testing; reads nothing from the simulation |
 | `scripts/presentation_rules.gd` | number -> label bands for the player-facing interface |
 | `Main.gd` / `Main.tscn` | interface and player interaction only |
@@ -114,6 +117,7 @@ Test suites, all deterministic:
 | `tests/divine_action_test.gd` | Send Rain end to end, and the twelve things a divine act must no longer do |
 | `tests/divine_pipeline_test.gd` | the road is generic: one routing surface, and an unforeseen power can walk it |
 | `tests/chronicle_test.gd` | historical selection, causal links, and the Autonomous Story Test (GDD 42) |
+| `tests/belief_test.gd` | the divine bootstrap, gradual formation, contradiction, and everything belief must not do |
 
 Do not assume this summary is exhaustive or newer than the code. Inspect the repository first, and use GitHub as the source of truth if anything conflicts.
 
@@ -193,7 +197,7 @@ would be derived one-to-one from the intent type and would duplicate what
 `knowledge_used` already records. Build it only if a later system needs one
 goal to produce several different intents.
 
-Myth, cultural memory, competing historical accounts, historical forgetting, and the migration of any FURTHER divine power onto the shared pipeline, **MUST NOT be implemented until the user explicitly asks**.
+Religion in every form, belief transmission between mortals, myth, cultural memory, competing historical accounts, historical forgetting, and the migration of any FURTHER divine power onto the shared pipeline, **MUST NOT be implemented until the user explicitly asks**.
 
 Broad Intent Model v1 constraints, settled with the user and to be preserved:
 
@@ -372,9 +376,15 @@ user and to be preserved:
   For a mortal with no history of divine events it wins on score, 50 to 48. The
   god must be able to act and go unnoticed as a cause, and mortals must be able
   to be wrong about God's actual involvement in either direction
-- what tips someone toward a divine reading is their OWN prior divine reading,
-  their traits, and whether the rain fell where they live. No priest role, no
-  theology stat, no religious education, no hidden faith archetype was invented
+- what tips someone toward a divine reading is the CIRCUMSTANCE (rain arriving
+  while their own wells were dry), their traits, their own prior divine reading,
+  and what they have come to believe. No priest role, no theology stat, no
+  religious education, no hidden faith archetype was invented.
+  **Changed by Belief Formation v1:** `home_was_helped` was removed from the
+  divine candidate, because rain falling where you live is not evidence that
+  anything answered you — rain falling where you live WHILE YOU NEEDED IT is,
+  and that is `home_was_in_crisis` (+22). `prior_divine_reading` dropped from 20
+  to 8 for the reason in the belief constraints below
 - `intervention_counts` and `action_counts` still tally a migrated act. They
   count the ACT, only Developer Mode reads them, and no belief pressure follows —
   which is asserted rather than assumed
@@ -493,14 +503,88 @@ preserved:
   is untouched. Whether the chronicle deserves the player-facing panel is a
   presentation decision to make after seeing real output, not now
 
-**Known issue, not yet addressed.** The divine belief loop has no bootstrap.
-Across 40 autonomous years `interpretation_factors` in intent scoring is ZERO:
-every rain reading is `rain_natural_weather`, because `rain_divine_help` needs a
-PRIOR divine reading and nothing seeds the first one. The design is right — a
-mortal with no divine experience calls rain weather — but the loop cannot start
-on its own. The live feedback channel is the social one instead: 41 applied
-interpretation effects and 136 relationship factors cited by intents in the same
-run. Seeding the first divine reading is a design decision, not a fix.
+Belief Formation v1 constraints, settled with the user and to be preserved:
+
+- **three layers, never merged.** Knowledge is what a mortal thinks HAPPENED, an
+  interpretation is what they made of ONE occurrence, and a belief is what they
+  have come to accept about the WORLD. The belief is the first thing here not
+  tied to a single event, and the only one that outlives its evidence
+- **beliefs are per-mortal and never spread.** No realm belief, no shared creed,
+  no membership, no conversion. Facts travel and the receiver reaches their own
+  conclusion; convictions do not travel at all, and a test asserts the rules
+  cannot even name `share`, `spread`, `transmit`, `convert` or `teach`
+- the proposition vocabulary is FOUR, and every one is something the existing
+  interpretation types can already produce: `divine_intervention_exists`,
+  `divine_help_follows_need`, `is_supportive` and `is_unreliable`. The last two
+  are subject-scoped. Two world-level and two person-level on purpose, so the
+  layer is not shaped around Send Rain. **No speculative ontology** — a
+  proposition with no interpretation type feeding it does not belong
+- interpretation -> proposition mappings live in ONE table each (`SUPPORTS`,
+  `CONTRADICTS`) in `belief_rules.gd`. A future interpretation type is one entry,
+  not a check scattered through the simulation
+- **absence of evidence is never contradiction.** `rain_natural_weather`
+  contradicts the divine propositions because deciding the weather was weather is
+  a real conclusion; a crisis that went unanswered contradicts nothing, because
+  the mortal never interpreted anything. Building that in would be inference this
+  layer has no business doing
+- **belief formation reads interpretation records and NOTHING else.** Not the
+  divine action archive, not `objective_truth_state`, not the consequence
+  archive, not the realm's `faith`/`followers`/`beliefs`. A test greps the rules
+  file for every one of those names. The engine knows the player caused the rain;
+  no conviction may be founded on that
+- formation is gradual and bounded: movement is `weight x reading confidence`,
+  damped by how much room is left, capped at +/-20 per piece of evidence and
+  clamped 0-100. Established at 45, below which a belief is recorded and
+  influences nothing. Gradualness is protected by the weights AND the cap
+  independently — a mutation test had to remove both to break it
+- **beliefs bias, never force.** An established belief is an interpretation
+  factor worth 12, and a believer must still be able to look at ordinary rain and
+  call it ordinary. A test asserts exactly that
+- **the theology lock-in this refuses.** `prior_divine_reading` and the belief
+  factor are the SAME evidence in two forms, and at full strength they stacked
+  into a lock where a believer read every later rain as divine. The fix was
+  cutting `prior_divine_reading` to 8 and giving `rain_natural_weather` the
+  factor `home_was_not_in_crisis` (+18): rain that arrived when nothing was wrong
+  is unremarkable. Do not raise either without re-checking the lock-in test
+- **the double-count rule.** Once a belief is established, the interpretation
+  types supporting it stop contributing to intent scoring. Recent conclusion or
+  settled conviction, never both for the same proposition — the belief outlasts
+  the reading, which is the point of having it
+- a belief weights a want that already has evidence behind it. **The gating law
+  is untouched:** a belief may not conjure an intent from nothing, and one that
+  seems to need to is a belief being asked to do action selection's job
+- **beliefs are durable and stored apart from knowledge**, because knowledge is
+  capped and pruned and the FACTS behind a belief will be forgotten. Somebody who
+  concluded that something intervenes does not stop believing it because they can
+  no longer recall which year it rained. No passive decay in v1
+- **belief is not a Chronicle source.** Updates are frequent, history is not, and
+  a test asserts the chronicle rules cannot name the belief store
+- `state.mortal_beliefs` is named apart from the legacy realm `state.beliefs`
+  string list, and `_developer_mortal_belief_lines()` apart from the legacy
+  `_developer_belief_lines()`. Two different things called belief: one is a
+  kingdom-wide doctrine string the old divine path appends to, the other is what
+  individual people accept. They must never be joined
+- tick order is `... perception -> interpretation -> BELIEF -> chronicle`. A
+  belief formed this year reaches next year's wants and never one already chosen
+
+**Known issue, not yet addressed.** The divine bootstrap needs a famine a
+notable mortal actually lives through, and the autonomous world rarely produces
+one where anybody lives — the Frontier starves and nobody is there. In a pure
+autonomous run no divine belief forms. `belief_test.gd` manufactures the
+CIRCUMSTANCE (a lived Westfield famine the god answers) and injects no belief and
+no reading. This is the "only two of three settlements host events" issue showing
+up again, and fixing it is a world-size question rather than a belief question.
+
+**Observed, not a defect.** `BeliefRules.MAX_SINGLE_MOVE` is not currently
+load-bearing: the evidence weights bind first. It is kept as a second, independent
+guarantee that no single interpretation can create a conviction.
+
+**Solved by Belief Formation v1.** The divine loop used to have no bootstrap:
+`rain_divine_help` needed a PRIOR divine reading and nothing could produce the
+first one. The circumstance is the evidence now — rain arriving while the
+mortal's own wells were dry — so a first divine reading can arise from what they
+actually lived through. See the Belief Formation constraints below, including
+the limitation that still remains.
 
 **Known issue, not yet addressed.** Chronicle summaries carry raw topic ids
 (`support_given`) and inherit the "request concerning The King" wording problem
@@ -556,6 +640,21 @@ GODOT=/Users/jamienfam/Downloads/Godot.app/Contents/MacOS/Godot
 "$GODOT" --headless --path . --import                      # refresh the class cache
 ```
 
+- **Poll for the process to exit; never guard a suite with a fixed `sleep`.**
+  The guard is needed because a script that fails to parse hangs headless forever
+  rather than failing, but a fixed sleep pays the worst case every time. All
+  eighteen suites finish in about 22 seconds when polled, and took roughly 28
+  minutes with a 95-second sleep apiece:
+
+  ```
+  "$GODOT" --headless --path . --script "tests/$1_test.gd" > out.txt 2>&1 &
+  pid=$!; i=0
+  while kill -0 $pid 2>/dev/null && [ $i -lt 120 ]; do sleep 1; i=$((i+1)); done
+  kill $pid 2>/dev/null
+  ```
+
+  Report the elapsed seconds, so a genuine hang is visible as a suite that burned
+  the whole bound.
 - Run `--import` after adding a script with a new `class_name`, or the class will
   not resolve in tests. It also generates the `.gd.uid` files, which are
   committed alongside their scripts.

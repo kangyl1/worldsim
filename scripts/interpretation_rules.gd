@@ -285,7 +285,13 @@ const WORLD_CANDIDATES := {
 				"base_score": 50,
 				"factors": [
 					{"kind": "trait", "value": "cautious", "score": 12},
-					{"kind": "no_prior_divine_reading", "value": true, "score": 14}
+					{"kind": "no_prior_divine_reading", "value": true, "score": 14},
+					# Rain that arrived when nothing was wrong is unremarkable,
+					# and this is what keeps a believer able to say so. Without
+					# it, someone who had once read a rain as help read EVERY
+					# later rain as help, which is the theology lock-in this
+					# design refuses: belief must bias a reading, never settle it.
+					{"kind": "home_was_not_in_crisis", "value": true, "score": 18}
 				]
 			},
 			{
@@ -296,8 +302,48 @@ const WORLD_CANDIDATES := {
 				"factors": [
 					{"kind": "trait", "value": "compassionate", "score": 10},
 					{"kind": "trait", "value": "gullible", "score": 16},
-					{"kind": "prior_divine_reading", "value": true, "score": 20},
-					{"kind": "home_was_helped", "value": true, "score": 14}
+					# Reduced from 20 now that belief exists. Having concluded
+					# this once and having come to ACCEPT it are the same
+					# evidence in two forms, and at full strength they stacked
+					# into a lock: once a mortal had read one rain as help, no
+					# amount of ordinary weather could read as ordinary again.
+					# The durable form carries the weight now.
+					#
+					# `home_was_helped` is gone from this candidate entirely.
+					# Rain falling where you live is not evidence that anything
+					# answered you; rain falling where you live WHILE YOUR WELLS
+					# WERE DRY is, and that is the factor below.
+					{"kind": "prior_divine_reading", "value": true, "score": 8},
+					# The circumstance, not the cause. Rain that arrives while
+					# your own wells are dry is the oldest reason people have
+					# ever had for thinking something answered them, and it is
+					# entirely mortal-visible: they lived through the shortage.
+					#
+					# This factor is what lets the FIRST divine reading happen.
+					# Without it every rain candidate lost to plain weather for
+					# every mortal in the seeded world, so a divine belief could
+					# never begin: `prior_divine_reading` needed a prior divine
+					# reading, and nothing could produce the first one.
+					#
+					# Deliberately worth 12 and not more. It is enough for a
+					# compassionate mortal to reach 70 against weather's 64, and
+					# not enough for an incurious one, who stays at 60 and calls
+					# it weather. Two people, same rain, same crisis, different
+					# conclusions — and no divine reading at all unless the
+					# timing was genuinely remarkable.
+					{"kind": "home_was_in_crisis", "value": true, "score": 22},
+					# What they already accept about the world. Bias, never a
+					# lock: an established belief adds 12, which moves the
+					# argument without settling it, and someone who believes
+					# this can still look at ordinary rain and call it ordinary.
+					{
+						"kind": "belief_at_least",
+						"value": {
+							"proposition": BeliefRules.DIVINE_HELP_FOLLOWS_NEED,
+							"confidence": BeliefRules.ESTABLISHED_CONFIDENCE
+						},
+						"score": 12
+					}
 				]
 			},
 			{
@@ -308,7 +354,15 @@ const WORLD_CANDIDATES := {
 				"factors": [
 					{"kind": "trait", "value": "ambitious", "score": 16},
 					{"kind": "elsewhere", "value": true, "score": 18},
-					{"kind": "prior_divine_reading", "value": true, "score": 10}
+					{"kind": "prior_divine_reading", "value": true, "score": 10},
+					{
+						"kind": "belief_at_least",
+						"value": {
+							"proposition": BeliefRules.DIVINE_INTERVENTION_EXISTS,
+							"confidence": BeliefRules.ESTABLISHED_CONFIDENCE
+						},
+						"score": 10
+					}
 				]
 			}
 		],
@@ -489,8 +543,21 @@ func _context(
 			prior_divine = true
 			break
 	var subject_id := str(knowledge.get("subject_id", ""))
+	var observer_home := state.get_home_location(observer_id)
+	# What they already accept. Only their OWN beliefs, and only the propositions
+	# a candidate actually asks about.
+	var belief_confidence := {}
+	for proposition: String in BeliefRules.PROPOSITIONS:
+		belief_confidence[proposition] = int(
+			state.get_belief(observer_id, proposition, "").get("confidence", 0)
+		)
 	return {
 		"prior_divine_reading": prior_divine,
+		# Their own home as they last lived it, before the god's turn. -1 means
+		# the world has not turned yet and they have no such memory of it.
+		"home_was_in_crisis": not observer_home.is_empty()
+			and state.condition_before_turn(observer_home, "food") == 0,
+		"belief_confidence": belief_confidence,
 		"subject_id": subject_id,
 		"home_was_subject": not subject_id.is_empty() and state.get_home_location(observer_id) == subject_id,
 		"observer_id": observer_id,
@@ -551,6 +618,22 @@ func _factor_holds(factor: Dictionary, context: Dictionary) -> bool:
 			return not bool(context["prior_divine_reading"])
 		"home_was_helped":
 			return bool(context["home_was_subject"])
+		"home_was_not_in_crisis":
+			return not bool(context["home_was_in_crisis"])
+		"home_was_in_crisis":
+			# Did they live through the shortage this occurrence answered? Their
+			# OWN settlement's condition when the year began — directly-lived
+			# context, the same thing intent scoring is already allowed to read,
+			# and read from the year's start because the occurrence has since
+			# relieved it.
+			return bool(context["home_was_in_crisis"])
+		"belief_at_least":
+			# What this mortal already accepts, at or above a stated confidence.
+			# Their own belief record and nothing else.
+			var requirement: Dictionary = factor["value"]
+			return int(context["belief_confidence"].get(
+				str(requirement["proposition"]), 0
+			)) >= int(requirement["confidence"])
 		"elsewhere":
 			return not bool(context["home_was_subject"])
 		"participated":

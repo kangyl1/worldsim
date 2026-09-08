@@ -116,7 +116,7 @@ func _test_routing_lives_in_one_place() -> void:
 	# An unregistered power gets the old road, never the new one by default.
 	assert(rules.pipeline_for("summon_locusts") == DivineActionRules.PIPELINE_LEGACY,
 		"an unregistered power was silently granted the shared pipeline")
-	assert(rules.shared_pipeline_actions() == ["send_rain"],
+	assert(rules.shared_pipeline_actions() == ["bless_harvest", "send_rain"],
 		"the migrated set is not what CLAUDE.md records: %s"
 			% str(rules.shared_pipeline_actions()))
 	print("  ONE SURFACE: %d powers registered, %d on the shared road." % [
@@ -277,23 +277,26 @@ func _test_a_registered_topic_may_have_no_meaning_yet() -> void:
 	# A power can be observable before anybody designs what it could mean. The
 	# fact is held; no conclusion is invented to fill the gap.
 	var rules := InterpretationRules.new()
-	assert(rules.is_world_topic("harvest_yield"),
+	# `mortal_speech` is the remaining example: registered, observable, and
+	# belonging to a power whose migration has not happened. `harvest_yield` was
+	# this example until Bless Harvest migrated and gave it meanings.
+	assert(rules.is_world_topic("mortal_speech"),
 		"a registered occurrence is not recognised")
-	assert(not rules.has_candidates("harvest_yield"),
-		"this test is stale: harvest_yield now has designed meanings")
-	assert(not rules.is_interpretable("harvest_yield"),
+	assert(not rules.has_candidates("mortal_speech"),
+		"this test is stale: mortal_speech now has designed meanings")
+	assert(not rules.is_interpretable("mortal_speech"),
 		"an undesigned occurrence was interpreted anyway")
 	assert(rules.has_candidates("weather_rain") and rules.is_interpretable("weather_rain"),
 		"a designed occurrence stopped being interpretable")
 	# And nobody reached a conclusion about it in a real run.
 	var simulation := _lived_in_world()
-	simulation.resolve_action("bless_harvest")
+	simulation.resolve_action("speak_mortal")
 	simulation.advance_year()
 	var state = simulation.state
-	assert(not _knowledge_on(state, "aster_king", "harvest_yield").is_empty(),
-		"the harvest was not even noticed")
+	assert(not _knowledge_on(state, "aster_king", "mortal_speech").is_empty(),
+		"the speech was not even noticed")
 	for record: Dictionary in state.interpretation_archive:
-		assert(str(record["topic"]) != "harvest_yield",
+		assert(str(record["topic"]) != "mortal_speech",
 			"a meaning was invented for an occurrence nobody has designed")
 	print("  HELD, UNREAD: the harvest is known and means nothing yet.")
 	completed += 1

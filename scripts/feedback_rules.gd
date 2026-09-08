@@ -89,7 +89,13 @@ const CHARACTER_LINES := {
 	"elsewhere_is_waterlogged": "They have had more rain than they can use.",
 	"flood_is_disaster": "The water has taken everything.",
 	"flood_divine_excess": "Enough. Why will it not stop?",
-	"elsewhere_is_flooded": "That whole place is under water."
+	"elsewhere_is_flooded": "That whole place is under water.",
+	"harvest_is_good_fortune": "A good season. They happen.",
+	"harvest_divine_help": "The fields gave more than they hold.",
+	"yield_is_beyond_explanation": "This is not what the land does.",
+	"harvest_divine_favour": "Something has settled on this place.",
+	"elsewhere_had_a_good_year": "They brought in a good harvest.",
+	"elsewhere_is_thriving": "They are doing far better than we are."
 }
 
 # Which conclusions are worth interrupting the player for. The rest are real and
@@ -98,7 +104,8 @@ const NOTABLE_INTERPRETATIONS := [
 	"rain_divine_help", "rain_divine_favour", "home_is_in_danger",
 	"home_is_recovering", "refusal_unwilling_to_help", "refusal_confirms_distrust",
 	"instability_is_an_opening", "opposition_stood_against_me",
-	"flood_is_disaster", "flood_divine_excess", "ground_cannot_take_more"
+	"flood_is_disaster", "flood_divine_excess", "ground_cannot_take_more",
+	"harvest_divine_help", "harvest_divine_favour", "yield_is_beyond_explanation"
 ]
 
 # What a belief reads as once somebody holds it. Plain sentences: the player
@@ -108,6 +115,7 @@ const BELIEF_SENTENCES = {
 	"divine_help_follows_need": "%s now believes help arrives when the need is greatest.",
 	"is_supportive": "%s now believes %s can be relied upon.",
 	"is_unreliable": "%s no longer believes %s can be relied upon.",
+	"place_is_favoured": "%s now believes %s is being favoured over other places.",
 	"home_is_unsafe": "%s now believes this place cannot keep them safe.",
 	"conditions_are_improving": "%s now believes the worst has passed."
 }
@@ -117,6 +125,7 @@ const BELIEF_LOST_SENTENCES = {
 	"divine_help_follows_need": "%s is no longer sure that help follows need.",
 	"is_supportive": "%s is no longer sure %s can be relied upon.",
 	"is_unreliable": "%s is no longer certain %s will fail them.",
+	"place_is_favoured": "%s is no longer sure %s is favoured at all.",
 	"home_is_unsafe": "%s is no longer certain this place is unsafe.",
 	"conditions_are_improving": "%s is no longer sure the worst has passed."
 }
@@ -226,6 +235,7 @@ func _topic_phrase(state: WorldState, topic_id: String, subject_id: String) -> S
 func developments(state: WorldState) -> Array[Dictionary]:
 	var candidates: Array[Dictionary] = []
 	candidates.append_array(_water_developments(state))
+	candidates.append_array(_abundance_developments(state))
 	candidates.append_array(_history_developments(state))
 	candidates.append_array(_belief_developments(state))
 	candidates.append_array(_relationship_developments(state))
@@ -294,6 +304,37 @@ func _water_developments(state: WorldState) -> Array[Dictionary]:
 			"source_record_id": "%s_water" % location_id,
 			"actor_id": location_id,
 			"context": {"water_state": water_state, "newly_reached": true}
+		}))
+	return found
+
+
+# HIGH. A settlement whose output has stopped looking like something its land
+# could do. The counterpart of the water crossings, and deliberately not
+# phrased as a warning: abundance is not a countdown to disaster.
+func _abundance_developments(state: WorldState) -> Array[Dictionary]:
+	var found: Array[Dictionary] = []
+	for event_value in state.last_abundance_events:
+		var event: Dictionary = event_value
+		var location_id := str(event["location_id"])
+		var abundance_state := str(event["abundance_state"])
+		if abundance_state not in [
+			WorldState.ABUNDANCE_EXTRAORDINARY, WorldState.ABUNDANCE_SUSTAINED
+		]:
+			continue
+		var place := state.location_name(location_id)
+		var sustained := abundance_state == WorldState.ABUNDANCE_SUSTAINED
+		found.append(_item(state, {
+			"priority": PRIORITY_HIGH,
+			"category": "abundance_%s" % abundance_state,
+			"voice": VOICE_CHRONICLER,
+			"headline": "THE FIELDS OF %s DO NOT FAIL" % place.to_upper() if sustained
+				else "AN IMPOSSIBLE HARVEST IN %s" % place.to_upper(),
+			"body": "Year after year, more comes in than the land should give." if sustained
+				else "The stores are fuller than the fields can account for.",
+			"source_record_type": "settlement_abundance",
+			"source_record_id": "%s_abundance" % location_id,
+			"actor_id": location_id,
+			"context": {"abundance_state": abundance_state, "newly_reached": true}
 		}))
 	return found
 
@@ -510,8 +551,25 @@ func divine_feedback(state: WorldState, result: Dictionary) -> Dictionary:
 	# The same power, worded by what it has come to. The escalation is read from
 	# the ground rather than from a counter: a first rain on dry soil and a
 	# fourth on standing water are the same act and are not the same event.
-	var water_state := state.water_state(location_id)
 	var headline := "YOU %s" % str(record["action_type"]).replace("_", " ").to_upper()
+	# Blessings escalate by how unfailing the fields have become, and the top of
+	# that scale is not a warning: a place that keeps producing is a place that
+	# keeps producing.
+	var abundance_state := state.abundance_state(location_id)
+	if str(record["action_type"]) == "bless_harvest":
+		if abundance_state == WorldState.ABUNDANCE_SUSTAINED:
+			headline = "THE FIELDS OF %s DO NOT FAIL" % state.location_name(location_id).to_upper()
+		elif abundance_state == WorldState.ABUNDANCE_EXTRAORDINARY:
+			headline += " — AGAIN"
+		lines.append("The yield in %s is %s." % [
+			state.location_name(location_id),
+			PresentationRules.abundance_label(abundance_state).to_lower()
+		])
+		return {
+			"headline": headline, "body": str(record["result"]), "changes": lines,
+			"pipeline": str(record["pipeline"]), "water_state": state.water_state(location_id)
+		}
+	var water_state := state.water_state(location_id)
 	if water_state == WorldState.WATER_FLOODED:
 		headline += " — AND THE WATER RISES"
 	elif water_state == WorldState.WATER_SATURATED:

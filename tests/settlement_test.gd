@@ -355,11 +355,12 @@ func _test_settlements_hold_no_management_and_no_will() -> void:
 		for field: String in FORBIDDEN_SETTLEMENT_FIELDS:
 			assert(not location.has(field),
 				"%s grew a '%s' — settlements are places, not domains" % [location_id, field])
-		# id, name, kind, role, population, the three condition bands, and water.
-		# The bound is the guardrail against settlement-state creep, and it moves
-		# only when a field is deliberately added: `water` arrived with the
-		# divine sandbox so that repeated rain can accumulate somewhere.
-		assert(location.size() <= 9, "a settlement record should stay small")
+		# id, name, kind, role, population, the three condition bands, water and
+		# abundance. The bound is the guardrail against settlement-state creep,
+		# and it moves only when a field is deliberately added: `water` arrived
+		# with the divine sandbox and `abundance` with Bless Harvest's
+		# migration, each so a repeated divine force has somewhere to accumulate.
+		assert(location.size() <= 10, "a settlement record should stay small")
 		# Wants and attempts belong to mortals alone.
 		assert(simulation.state.get_intents_for(location_id).is_empty())
 		assert(simulation.state.get_actions_for(location_id).is_empty())

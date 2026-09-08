@@ -50,6 +50,12 @@ const IS_UNRELIABLE := "is_unreliable"
 # ontology for its own sake.
 const HOME_IS_UNSAFE := "home_is_unsafe"
 const CONDITIONS_ARE_IMPROVING := "conditions_are_improving"
+# Subject-scoped, and about a PLACE rather than a person: this settlement is
+# getting something the others are not. Added with Bless Harvest because two
+# interpretation types feed it and it changes what its holder wants — somebody
+# who believes their home is favoured wants to preserve it. It is a private
+# conviction about a location, NOT a doctrine, a chosen people or a membership.
+const PLACE_IS_FAVOURED := "place_is_favoured"
 
 const PROPOSITIONS := [
 	DIVINE_INTERVENTION_EXISTS,
@@ -57,12 +63,13 @@ const PROPOSITIONS := [
 	IS_SUPPORTIVE,
 	IS_UNRELIABLE,
 	HOME_IS_UNSAFE,
-	CONDITIONS_ARE_IMPROVING
+	CONDITIONS_ARE_IMPROVING,
+	PLACE_IS_FAVOURED
 ]
 
 # Propositions about a particular person. Their belief record carries a
 # subject_id, and a mortal may hold opposite views of two different people.
-const SUBJECT_SCOPED := [IS_SUPPORTIVE, IS_UNRELIABLE]
+const SUBJECT_SCOPED := [IS_SUPPORTIVE, IS_UNRELIABLE, PLACE_IS_FAVOURED]
 
 # What each conclusion is evidence FOR and AGAINST. One table, so that adding a
 # future interpretation type means one entry here rather than a check scattered
@@ -118,6 +125,17 @@ const SUPPORTS := {
 	"flood_is_disaster": [
 		{"proposition": HOME_IS_UNSAFE, "weight": 16}
 	],
+	"harvest_divine_help": [
+		{"proposition": DIVINE_INTERVENTION_EXISTS, "weight": 14},
+		{"proposition": CONDITIONS_ARE_IMPROVING, "weight": 8}
+	],
+	"harvest_divine_favour": [
+		{"proposition": DIVINE_INTERVENTION_EXISTS, "weight": 12},
+		{"proposition": PLACE_IS_FAVOURED, "weight": 16}
+	],
+	"yield_is_beyond_explanation": [
+		{"proposition": PLACE_IS_FAVOURED, "weight": 8}
+	],
 	"flood_divine_excess": [
 		{"proposition": HOME_IS_UNSAFE, "weight": 14},
 		# Still evidence that something intervenes. Reading a flood as sent is
@@ -159,6 +177,13 @@ const CONTRADICTS = {
 	],
 	"flood_is_disaster": [
 		{"proposition": CONDITIONS_ARE_IMPROVING, "weight": 14}
+	],
+	# Deciding a remarkable harvest was simply a good season is a real
+	# conclusion about the world, and it is evidence against something having
+	# sent it.
+	"harvest_is_good_fortune": [
+		{"proposition": DIVINE_INTERVENTION_EXISTS, "weight": 8},
+		{"proposition": PLACE_IS_FAVOURED, "weight": 8}
 	]
 }
 
@@ -319,7 +344,15 @@ func _subject_for(proposition: String, record: Dictionary) -> String:
 	var target_id := str(record.get("target_id", ""))
 	if not target_id.is_empty():
 		return target_id
-	return str(record.get("actor_id", ""))
+	var actor_id := str(record.get("actor_id", ""))
+	if not actor_id.is_empty():
+		return actor_id
+	# A world occurrence has no second party, so what the reading was ABOUT is
+	# the place it happened in. That is how a belief can be held about a
+	# SETTLEMENT — "somewhere is being favoured" — rather than only about a
+	# person. Without this, a place-scoped proposition could never find its
+	# subject and was silently discarded.
+	return str(record.get("subject_id", ""))
 
 
 func _extended_sources(existing: Dictionary, interpretation_id: String) -> Array:

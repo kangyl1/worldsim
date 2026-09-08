@@ -108,7 +108,10 @@ const INTENT_INTERPRETATION_RULES := {
 	"instability_is_an_opening": {"acquire": 8},
 	"elsewhere_is_struggling": {"help": 8},
 	"flood_is_disaster": {"protect": 12, "preserve": 6},
-	"flood_divine_excess": {"protect": 10}
+	"flood_divine_excess": {"protect": 10},
+	"harvest_divine_help": {"learn": 8},
+	"yield_is_beyond_explanation": {"learn": 10},
+	"elsewhere_is_thriving": {"acquire": 8}
 }
 
 # What an ESTABLISHED belief does to what someone wants. Deliberately smaller
@@ -131,7 +134,8 @@ const INTENT_BELIEF_RULES := {
 	BeliefRules.IS_SUPPORTIVE: {"connect": 8},
 	BeliefRules.IS_UNRELIABLE: {"distance": 8},
 	BeliefRules.HOME_IS_UNSAFE: {"protect": 12, "preserve": 8},
-	BeliefRules.CONDITIONS_ARE_IMPROVING: {"preserve": 6, "wait": 4}
+	BeliefRules.CONDITIONS_ARE_IMPROVING: {"preserve": 6, "wait": 4},
+	BeliefRules.PLACE_IS_FAVOURED: {"preserve": 10, "learn": 6}
 }
 
 const INTENT_TRAIT_RULES := {

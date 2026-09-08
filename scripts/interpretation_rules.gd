@@ -389,6 +389,124 @@ const WORLD_CANDIDATES := {
 			}
 		]
 	},
+	# --- Harvests beyond explanation --------------------------------------
+	#
+	# `harvest_yield` was registered and deliberately uninterpreted until Bless
+	# Harvest migrated. It has now, so these are what an observer can make of a
+	# harvest that came in larger than the ground should allow.
+	#
+	# `extraordinary_harvest` is the PATTERN, and it is what makes repetition
+	# mortal evidence rather than engine bookkeeping: the settlement itself
+	# reaches a condition anyone living there can see, again and again. Nobody
+	# reads the player's action archive.
+	#
+	# The ordinary reading stays available throughout. A good season is a good
+	# season, and a mortal is never forced to conclude that something sent it.
+	"harvest_yield": {
+		STANCE_WITNESS: [
+			{
+				"id": "harvest_is_good_fortune",
+				"meaning": "A good season. The land was kind.",
+				"effect": {},
+				"base_score": 52,
+				"factors": [
+					{"kind": "trait", "value": "cautious", "score": 12},
+					{"kind": "no_prior_divine_reading", "value": true, "score": 12},
+					{"kind": "confidence_below", "value": UNCERTAIN_CONFIDENCE, "score": -30}
+				]
+			},
+			{
+				"id": "harvest_divine_help",
+				"meaning": "More came in than the fields could have given.",
+				"effect": {},
+				"base_score": 34,
+				"factors": [
+					{"kind": "trait", "value": "gullible", "score": 16},
+					{"kind": "trait", "value": "compassionate", "score": 8},
+					{"kind": "prior_divine_reading", "value": true, "score": 10},
+					{
+						"kind": "belief_at_least",
+						"value": {
+							"proposition": BeliefRules.DIVINE_INTERVENTION_EXISTS,
+							"confidence": BeliefRules.ESTABLISHED_CONFIDENCE
+						},
+						"score": 14
+					},
+					# The pattern, seen with their own eyes. One remarkable year
+					# is luck; a settlement that has already struck them as
+					# producing the impossible is the reason people start
+					# reaching for an explanation.
+					#
+					# Weighted to be able to WIN, for the same reason the rain
+					# bootstrap needed a circumstance: without it the ordinary
+					# reading took every harvest forever and no divine belief
+					# about abundance could ever begin. It still loses to a
+					# cautious observer, who reads a good season as a good
+					# season however often it repeats.
+					{"kind": "repeated_extraordinary_yield", "value": true, "score": 32},
+					{"kind": "confidence_below", "value": UNCERTAIN_CONFIDENCE, "score": -30}
+				]
+			}
+		],
+		STANCE_DISTANT: [
+			{
+				"id": "elsewhere_had_a_good_year",
+				"meaning": "%s brought in a good harvest.",
+				"effect": {},
+				"base_score": 50,
+				"factors": [
+					{"kind": "confidence_below", "value": UNCERTAIN_CONFIDENCE, "score": -30}
+				]
+			}
+		]
+	},
+	"extraordinary_harvest": {
+		STANCE_WITNESS: [
+			{
+				"id": "yield_is_beyond_explanation",
+				"meaning": "This is not what the land does.",
+				"effect": {},
+				"base_score": 50,
+				"factors": [
+					{"kind": "trait", "value": "cautious", "score": 10},
+					{"kind": "confidence_below", "value": UNCERTAIN_CONFIDENCE, "score": -30}
+				]
+			},
+			{
+				"id": "harvest_divine_favour",
+				"meaning": "Something has settled on this place.",
+				"effect": {},
+				"base_score": 32,
+				"factors": [
+					{"kind": "trait", "value": "gullible", "score": 14},
+					{"kind": "trait", "value": "ambitious", "score": 10},
+					{"kind": "prior_divine_reading", "value": true, "score": 12},
+					{
+						"kind": "belief_at_least",
+						"value": {
+							"proposition": BeliefRules.DIVINE_INTERVENTION_EXISTS,
+							"confidence": BeliefRules.ESTABLISHED_CONFIDENCE
+						},
+						"score": 16
+					},
+					{"kind": "repeated_extraordinary_yield", "value": true, "score": 30},
+					{"kind": "confidence_below", "value": UNCERTAIN_CONFIDENCE, "score": -30}
+				]
+			}
+		],
+		STANCE_DISTANT: [
+			{
+				"id": "elsewhere_is_thriving",
+				"meaning": "%s is doing far better than the rest of us.",
+				"effect": {},
+				"base_score": 50,
+				"factors": [
+					{"kind": "trait", "value": "ambitious", "score": 12},
+					{"kind": "confidence_below", "value": UNCERTAIN_CONFIDENCE, "score": -30}
+				]
+			}
+		]
+	},
 	# --- The yearly conditions -------------------------------------------
 	#
 	# These three topics are produced every single year by the event cycle and
@@ -906,11 +1024,22 @@ func _context(
 	# world acted in it? Their OWN past conclusions, never the engine's record of
 	# what the god actually did. Someone who has read a divine hand into events
 	# before reads one in more readily; someone who never has does not start now.
+	# Has this mortal already decided, at some point, that something beyond the
+	# world acted in it? Broadened from rain alone when Bless Harvest migrated:
+	# a conclusion is a conclusion whichever occurrence prompted it, and reading
+	# a flood as excess counts as much as reading a rain as help.
 	var prior_divine := false
+	# And how often have they seen THIS place produce what its fields should
+	# not? Their own past readings of the pattern, never the player's history.
+	var repeated_yield := 0
+	var subject_for_repeats := str(knowledge.get("subject_id", ""))
 	for past: Dictionary in state.get_interpretations_for(observer_id):
-		if str(past["interpretation_type"]).begins_with("rain_divine"):
+		var past_type := str(past["interpretation_type"])
+		if past_type.contains("divine"):
 			prior_divine = true
-			break
+		if str(past["topic"]) == "extraordinary_harvest" \
+			and str(past["subject_id"]) == subject_for_repeats:
+			repeated_yield += 1
 	var subject_id := str(knowledge.get("subject_id", ""))
 	var observer_home := state.get_home_location(observer_id)
 	# What they already accept. Only their OWN beliefs, and only the propositions
@@ -922,6 +1051,7 @@ func _context(
 		)
 	return {
 		"prior_divine_reading": prior_divine,
+		"repeated_extraordinary_yield": repeated_yield >= 1,
 		# Their own home as they last lived it, before the god's turn. -1 means
 		# the world has not turned yet and they have no such memory of it.
 		"home_was_in_crisis": not observer_home.is_empty()
@@ -987,6 +1117,8 @@ func _factor_holds(factor: Dictionary, context: Dictionary) -> bool:
 			return not bool(context["prior_divine_reading"])
 		"home_was_helped":
 			return bool(context["home_was_subject"])
+		"repeated_extraordinary_yield":
+			return bool(context["repeated_extraordinary_yield"])
 		"home_was_not_in_crisis":
 			return not bool(context["home_was_in_crisis"])
 		"home_was_in_crisis":

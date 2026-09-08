@@ -111,6 +111,18 @@ const WATER_LABELS := {
 }
 
 
+const ABUNDANCE_LABELS := {
+	"ordinary": "Ordinary",
+	"abundant": "Abundant",
+	"extraordinary": "Extraordinary",
+	"sustained_extraordinary": "Unfailing"
+}
+
+
+static func abundance_label(abundance_state: String) -> String:
+	return str(ABUNDANCE_LABELS.get(abundance_state, abundance_state.capitalize()))
+
+
 static func water_label(water_state: String) -> String:
 	return str(WATER_LABELS.get(water_state, water_state.capitalize()))
 

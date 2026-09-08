@@ -181,9 +181,52 @@ const RAIN_OUTCOMES := {
 	WorldState.WATER_FLOODED: {"food": -2, "stability": -1}
 }
 
+# What one blessing adds, and how fast abundance fades when nobody blesses.
+# Prototype tuning: roughly three consecutive blessings to reach a sustained
+# extraordinary state from ordinary, and about a decade of silence to return.
+const BLESSING_ABUNDANCE_GAIN := 30
+const ABUNDANCE_DRIFT_PER_YEAR := 7
+
+# What the harvest does at each level of abundance. Keyed on the state the
+# blessing RESULTS in, and monotonically good on purpose.
+#
+# This is where Bless Harvest differs from Send Rain, deliberately. Water has a
+# top end that ruins a settlement, because too much water is a real physical
+# problem. Too much grain is not: a place that keeps producing simply keeps
+# producing. No punishment is written into the power, and none should be — if
+# sustained abundance ever becomes dangerous, that will be ecology or politics
+# or belief reacting to the CONDITION, decided by systems that do not exist yet.
+const HARVEST_OUTCOMES := {
+	WorldState.ABUNDANCE_ORDINARY: {"food": 1, "prosperity": 0},
+	WorldState.ABUNDANCE_ABUNDANT: {"food": 1, "prosperity": 0},
+	WorldState.ABUNDANCE_EXTRAORDINARY: {"food": 2, "prosperity": 1},
+	WorldState.ABUNDANCE_SUSTAINED: {"food": 2, "prosperity": 1}
+}
+
 # What a settlement crossing into a state makes newly perceivable. Objective
 # occurrences, stated as conditions of the WORLD — a place can reach these
 # without any god involved, and the claims say nothing about who caused them.
+# A settlement whose output has stopped looking ordinary. Emitted by the PLACE
+# reaching the condition, so a settlement that got there some other way would
+# offer the same fact — and it is what gives a mortal observable evidence of a
+# PATTERN rather than of one good year.
+const ABUNDANCE_KNOWLEDGE := {
+	WorldState.ABUNDANCE_EXTRAORDINARY: {
+		"id_suffix": "extraordinary_harvest",
+		"topic": "extraordinary_harvest",
+		"claim": "%s is producing more than its fields should be able to give",
+		"confidence": 90,
+		"observability": "local"
+	},
+	WorldState.ABUNDANCE_SUSTAINED: {
+		"id_suffix": "extraordinary_harvest",
+		"topic": "extraordinary_harvest",
+		"claim": "%s's fields have not failed in years",
+		"confidence": 95,
+		"observability": "local"
+	}
+}
+
 const WATER_KNOWLEDGE := {
 	WorldState.WATER_SATURATED: {
 		"id_suffix": "water_saturation",
@@ -252,6 +295,7 @@ func resolve_action(action_id: String, target_location_id: String = "") -> Dicti
 
 	# A fresh turn: last turn's crossings are no longer news.
 	state.last_water_events = []
+	state.last_abundance_events = []
 	state.divine_power -= cost
 	# Tolerant of a power the tally was not written with, so registering one does
 	# not mean editing a counter dictionary in `world_state.gd` as well.
@@ -407,6 +451,7 @@ func advance_year() -> Dictionary:
 	state.last_consequences = tick_consequences()
 	_process_population()
 	_process_water_drift()
+	_process_abundance_drift()
 	_process_world_drift()
 	_select_next_event()
 	state.action_taken = false
@@ -985,7 +1030,7 @@ func _apply_immediate_action(action_id: String, location_id: String) -> String:
 		"send_rain":
 			return _resolve_send_rain(location_id)
 		"bless_harvest":
-			return _resolve_bless_harvest()
+			return _resolve_bless_harvest(location_id)
 		"speak_mortal":
 			return _resolve_speak_mortal()
 		"do_nothing":
@@ -1091,19 +1136,85 @@ func _process_water_drift() -> void:
 			_offer_water_fact(location_id, after_state)
 
 
-func _resolve_bless_harvest() -> String:
-	var location_id := state.current_event_location_id
+# MIGRATED to the shared causal pipeline.
+#
+# It used to check whether a good harvest was already running, hand out food
+# accordingly, and then add faith and followers directly — the act deciding that
+# mortals believed in it, which is exactly what migration exists to stop. Belief
+# now has to come from somebody noticing the harvest and concluding something
+# about it, and they may equally conclude it was a good season.
+#
+# What the power does is one thing: it raises this settlement's agricultural
+# abundance. The yield follows from that condition rather than from the power,
+# and blessing a place that is already unfailing simply keeps it unfailing.
+#
+# Consequence: faith and followers no longer respond to blessings at all, the
+# same deliberate gap Send Rain left. It closes when the remaining powers
+# migrate and faith is redesigned to accept per-mortal belief.
+func _resolve_bless_harvest(location_id: String) -> String:
 	var place := state.location_name(location_id)
-	var improvement := 2 if state.current_event_id == "good_harvest" else 1
-	state.change_settlement_band(location_id, "food", improvement)
-	state.population_growth_bonus += 4
-	state.faith += 3
-	state.followers += 8
+	var before_state := state.abundance_state(location_id)
 	state.intervention_counts["blessed_harvest"] += 1
-	if state.get_settlement_band(location_id, "prosperity") <= 1:
-		state.change_settlement_band(location_id, "prosperity", 1)
-		return "Full granaries begin lifting %s out of poverty." % place
-	return "The fields around %s yield more grain than their soil should allow." % place
+
+	state.change_abundance(location_id, BLESSING_ABUNDANCE_GAIN)
+	var after_state := state.abundance_state(location_id)
+
+	var outcome: Dictionary = HARVEST_OUTCOMES.get(after_state, {})
+	if int(outcome.get("food", 0)) != 0:
+		state.change_settlement_band(location_id, "food", int(outcome["food"]))
+	if int(outcome.get("prosperity", 0)) != 0:
+		state.change_settlement_band(location_id, "prosperity", int(outcome["prosperity"]))
+
+	if before_state != after_state:
+		_offer_abundance_fact(location_id, after_state)
+	match after_state:
+		WorldState.ABUNDANCE_SUSTAINED:
+			return "The fields around %s give again what they have given for years." % place
+		WorldState.ABUNDANCE_EXTRAORDINARY:
+			return "%s brings in a harvest its soil should not be able to carry." % place
+		WorldState.ABUNDANCE_ABUNDANT:
+			return "The fields around %s yield more grain than the season promised." % place
+	return "A good harvest comes in around %s." % place
+
+
+# A settlement's abnormal output becoming perceivable. Generic: any location
+# reaching the state offers the fact, however it got there.
+func _offer_abundance_fact(location_id: String, abundance_state: String) -> void:
+	var template: Dictionary = ABUNDANCE_KNOWLEDGE.get(abundance_state, {})
+	if template.is_empty():
+		return
+	state.last_abundance_events.append({
+		"location_id": location_id,
+		"abundance_state": abundance_state,
+		"year": state.year
+	})
+	state.pending_perception_facts.append({
+		"id": "%s_%s" % [location_id, str(template["id_suffix"])],
+		"event_id": str(template["topic"]),
+		"subject_id": location_id,
+		"topic": str(template["topic"]),
+		"claim": str(template["claim"]) % state.location_name(location_id),
+		"confidence": int(template["confidence"]),
+		"truth_state": "true",
+		"objective_truth_state": "true",
+		"fresh_for_years": WorldState.DEFAULT_KNOWLEDGE_FRESH_YEARS,
+		"observability": str(template["observability"]),
+		"participants": []
+	})
+
+
+# Abundance fades when nobody sustains it. Slower than a blessing adds, so
+# repeated intervention can hold a settlement above ordinary indefinitely —
+# which is the sandbox working, not a leak.
+func _process_abundance_drift() -> void:
+	for location_id: String in state.get_location_ids():
+		var current := state.get_abundance(location_id)
+		if current <= WorldState.ABUNDANCE_BASELINE:
+			continue
+		var before_state := state.abundance_state(location_id)
+		state.change_abundance(location_id, -mini(ABUNDANCE_DRIFT_PER_YEAR, current))
+		if state.abundance_state(location_id) != before_state:
+			_offer_abundance_fact(location_id, state.abundance_state(location_id))
 
 
 func _resolve_speak_mortal() -> String:

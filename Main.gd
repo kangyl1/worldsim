@@ -389,8 +389,10 @@ func _render_location() -> void:
 	]
 	lines.append_array(_settlement_condition_lines(selected_location_id))
 	# The ground itself, qualitatively. The number behind it is Developer Mode's.
-	lines.append("[color=#68757c]GROUND[/color]  [color=#cfd6d8]%s[/color]"
-		% PresentationRules.water_label(state.water_state(selected_location_id)))
+	lines.append("[color=#68757c]GROUND[/color]  [color=#cfd6d8]%s[/color]   [color=#68757c]YIELD[/color]  [color=#cfd6d8]%s[/color]" % [
+		PresentationRules.water_label(state.water_state(selected_location_id)),
+		PresentationRules.abundance_label(state.abundance_state(selected_location_id))
+	])
 	location_text.text = "\n".join(lines)
 
 
@@ -980,6 +982,11 @@ func _developer_locality_lines() -> Array[String]:
 			state.get_water(str(row["location_id"])), WorldState.WATER_MAX,
 			state.water_state(str(row["location_id"])),
 			WorldSimulation.WATER_DRIFT_PER_YEAR, WorldState.WATER_BASELINE
+		]))
+		lines.append(_dev_field("    abundance", "%d / %d  (%s, drifts %d/yr toward %d)" % [
+			state.get_abundance(str(row["location_id"])), WorldState.ABUNDANCE_MAX,
+			state.abundance_state(str(row["location_id"])),
+			WorldSimulation.ABUNDANCE_DRIFT_PER_YEAR, WorldState.ABUNDANCE_BASELINE
 		]))
 		lines.append(_dev_field("    local events perceivable",
 			"yes" if covered else "NO — anything here is seen by nobody"))

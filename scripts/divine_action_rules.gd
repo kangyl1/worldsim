@@ -60,7 +60,7 @@ const DIVINE_ACTIONS := {
 		}
 	},
 	"bless_harvest": {
-		"pipeline": PIPELINE_LEGACY,
+		"pipeline": PIPELINE_SHARED,
 		"occurrence": {
 			"topic": "harvest_yield",
 			"claim": "%s's fields yielded more than their soil should allow",

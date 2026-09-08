@@ -47,8 +47,11 @@ func _test_mixed_divine_style() -> void:
 	# pipeline, where the act carries no meaning of its own and each mortal
 	# reaches their own conclusion later. The powers listed here are the ones
 	# still served by the legacy divine reader.
+	# send_rain and bless_harvest are both absent now. They have moved to the
+	# shared causal pipeline, where the act carries no meaning of its own and
+	# each mortal reaches their own conclusion later. The powers listed here are
+	# the ones still served by the legacy divine reader.
 	var interpretations_by_action := {
-		"bless_harvest": {},
 		"speak_mortal": {},
 		"do_nothing": {}
 	}

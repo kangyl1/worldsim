@@ -29,7 +29,9 @@ const MIGRATED := "send_rain"
 # a result, and must never be counted as one: an early version of this suite
 # passed because it was comparing a seed against a real reading.
 const SEED_ID := "interpretation_seed"
-const UNMIGRATED := ["bless_harvest", "speak_mortal"]
+# Bless Harvest left this list when it migrated. Divine Voice is the last power
+# still reading one collective meaning out of its own act.
+const UNMIGRATED := ["speak_mortal"]
 
 # Words that would mean a layer had started speaking for a mortal's soul.
 const MEANING_WORDS := [

@@ -28,7 +28,10 @@ const CONDITION_TOPICS := ["food_shortage", "danger_unrest", "surplus"]
 # Registered, observable, and deliberately without meanings: they belong to
 # divine powers that have not been migrated, and designing what they MEAN is a
 # separate approved pass.
-const DELIBERATELY_UNCOVERED := ["harvest_yield", "mortal_speech"]
+# `harvest_yield` left this list when Bless Harvest migrated and its meanings
+# were designed. Divine Voice's occurrence is the last one still held as a fact
+# and read by nobody.
+const DELIBERATELY_UNCOVERED := ["mortal_speech"]
 
 const OUT_OF_SCOPE := [
 	"religion", "doctrine", "faction", "politic", "ideology", "economy",
@@ -396,16 +399,16 @@ func _test_coverage_report_names_the_gaps() -> void:
 	var simulation := _sim()
 	var state = simulation.state
 	_settle(simulation, 8)
-	_deliver(simulation, "mara", "harvest_yield", "westfield", "The fields yielded more")
+	_deliver(simulation, "mara", "mortal_speech", "westfield", "A voice spoke with certainty")
 	var report: Dictionary = simulation.interpretation_rules.coverage_report(state)
 	for field: String in [
 		"topics_encountered", "topics_covered", "topics_without_candidates",
 		"families_designed"
 	]:
 		assert(report.has(field), "the coverage report cannot answer '%s'" % field)
-	assert("harvest_yield" in report["topics_without_candidates"],
+	assert("mortal_speech" in report["topics_without_candidates"],
 		"an uncovered topic in play was not reported as a gap")
-	assert("harvest_yield" not in report["topics_covered"])
+	assert("mortal_speech" not in report["topics_covered"])
 	for topic: String in report["topics_covered"]:
 		assert(topic in report["families_designed"])
 	print("  DIAGNOSTIC: %d topics in play, %d covered, gaps named: %s." % [

@@ -60,6 +60,38 @@ const WATER_WET := "wet"
 const WATER_SATURATED := "saturated"
 const WATER_FLOODED := "flooded"
 const WATER_STATES := [WATER_DRY, WATER_NORMAL, WATER_WET, WATER_SATURATED, WATER_FLOODED]
+
+# How far this settlement's output currently exceeds what the land would
+# ordinarily give. The second environmental pressure, added for Bless Harvest,
+# and deliberately shaped UNLIKE water.
+#
+# Water runs dry -> flooded, and its top end is ruin. Abundance runs ordinary ->
+# sustained extraordinary, and its top end is simply a great deal of food. There
+# is no terminal bad state and no punishment built into the scale: a god who
+# keeps blessing a place gets a place that keeps producing. Whether that becomes
+# dangerous is for ecology, politics and belief to decide later, from the
+# condition — not for the power to decide by arithmetic.
+#
+# Zero is the baseline, because abundance measures the ABNORMAL part. A
+# settlement with none is not deprived; it is ordinary.
+const ABUNDANCE_MIN := 0
+const ABUNDANCE_MAX := 100
+const ABUNDANCE_BASELINE := 0
+
+const ABUNDANCE_ORDINARY := "ordinary"
+const ABUNDANCE_ABUNDANT := "abundant"
+const ABUNDANCE_EXTRAORDINARY := "extraordinary"
+const ABUNDANCE_SUSTAINED := "sustained_extraordinary"
+const ABUNDANCE_STATES := [
+	ABUNDANCE_ORDINARY, ABUNDANCE_ABUNDANT, ABUNDANCE_EXTRAORDINARY, ABUNDANCE_SUSTAINED
+]
+# Prototype tuning, not final balance.
+const ABUNDANCE_THRESHOLDS := [
+	{"state": ABUNDANCE_ORDINARY, "max": 19},
+	{"state": ABUNDANCE_ABUNDANT, "max": 49},
+	{"state": ABUNDANCE_EXTRAORDINARY, "max": 79},
+	{"state": ABUNDANCE_SUSTAINED, "max": 100}
+]
 # Upper bound of each state, in order. Prototype tuning, not final balance.
 const WATER_THRESHOLDS := [
 	{"state": WATER_DRY, "max": 20},
@@ -127,6 +159,9 @@ var last_divine_target_id: String = ""
 # of the rain may already have eased by the time anything reads the level, and
 # the crossing still happened.
 var last_water_events: Array[Dictionary] = []
+# Abundance thresholds crossed since the player's turn began. Current turn only,
+# for the same reason as water: drift moves the level within the tick.
+var last_abundance_events: Array[Dictionary] = []
 var action_taken: bool = false
 var last_result: String = ""
 # The POPULACE's reading of a divine act, owned by DivineReceptionSystem. Not
@@ -494,6 +529,9 @@ func add_location(
 		record[band] = clampi(int(conditions.get(band, 1)), 0, FOOD_LABELS.size() - 1)
 	# Generic across any settlement, including ones this file has never heard of.
 	record["water"] = clampi(int(conditions.get("water", WATER_BASELINE)), WATER_MIN, WATER_MAX)
+	record["abundance"] = clampi(
+		int(conditions.get("abundance", ABUNDANCE_BASELINE)), ABUNDANCE_MIN, ABUNDANCE_MAX
+	)
 	locations[location_id] = record
 	return true
 
@@ -525,6 +563,38 @@ func change_water(location_id: String, delta: int) -> int:
 
 func water_state(location_id: String) -> String:
 	return water_state_for(get_water(location_id))
+
+
+func get_abundance(location_id: String) -> int:
+	if not locations.has(location_id):
+		return 0
+	return int(locations[location_id].get("abundance", ABUNDANCE_BASELINE))
+
+
+func set_abundance(location_id: String, value: int) -> bool:
+	if not locations.has(location_id):
+		return false
+	locations[location_id]["abundance"] = clampi(value, ABUNDANCE_MIN, ABUNDANCE_MAX)
+	return true
+
+
+func change_abundance(location_id: String, delta: int) -> int:
+	if not locations.has(location_id):
+		return 0
+	set_abundance(location_id, get_abundance(location_id) + delta)
+	return get_abundance(location_id)
+
+
+func abundance_state(location_id: String) -> String:
+	return abundance_state_for(get_abundance(location_id))
+
+
+func abundance_state_for(value: int) -> String:
+	var clamped := clampi(value, ABUNDANCE_MIN, ABUNDANCE_MAX)
+	for threshold: Dictionary in ABUNDANCE_THRESHOLDS:
+		if clamped <= int(threshold["max"]):
+			return str(threshold["state"])
+	return ABUNDANCE_SUSTAINED
 
 
 func water_state_for(value: int) -> String:

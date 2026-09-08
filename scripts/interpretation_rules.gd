@@ -475,6 +475,93 @@ const WORLD_CANDIDATES := {
 			}
 		]
 	},
+	# --- Too much of a good thing -----------------------------------------
+	#
+	# Added with the divine sandbox. Rain is a force, and a force applied often
+	# enough stops helping — so a mortal has to be able to read standing water
+	# as a disaster, and, if they already think something intervenes, as that
+	# thing having sent far too much.
+	#
+	# `flood_divine_excess` is the interesting one. It is reachable ONLY by
+	# somebody who already believes intervention happens, which is the honest
+	# grounding: a person with no such belief sees a flood, not a judgement.
+	# And it CONTRADICTS the belief that help follows need, so a god who keeps
+	# raining can talk their own believers out of it.
+	"water_saturation": {
+		STANCE_WITNESS: [
+			{
+				"id": "ground_cannot_take_more",
+				"meaning": "The fields have taken all the water they can.",
+				"effect": {},
+				"base_score": 52,
+				"factors": [
+					{"kind": "confidence_below", "value": UNCERTAIN_CONFIDENCE, "score": -30}
+				]
+			}
+		],
+		STANCE_DISTANT: [
+			{
+				"id": "elsewhere_is_waterlogged",
+				"meaning": "%s has had more rain than it can use.",
+				"effect": {},
+				"base_score": 50,
+				"factors": [
+					{"kind": "confidence_below", "value": UNCERTAIN_CONFIDENCE, "score": -30}
+				]
+			}
+		]
+	},
+	"flooding": {
+		STANCE_WITNESS: [
+			{
+				"id": "flood_is_disaster",
+				"meaning": "The water is taking everything we have.",
+				"effect": {},
+				"base_score": 54,
+				"factors": [
+					{"kind": "trait", "value": "cautious", "score": 10},
+					{"kind": "confidence_below", "value": UNCERTAIN_CONFIDENCE, "score": -30}
+				]
+			},
+			{
+				"id": "flood_divine_excess",
+				"meaning": "Far more was sent than anyone asked for.",
+				"effect": {},
+				"base_score": 30,
+				"factors": [
+					{
+						"kind": "belief_at_least",
+						"value": {
+							"proposition": BeliefRules.DIVINE_INTERVENTION_EXISTS,
+							"confidence": BeliefRules.ESTABLISHED_CONFIDENCE
+						},
+						"score": 26
+					},
+					{
+						"kind": "belief_at_least",
+						"value": {
+							"proposition": BeliefRules.DIVINE_HELP_FOLLOWS_NEED,
+							"confidence": BeliefRules.ESTABLISHED_CONFIDENCE
+						},
+						"score": 14
+					},
+					{"kind": "trait", "value": "gullible", "score": 10},
+					{"kind": "confidence_below", "value": UNCERTAIN_CONFIDENCE, "score": -30}
+				]
+			}
+		],
+		STANCE_DISTANT: [
+			{
+				"id": "elsewhere_is_flooded",
+				"meaning": "%s is under water.",
+				"effect": {},
+				"base_score": 50,
+				"factors": [
+					{"kind": "confidence_below", "value": UNCERTAIN_CONFIDENCE, "score": -30}
+				]
+			}
+		]
+	},
 	"danger_unrest": {
 		STANCE_WITNESS: [
 			{

@@ -84,7 +84,12 @@ const CHARACTER_LINES := {
 	"opposition_stood_against_me": "They stood against me.",
 	"opposition_from_a_rival": "That is who they are.",
 	"opposition_said_what_i_had_to": "It had to be said.",
-	"unclear_what_happened": "I do not know what to make of it."
+	"unclear_what_happened": "I do not know what to make of it.",
+	"ground_cannot_take_more": "The ground cannot take any more.",
+	"elsewhere_is_waterlogged": "They have had more rain than they can use.",
+	"flood_is_disaster": "The water has taken everything.",
+	"flood_divine_excess": "Enough. Why will it not stop?",
+	"elsewhere_is_flooded": "That whole place is under water."
 }
 
 # Which conclusions are worth interrupting the player for. The rest are real and
@@ -92,7 +97,8 @@ const CHARACTER_LINES := {
 const NOTABLE_INTERPRETATIONS := [
 	"rain_divine_help", "rain_divine_favour", "home_is_in_danger",
 	"home_is_recovering", "refusal_unwilling_to_help", "refusal_confirms_distrust",
-	"instability_is_an_opening", "opposition_stood_against_me"
+	"instability_is_an_opening", "opposition_stood_against_me",
+	"flood_is_disaster", "flood_divine_excess", "ground_cannot_take_more"
 ]
 
 # What a belief reads as once somebody holds it. Plain sentences: the player
@@ -219,6 +225,7 @@ func _topic_phrase(state: WorldState, topic_id: String, subject_id: String) -> S
 # returns at most MAX_DEVELOPMENTS of the highest. Nothing is written anywhere.
 func developments(state: WorldState) -> Array[Dictionary]:
 	var candidates: Array[Dictionary] = []
+	candidates.append_array(_water_developments(state))
 	candidates.append_array(_history_developments(state))
 	candidates.append_array(_belief_developments(state))
 	candidates.append_array(_relationship_developments(state))
@@ -254,6 +261,43 @@ func developments(state: WorldState) -> Array[Dictionary]:
 # HIGH. Whatever the Chronicle already judged worth remembering is, by
 # definition, worth the player noticing. Read only — nothing is written back,
 # and the Chronicle's own selection is untouched.
+# HIGH. What the ground itself has become. A settlement crossing into
+# saturation or flood is the clearest possible statement that a force has been
+# applied past the point of helping, and the player should not have to infer it.
+#
+# Read from the world's own condition, so a place that floods without any god
+# involved reads exactly the same.
+func _water_developments(state: WorldState) -> Array[Dictionary]:
+	var found: Array[Dictionary] = []
+	# Read from the crossings the world recorded when they happened, not from
+	# the level now: the ground drains a little every year, so a flood reached
+	# at the moment of the rain may already read as merely saturated by the time
+	# anybody looks. A settlement that has simply been under water for years
+	# crosses nothing and is not news again.
+	for event_value in state.last_water_events:
+		var event: Dictionary = event_value
+		var location_id := str(event["location_id"])
+		var water_state := str(event["water_state"])
+		if water_state not in [WorldState.WATER_SATURATED, WorldState.WATER_FLOODED]:
+			continue
+		var place := state.location_name(location_id)
+		var flooded := water_state == WorldState.WATER_FLOODED
+		found.append(_item(state, {
+			"priority": PRIORITY_HIGH,
+			"category": "water_%s" % water_state,
+			"voice": VOICE_CHRONICLER,
+			"headline": "FLOODING IN %s" % place.to_upper() if flooded
+				else "%s IS SATURATED" % place.to_upper(),
+			"body": "Water is standing where the fields used to be." if flooded
+				else "The ground can take no more.",
+			"source_record_type": "settlement_water",
+			"source_record_id": "%s_water" % location_id,
+			"actor_id": location_id,
+			"context": {"water_state": water_state, "newly_reached": true}
+		}))
+	return found
+
+
 func _history_developments(state: WorldState) -> Array[Dictionary]:
 	var found: Array[Dictionary] = []
 	for record_value in state.last_chronicle_entries:
@@ -463,11 +507,28 @@ func divine_feedback(state: WorldState, result: Dictionary) -> Dictionary:
 			state.location_name(location_id),
 			_band_label(str(change["field"]), int(change["after"])).to_lower()
 		])
+	# The same power, worded by what it has come to. The escalation is read from
+	# the ground rather than from a counter: a first rain on dry soil and a
+	# fourth on standing water are the same act and are not the same event.
+	var water_state := state.water_state(location_id)
+	var headline := "YOU %s" % str(record["action_type"]).replace("_", " ").to_upper()
+	if water_state == WorldState.WATER_FLOODED:
+		headline += " — AND THE WATER RISES"
+	elif water_state == WorldState.WATER_SATURATED:
+		headline += " — AGAIN"
+	if not lines.is_empty() or water_state in [
+		WorldState.WATER_SATURATED, WorldState.WATER_FLOODED
+	]:
+		lines.append("The ground in %s is %s." % [
+			state.location_name(location_id),
+			PresentationRules.water_label(water_state).to_lower()
+		])
 	return {
-		"headline": "YOU %s" % str(record["action_type"]).replace("_", " ").to_upper(),
+		"headline": headline,
 		"body": str(record["result"]),
 		"changes": lines,
-		"pipeline": str(record["pipeline"])
+		"pipeline": str(record["pipeline"]),
+		"water_state": water_state
 	}
 
 

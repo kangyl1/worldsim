@@ -381,7 +381,12 @@ func _test_state_changes_record_before_and_after() -> void:
 	simulation.state.current_event_id = "drought"
 	simulation.state.current_event_location_id = "westfield"
 	assert(simulation.state.set_settlement_band("westfield", "food", 0))
-	assert(simulation.resolve_action("send_rain")["ok"])
+	# Rain only changes a harvest when the ground actually needed it, so the
+	# fixture makes it parched. On healthy ground the same act changes no band
+	# at all, which is the point of the divine sandbox and not what this test is
+	# about.
+	assert(simulation.state.set_water("westfield", WorldState.WATER_MIN))
+	assert(simulation.resolve_action("send_rain", "westfield")["ok"])
 
 	var record: Dictionary = simulation.state.consequence_archive[0]
 	assert(str(record["source_type"]) == ConsequenceRules.SOURCE_DIVINE)
@@ -406,7 +411,7 @@ func _test_a_divine_act_is_an_occurrence_anyone_could_see() -> void:
 	simulation.state.current_event_id = "drought"
 	simulation.state.current_event_location_id = "westfield"
 	assert(simulation.state.set_settlement_band("westfield", "food", 0))
-	assert(simulation.resolve_action("send_rain")["ok"])
+	assert(simulation.resolve_action("send_rain", "westfield")["ok"])
 	simulation.tick_perception()
 
 	var rain_id := ""

@@ -186,9 +186,32 @@ func _condition_candidates(state: WorldState, before: Dictionary) -> Array[Dicti
 					% REINFORCEMENT_WINDOW))
 			if factors.is_empty():
 				continue
+			var event_type := "crisis_entered" if entered else (
+				"crisis_lifted" if lifted else "condition_changed")
+			# ONE continuing episode, not one record per wobble.
+			#
+			# A settlement can cross the same threshold in the same band every
+			# other year for decades — food dipping to Critical and recovering,
+			# over and over — and writing each crossing as its own top-level
+			# history turned a single long spell of instability into forty-five
+			# separate "events". That is the event log this layer exists to
+			# avoid, and it hid the entries that actually mattered among the
+			# churn.
+			#
+			# So a transition is history when it is the FIRST of its kind for
+			# that place and band in living memory. The fall is recorded, and so
+			# is the recovery; the eleven relapses in between are the same
+			# episode continuing. Once the place has been quiet for longer than
+			# the reinforcement window, the next collapse is genuinely new and
+			# is recorded again.
+			#
+			# Nothing is lost causally: `parent_for()` still hangs later
+			# occurrences off the open crisis, so a flood or a refusal during
+			# this episode still points at the entry that opened it.
+			if _same_transition_recently(state, location_id, band, event_type):
+				continue
 			found.append(_candidate(state, {
-				"event_type": "crisis_entered" if entered else (
-					"crisis_lifted" if lifted else "condition_changed"),
+				"event_type": event_type,
 				"subject_id": location_id,
 				"location_id": location_id,
 				"summary": _condition_summary(state, location_id, band, was, now),
@@ -528,6 +551,26 @@ func _is_uncommon(state: WorldState, result_type: String) -> bool:
 	if total < 8:
 		return false
 	return float(matching) / float(total) <= UNCOMMON_SHARE
+
+
+# Has this place already crossed this threshold, in this direction, in this
+# band, within living memory? Read from the chronicle itself, so the rule is
+# about what history already holds rather than about a counter kept for it.
+func _same_transition_recently(
+	state: WorldState, location_id: String, band: String, event_type: String
+) -> bool:
+	for index in range(state.chronicle.size() - 1, -1, -1):
+		var record: Dictionary = state.chronicle[index]
+		if state.year - int(record["year"]) > REINFORCEMENT_WINDOW:
+			return false
+		if str(record["location_id"]) != location_id:
+			continue
+		if str(record["event_type"]) != event_type:
+			continue
+		# The band is carried in the source id: "<place>_<year>_<band>".
+		if str(record["source_record_id"]).ends_with("_%s" % band):
+			return true
+	return false
 
 
 func _was_recently_recorded(state: WorldState, location_id: String, band: String) -> bool:

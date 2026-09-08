@@ -157,6 +157,49 @@ var chronicle_rules := ChronicleRules.new()
 var belief_rules := BeliefRules.new()
 # Presentation only. It reads records and writes nothing; see feedback_rules.gd.
 var feedback_rules := FeedbackRules.new()
+
+# How much water one Send Rain puts into the ground, and how fast the ground
+# gives it back. Prototype tuning, chosen to make the sandbox provable rather
+# than balanced: rain adds more than a year returns, so a player who keeps
+# raining on one place will eventually flood it — roughly four consecutive
+# years from the baseline — and a player who stops will see it drain back over
+# about a decade.
+const RAIN_WATER_GAIN := 22
+const WATER_DRIFT_PER_YEAR := 6
+
+# What a settlement's water level does to its harvest when rain arrives, keyed
+# by the state it was in BEFORE the rain fell.
+#
+# This is the heart of the milestone. Send Rain has no idea whether it is
+# "appropriate": it applies the same force every time, and whether that force
+# helps or ruins depends entirely on what the ground was already holding.
+const RAIN_OUTCOMES := {
+	WorldState.WATER_DRY: {"food": 2, "stability": 0},
+	WorldState.WATER_NORMAL: {"food": 0, "stability": 0},
+	WorldState.WATER_WET: {"food": 0, "stability": 0},
+	WorldState.WATER_SATURATED: {"food": -1, "stability": 0},
+	WorldState.WATER_FLOODED: {"food": -2, "stability": -1}
+}
+
+# What a settlement crossing into a state makes newly perceivable. Objective
+# occurrences, stated as conditions of the WORLD — a place can reach these
+# without any god involved, and the claims say nothing about who caused them.
+const WATER_KNOWLEDGE := {
+	WorldState.WATER_SATURATED: {
+		"id_suffix": "water_saturation",
+		"topic": "water_saturation",
+		"claim": "The ground around %s can hold no more water",
+		"confidence": 90,
+		"observability": "local"
+	},
+	WorldState.WATER_FLOODED: {
+		"id_suffix": "flooding",
+		"topic": "flooding",
+		"claim": "Floodwater is standing in %s",
+		"confidence": 95,
+		"observability": "local"
+	}
+}
 var knowledge_rules := KnowledgeRules.new()
 var debug_logging_enabled: bool = true
 
@@ -188,7 +231,15 @@ func can_resolve(action_id: String) -> bool:
 	return state.divine_power >= int(actions[action_id]["cost"])
 
 
-func resolve_action(action_id: String) -> Dictionary:
+# `target_location_id` is the settlement the PLAYER chose.
+#
+# It defaults to wherever the year's event landed, which is what every
+# unmigrated power still relies on and what every existing caller expects. But a
+# player who wants to rain on a quiet settlement while another one starves is
+# allowed to: divine power is a force applied where the god chooses, not a
+# response the simulation approves of. Nothing here consults whether the target
+# needs it, and nothing picks a better one.
+func resolve_action(action_id: String, target_location_id: String = "") -> Dictionary:
 	if state.action_taken:
 		return {"ok": false, "message": "The world is already interpreting your choice."}
 	if not actions.has(action_id):
@@ -199,13 +250,21 @@ func resolve_action(action_id: String) -> Dictionary:
 	if state.divine_power < cost:
 		return {"ok": false, "message": "Insufficient Divine Power. Choose another response."}
 
+	# A fresh turn: last turn's crossings are no longer news.
+	state.last_water_events = []
 	state.divine_power -= cost
 	# Tolerant of a power the tally was not written with, so registering one does
 	# not mean editing a counter dictionary in `world_state.gd` as well.
 	state.action_counts[action_id] = int(state.action_counts.get(action_id, 0)) + 1
-	var location_id := state.current_event_location_id
+	# The chosen target, or the year's event if the caller named none. An
+	# unknown id falls back rather than failing, so a stale selection cannot
+	# strand the player.
+	var location_id := target_location_id
+	if location_id.is_empty() or not state.locations.has(location_id):
+		location_id = state.current_event_location_id
+	state.last_divine_target_id = location_id
 	var before := _settlement_snapshot(location_id)
-	var immediate_result := _apply_immediate_action(action_id)
+	var immediate_result := _apply_immediate_action(action_id, location_id)
 	# The same consequence pipeline mortals use. What the act changed is already
 	# in the world; this records that it happened and gives mortals something to
 	# notice. No motive is attached: "rain fell" is the fact, and what it means
@@ -347,6 +406,7 @@ func advance_year() -> Dictionary:
 	state.last_executions = tick_action_execution()
 	state.last_consequences = tick_consequences()
 	_process_population()
+	_process_water_drift()
 	_process_world_drift()
 	_select_next_event()
 	state.action_taken = false
@@ -675,6 +735,9 @@ func _settlement_conditions() -> Dictionary:
 		var bands := {}
 		for band: String in WorldState.SETTLEMENT_BANDS:
 			bands[band] = state.get_settlement_band(location_id, band)
+		# The ground too, so a threshold crossing can be told apart from a
+		# settlement that has simply been under water for years.
+		bands["water"] = state.get_water(location_id)
 		snapshot[location_id] = bands
 	return snapshot
 
@@ -917,10 +980,10 @@ func _settlement_changes(location_id: String, before: Dictionary) -> Array:
 	return changes
 
 
-func _apply_immediate_action(action_id: String) -> String:
+func _apply_immediate_action(action_id: String, location_id: String) -> String:
 	match action_id:
 		"send_rain":
-			return _resolve_send_rain()
+			return _resolve_send_rain(location_id)
 		"bless_harvest":
 			return _resolve_bless_harvest()
 		"speak_mortal":
@@ -943,17 +1006,89 @@ func _apply_immediate_action(action_id: String) -> String:
 # route from a mortal's interpretation to kingdom faith exists yet. That is a
 # deliberate gap, recorded rather than papered over, and it closes when the
 # remaining powers migrate. The other three powers still move faith directly.
-func _resolve_send_rain() -> String:
-	var location_id := state.current_event_location_id
+# Rain is a force, not an answer.
+#
+# It used to ask whether a drought was running and hand out food accordingly,
+# which made the power a correct response to a situation. Now it does the same
+# thing every time — it puts water in the ground — and what that WAS depends on
+# what the ground was already holding. The god is not prevented from ruining a
+# harvest by watering a field that was already drowning.
+func _resolve_send_rain(location_id: String) -> String:
 	var place := state.location_name(location_id)
+	var before_state := state.water_state(location_id)
 	state.intervention_counts["rain_during_drought"] += int(state.current_event_id == "drought")
-	if state.current_event_id == "drought":
-		state.change_settlement_band(location_id, "food", 2)
-		if state.get_settlement_band(location_id, "food") <= 1:
-			state.change_settlement_band(location_id, "stability", 1)
-		return "Rain reaches %s and its empty wells begin to fill." % place
-	state.change_settlement_band(location_id, "food", 1)
-	return "Unexpected rain passes over %s and changes the season's course." % place
+
+	state.change_water(location_id, RAIN_WATER_GAIN)
+	var after_state := state.water_state(location_id)
+
+	# The harvest answers to what the ground was like when the rain arrived.
+	var outcome: Dictionary = RAIN_OUTCOMES.get(before_state, {})
+	var food := int(outcome.get("food", 0))
+	var stability := int(outcome.get("stability", 0))
+	if food != 0:
+		state.change_settlement_band(location_id, "food", food)
+	if stability != 0:
+		state.change_settlement_band(location_id, "stability", stability)
+
+	# Whatever the ground has newly become, said plainly. No cause is named and
+	# no judgement is offered: mortals decide what it meant.
+	if before_state != after_state:
+		_offer_water_fact(location_id, after_state)
+	match after_state:
+		WorldState.WATER_FLOODED:
+			return "Rain falls on %s until the water has nowhere left to go." % place
+		WorldState.WATER_SATURATED:
+			return "Rain falls on %s. The ground is already soaked." % place
+		WorldState.WATER_WET:
+			return "Rain falls on %s and the fields drink their fill." % place
+	return "Rain falls on %s and the dry soil begins to recover." % place
+
+
+# A settlement's condition becoming perceivable. Generic: any location reaching
+# the state offers the fact, whoever or whatever put it there.
+func _offer_water_fact(location_id: String, water_state: String) -> void:
+	# Recorded whether or not anybody can perceive it: the crossing is a fact
+	# about the ground, and presentation reads this rather than the level, which
+	# drift may already have moved.
+	state.last_water_events.append({
+		"location_id": location_id,
+		"water_state": water_state,
+		"year": state.year
+	})
+	var template: Dictionary = WATER_KNOWLEDGE.get(water_state, {})
+	if template.is_empty():
+		return
+	state.pending_perception_facts.append({
+		"id": "%s_%s" % [location_id, str(template["id_suffix"])],
+		"event_id": str(template["topic"]),
+		"subject_id": location_id,
+		"topic": str(template["topic"]),
+		"claim": str(template["claim"]) % state.location_name(location_id),
+		"confidence": int(template["confidence"]),
+		"truth_state": "true",
+		"objective_truth_state": "true",
+		"fresh_for_years": WorldState.DEFAULT_KNOWLEDGE_FRESH_YEARS,
+		"observability": str(template["observability"]),
+		"participants": []
+	})
+
+
+# Water leaves the ground on its own. Slower than rain puts it in, so a player
+# who keeps intervening can outpace it and flood a place — which is the point —
+# and a player who stops will watch it drain back to baseline over about a
+# decade. Deterministic, and applied to every settlement equally.
+func _process_water_drift() -> void:
+	for location_id: String in state.get_location_ids():
+		var current := state.get_water(location_id)
+		if current == WorldState.WATER_BASELINE:
+			continue
+		var before_state := state.water_state(location_id)
+		var step := mini(WATER_DRIFT_PER_YEAR, absi(current - WorldState.WATER_BASELINE))
+		state.change_water(location_id, -step if current > WorldState.WATER_BASELINE else step)
+		var after_state := state.water_state(location_id)
+		# Draining into a state is as objective as raining into one.
+		if before_state != after_state:
+			_offer_water_fact(location_id, after_state)
 
 
 func _resolve_bless_harvest() -> String:

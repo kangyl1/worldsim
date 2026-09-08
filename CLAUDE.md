@@ -13,13 +13,13 @@ The user retains authority over game design, project direction, and GitHub publi
 3. If there is **ANY** design ambiguity, design problem, or architecture decision that could affect game behavior, scope, rules, simulation outcomes, or project direction, **STOP and ask the user before deciding**. Do not make autonomous game-design decisions.
 4. Small, purely mechanical implementation details may be handled without asking only when they cannot alter design intent. If uncertain, ask.
 5. GitHub repository `kangyl1/worldsim` is the source of truth when this document or any handoff summary conflicts with the current committed code. Inspect the repository and history when unsure.
-6. Minimal Settlement State v1, Selective Perception v1, Broad Intent v1, Action Selection v1, Action Execution v1, Consequence Engine v1, **Interpretation v1** and **Divine Actions in the shared causal pipeline v1** are built. Mortals notice different things, want things, try things, attempts have results, results objectively change the world, and mortals now decide what those results MEANT — which changes what they want later. **Exactly ONE divine power, Send Rain, has been migrated onto that same road**, and the road itself is now generic: `scripts/divine_action_rules.gd` is the single surface that registers how any power enters the world. Bless Harvest and Divine Voice still get one collective meaning from the populace-level `DivineReceptionSystem`. **Historical Selection + Chronicle v1** is also built: the simulation now decides which occurrences mattered enough to become history, and links them causally. **Belief Formation v1** is built on top of that: mortals accumulate durable, revisable, per-mortal beliefs from their own repeated interpretations, and the first divine belief can now bootstrap organically. **Population & Locality Coverage Foundation v1** made the rules generic around the seeded fixtures: no rules file names a settlement or a mortal, so generated places and people can take part by existing in state. **Broader Interpretation Coverage v1** widened what mortals can conclude: the three settlement-condition topics the event cycle produces every year are now interpreted, per observer, by where they live and who they are. **Situational Choices & Theatrical Feedback v1** made that depth visible: a presentation-only layer decides what the player is told each year and how it is worded, reading records and writing nothing. Migrating any further power, designing what its occurrence could MEAN, religion in any form, world generation itself, and the later history systems (myth, decay, competing accounts) must not be built until the user explicitly asks.
+6. Minimal Settlement State v1, Selective Perception v1, Broad Intent v1, Action Selection v1, Action Execution v1, Consequence Engine v1, **Interpretation v1** and **Divine Actions in the shared causal pipeline v1** are built. Mortals notice different things, want things, try things, attempts have results, results objectively change the world, and mortals now decide what those results MEANT — which changes what they want later. **Exactly ONE divine power, Send Rain, has been migrated onto that same road**, and the road itself is now generic: `scripts/divine_action_rules.gd` is the single surface that registers how any power enters the world. Bless Harvest and Divine Voice still get one collective meaning from the populace-level `DivineReceptionSystem`. **Historical Selection + Chronicle v1** is also built: the simulation now decides which occurrences mattered enough to become history, and links them causally. **Belief Formation v1** is built on top of that: mortals accumulate durable, revisable, per-mortal beliefs from their own repeated interpretations, and the first divine belief can now bootstrap organically. **Population & Locality Coverage Foundation v1** made the rules generic around the seeded fixtures: no rules file names a settlement or a mortal, so generated places and people can take part by existing in state. **Broader Interpretation Coverage v1** widened what mortals can conclude: the three settlement-condition topics the event cycle produces every year are now interpreted, per observer, by where they live and who they are. **Situational Choices & Theatrical Feedback v1** made that depth visible: a presentation-only layer decides what the player is told each year and how it is worded, reading records and writing nothing. **Divine Sandbox & Cumulative Consequences Foundation v1** turned Send Rain from a correct answer into a force: the player picks the target, water accumulates in the ground, and the same power helps, does nothing, or floods a settlement depending on what that ground already held. Migrating any further power, designing what its occurrence could MEAN, religion in any form, world generation itself, and the later history systems (myth, decay, competing accounts) must not be built until the user explicitly asks.
 7. The player-facing interface shows a mortal's perspective; Developer Mode shows the machine. Never merge the two. See "Interface rules".
 
 ## Project reference
 
 - Repository: `kangyl1/worldsim`
-- Current important commit: `ede5410f3af1734d4b06568e39e11a88922edd31` — `Add Situational Choices and Theatrical Feedback v1`, which made the simulation visible in normal play
+- Current important commit: `PENDING_SANDBOX_COMMIT` — `Add Divine Sandbox and Cumulative Consequences Foundation v1`, where a divine power became a force rather than a remedy
 
 The mortal causal chain, one commit per layer, oldest first:
 
@@ -40,6 +40,7 @@ The mortal causal chain, one commit per layer, oldest first:
 - `0529b3543f1aac1e98ba353ef7f8334076af23b6` — `Add Population and Locality Coverage Foundation v1` (the rules stopped knowing which settlements and people happen to exist)
 - `da5abee821793741e9b9d636bb2102e8e5dd71bd` — `Add Broader Interpretation Coverage v1` (the world's own conditions became things a mortal can have an opinion about)
 - `ede5410f3af1734d4b06568e39e11a88922edd31` — `Add Situational Choices and Theatrical Feedback v1` (the player can finally see what the simulation had been doing all along)
+- `PENDING_SANDBOX_COMMIT` — `Add Divine Sandbox and Cumulative Consequences Foundation v1` (the god applies a force, and the world lives with the result)
 
 - Local project path: `/Users/jamienfam/Documents/ChatGPT/worldsim`
 - Tested Godot version: `4.7.1`
@@ -73,12 +74,13 @@ The current foundation includes:
 - Population & Locality Coverage Foundation v1: a small locality API, no rules file naming a settlement or a mortal, and empty locations represented honestly rather than filled in
 - Broader Interpretation Coverage v1: the yearly settlement conditions are interpreted per observer by locality, traits, confidence and belief, with a coverage diagnostic naming the topics nobody has designed meanings for
 - Situational Choices & Theatrical Feedback v1: deterministic templates turn existing records into at most three player-facing developments a year, in three voices, with every line grounded in state the simulation actually holds
+- Divine Sandbox & Cumulative Consequences Foundation v1: explicit divine targeting, one accumulating environmental pressure, and the same power reading as help, waste or catastrophe depending on the ground
 - knowledge generation from existing events, outcome-aware and refreshing stable ids
 - a world map interface with clickable settlements and crisis markers
 - world -> settlement -> person navigation in one reusable panel
 - in-game Developer Mode (DEV button, F1 secondary) exposing raw simulation values, read-only
 - a centralised presentation layer turning numbers into qualitative labels
-- deterministic tests across twenty-one suites
+- deterministic tests across twenty-two suites
 - a 72-turn regression suite
 
 Current core source files:
@@ -128,6 +130,7 @@ Test suites, all deterministic:
 | `tests/locality_test.gd` | invented settlements and mortals take part; empty places stay empty and stay valid |
 | `tests/interpretation_coverage_test.gd` | the yearly conditions mean something, differently to different people, without inventing motive |
 | `tests/feedback_test.gd` | the player is told the truth, theatrically, boundedly, and presentation changes nothing |
+| `tests/sandbox_test.gd` | explicit targeting, accumulating water, help to catastrophe, and nothing protecting the player |
 
 Do not assume this summary is exhaustive or newer than the code. Inspect the repository first, and use GitHub as the source of truth if anything conflicts.
 
@@ -288,7 +291,7 @@ Minimal Settlement State v1 constraints, settled with the user and to be preserv
 - settlements are places with conditions, never actors: a settlement has no intentions, no budget, no council, no buildings, and makes no decisions. Mortals decide things
 - no taxes, laws, governors, construction, levies, trade routes, vassals or succession; the god is not a ruler and must not be given a domain to administer
 - a settlement field must pass all three of: can the player notice it, understand it, act on it. If it exists only because a real society would have one, it does not belong
-- settlements own `food`, `stability`, `prosperity` and `population`; the kingdom's `food_level`, `stability_level`, `prosperity_level` and `population` are DERIVED views with broadcast setters, never a second copy
+- settlements own `food`, `stability`, `prosperity`, `population` and `water`; the kingdom's `food_level`, `stability_level`, `prosperity_level` and `population` are DERIVED views with broadcast setters, never a second copy. `water` is the one environmental pressure and arrived with the divine sandbox; the settlement-record size guardrail in `settlement_test.gd` moved from 8 to 9 to admit it, and moves again only for a field as deliberate
 - **never use `+=` on a derived kingdom band.** It reads the aggregate, adds, and writes the result back to every settlement, flattening the world. Use `change_settlement_band()`
 - `military_level`, `faith`, `followers` and `reputation` stay kingdom-level; not every world stat should become local
 - events are settlement-generic: no code may name a settlement. The claim is a format string, the knowledge id is built from the settlement, and a new settlement needs no new event definition
@@ -406,10 +409,12 @@ user and to be preserved:
   at the other four rather than restating them, and names the `occurrence_topic`
   that links the act to what mortals were offered. Merging them would hide the
   exact gap this layer exists to show
-- divine acts land on `current_event_location_id`, so a test that wants the act
-  observed must aim it at a settlement somebody lives in. Aimed at the Frontier,
-  nobody perceives it and nobody interprets it — that is the observability rules
-  working, not a defect
+- divine acts land on the settlement the PLAYER chose. `resolve_action()` takes
+  a `target_location_id`, and `current_event_location_id` is only the fallback
+  when none is given — see the sandbox constraints below. A test that wants the
+  act observed must still aim it at a settlement somebody lives in: aimed at the
+  Frontier, nobody perceives it and nobody interprets it, which is the
+  observability rules working rather than a defect
 
 Generic Divine Action Pipeline Foundation constraints, settled with the user and
 to be preserved:
@@ -505,6 +510,22 @@ preserved:
   makes an occurrence important and what makes it part of a story are the same
   fact: a ruler refusing aid during a famine is history, and the same refusal in
   a fed and quiet year is two people disagreeing
+- **one continuing episode is one entry, not one per wobble.** A transition
+  becomes history when it is the FIRST of its kind for that place and band
+  within `REINFORCEMENT_WINDOW` years. The fall is recorded and so is the
+  recovery; the relapses between them are the same episode continuing, and once
+  the place has been quiet longer than the window its next collapse is genuinely
+  new. Added when the divine sandbox made settlements oscillate: Aster crossed
+  the food floor every two years for forty years and wrote 45 separate
+  "events", which buried the entries that mattered. The collapse took a 40-year
+  run from 94 entries to 56 — and it IMPROVED causal linking from 1 link to 4,
+  because the churn had been closing every episode as fast as it opened, so
+  nothing could find a parent
+- **the fix for a noisy chronicle is the episode rule, never the threshold.**
+  `IMPORTANCE_THRESHOLD` stays at 50 and is not to be moved to manage volume.
+  The absolute guard in `chronicle_test.gd` — two entries per year — is likewise
+  not to be relaxed: it was raised to three once during the sandbox milestone
+  and the user correctly sent it back
 - **the chronicle is uncapped, immutable and permanent in v1**, unlike every
   other archive. The others are working memory that forgets cheaply; this one
   would leave dangling causal links if it dropped its oldest entries. The single
@@ -682,6 +703,63 @@ and to be preserved:
 - the player-facing surface is the existing central text region. No new panels,
   no fake-phone work, and the prose History Log and Developer-Mode-only
   Chronicle are both untouched
+
+Divine Sandbox & Cumulative Consequences Foundation v1 constraints, settled with
+the user and to be preserved:
+
+- **divine power is not a correct answer to a situation. It is a force applied
+  to a living world.** The menu is a toolbox: no power may be hidden, disabled,
+  greyed out or redirected because the simulation thinks it is inappropriate.
+  Only the existing Divine Power cost may refuse an act. A test tries Send Rain
+  at every water level and greps for `rain_not_needed`, `already_used_here`,
+  `target_is_satisfied`, `recommended_target` and `best_target`
+- **the player chooses the target.** `resolve_action(action_id,
+  target_location_id := "")`; `current_event_location_id` is only the fallback.
+  The world decides where EVENTS happen and the god decides where to ACT, and
+  the two need not agree. Nothing auto-selects the settlement most in need, and
+  a test rains on a quiet place while another starves
+- Send Rain applies the same force every time and **the outcome comes from the
+  state the ground was already in**, keyed on the state BEFORE the rain: dry
+  `food +2`, normal and wet nothing, saturated `food -1`, flooded `food -2` and
+  `stability -1`. There is no `if drought:` branch any more, and reintroducing
+  one would make the power a scripted answer again
+- **one environmental pressure exists, and only one.** `water`, 0-100 per
+  settlement, baseline 35, states dry/normal/wet/saturated/flooded. Do NOT add
+  `fire_pressure`, `wind_pressure` or a "elemental pressure framework" — another
+  power earns its own field when it needs one, and not before
+- prototype tuning, NOT final balance: rain `+22`, drift `-6` per year toward
+  baseline. Rain must outpace drift or the sandbox cannot escalate, and a test
+  asserts that relationship directly. **Do not retune either to manage Chronicle
+  volume** — that is what the episode rule is for
+- **threshold crossings are conditions of the WORLD, not of the act.**
+  `water_saturation` and `flooding` are emitted by the settlement reaching that
+  state, so a place that floods with no god involved reads identically. They do
+  not go through the divine registry's single `occurrence`, and the generic
+  routing still knows nothing about water
+- the crossings are recorded in `state.last_water_events` as they happen,
+  because drift moves the level within the same tick: a flood reached at the
+  moment of the rain can already read as merely saturated by the time anything
+  looks at the number
+- **flood damage is limited to food and stability on purpose.** No buildings,
+  casualties, disease, displacement or economy exist to damage, and none were
+  invented to make flooding feel worse
+- new readings: `ground_cannot_take_more`, `flood_is_disaster`,
+  `flood_divine_excess`, plus distant variants. **`flood_divine_excess` is
+  reachable only by somebody who already believes intervention happens** — a
+  person with no such belief sees a flood, not a judgement — and it CONTRADICTS
+  `divine_help_follows_need`. A god who keeps raining can talk his own believer
+  out of it, measured at 70 -> 31, and only ever through perceiving, knowing and
+  interpreting the flood
+- feedback escalates from the ground, not from a counter: `YOU SEND RAIN` ->
+  `— AGAIN` -> `— AND THE WATER RISES`, and the dramatic wording appears only
+  when the thresholds support it
+- **only Send Rain has explicit targeting.** The three legacy powers still use
+  the event location, because giving them targets would force their design
+  before their migration pass. Reported rather than faked
+- several existing suites encoded "rain always improves food" in their fixtures.
+  They were given the dry ground they actually meant to test, not laxer
+  assertions — if a test about the causal chain starts failing because rain no
+  longer helps, the fixture is what is wrong
 
 **Known limitation.** The LEGACY feedback horizon of GDD Section 97 is not
 built. Nothing models an event's later reputation — the Chronicle has

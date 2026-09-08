@@ -157,7 +157,10 @@ func _on_advance_pressed() -> void:
 func choose_action(index: int) -> void:
 	if index < 0 or index >= ACTION_KEYS.size():
 		return
-	var result := simulation.resolve_action(ACTION_KEYS[index])
+	# The settlement the player has selected on the map is where the act lands.
+	# No power is hidden, no target is chosen for them, and nothing redirects
+	# the act to whichever place the simulation thinks needs it most.
+	var result := simulation.resolve_action(ACTION_KEYS[index], selected_location_id)
 	if not result["ok"]:
 		result_text.text = str(result["message"])
 		return
@@ -275,10 +278,20 @@ func _render_action_hint() -> void:
 				str(action["hint"]), cost, state.divine_power
 			]
 		else:
-			action_hint.text = str(action["hint"])
+			# Where the act will land, and the state of that ground. Stated so
+			# the player knows what they are about to do — never as advice, and
+			# never as a reason the power is unavailable.
+			action_hint.text = "%s  ·  on %s (%s)" % [
+				str(action["hint"]),
+				state.location_name(selected_location_id),
+				PresentationRules.water_label(state.water_state(selected_location_id)).to_lower()
+			]
 		return
-	action_hint.text = "The year awaits your answer." if not state.action_taken \
-		else "Advance the year to see what the world makes of it."
+	if state.action_taken:
+		action_hint.text = "Advance the year to see what the world makes of it."
+		return
+	action_hint.text = "The year awaits your answer.  ·  target: %s" \
+		% state.location_name(selected_location_id)
 
 
 func _on_action_hovered(index: int) -> void:
@@ -375,6 +388,9 @@ func _render_location() -> void:
 		"[color=#68757c]%s[/color]\n" % _location_kind_label(str(location["kind"]))
 	]
 	lines.append_array(_settlement_condition_lines(selected_location_id))
+	# The ground itself, qualitatively. The number behind it is Developer Mode's.
+	lines.append("[color=#68757c]GROUND[/color]  [color=#cfd6d8]%s[/color]"
+		% PresentationRules.water_label(state.water_state(selected_location_id)))
 	location_text.text = "\n".join(lines)
 
 
@@ -958,6 +974,13 @@ func _developer_locality_lines() -> Array[String]:
 			int(row["resident_count"]),
 			str(row["residents"]) if int(row["resident_count"]) > 0 else "(nobody)"
 		]))
+		# The exact pressure, and the drift that will move it. Player-facing
+		# surfaces show only the qualitative state.
+		lines.append(_dev_field("    water", "%d / %d  (%s, drifts %d/yr toward %d)" % [
+			state.get_water(str(row["location_id"])), WorldState.WATER_MAX,
+			state.water_state(str(row["location_id"])),
+			WorldSimulation.WATER_DRIFT_PER_YEAR, WorldState.WATER_BASELINE
+		]))
 		lines.append(_dev_field("    local events perceivable",
 			"yes" if covered else "NO — anything here is seen by nobody"))
 		if str(state.current_event_location_id) == str(row["location_id"]):
@@ -1166,6 +1189,9 @@ func _developer_divine_lines() -> Array[String]:
 	]:
 		lines.append(_dev_field("  %s" % field, _or_none(str(latest[field]))))
 	lines.append(_dev_field("  parameters", str(latest["parameters"])))
+	# Where the PLAYER aimed, which need not be where the year's event landed.
+	lines.append(_dev_field("  player target", _or_none(state.last_divine_target_id)))
+	lines.append(_dev_field("  event location", _or_none(state.current_event_location_id)))
 	lines.append("")
 	# The trace, as pointers rather than as a merged record.
 	lines.append("[color=#76c8d5]where the rest of this chain lives[/color]")

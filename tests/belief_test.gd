@@ -255,8 +255,13 @@ func _test_a_belief_can_be_contradicted() -> void:
 	for year in range(6):
 		state.set_settlement_band("westfield", "food", 2)
 		state.set_settlement_band("westfield", "prosperity", 2)
+		# Healthy ground each year, so this is ORDINARY rain on a settlement
+		# that is fine — which is what should read as weather and contradict the
+		# belief. Left to accumulate it would flood the place instead, and a
+		# flood is a different argument (see `sandbox_test.gd`).
+		state.set_water("westfield", WorldState.WATER_BASELINE)
 		state.current_event_location_id = "westfield"
-		simulation.resolve_action("send_rain")
+		simulation.resolve_action("send_rain", "westfield")
 		simulation.advance_year()
 
 	var after: Dictionary = state.get_belief("mara", BeliefRules.DIVINE_HELP_FOLLOWS_NEED, "")

@@ -112,6 +112,17 @@ const SUPPORTS := {
 	],
 	"unrest_will_settle": [
 		{"proposition": CONDITIONS_ARE_IMPROVING, "weight": 10}
+	],
+	# Standing water where you live is evidence the place cannot keep you safe,
+	# however it got there.
+	"flood_is_disaster": [
+		{"proposition": HOME_IS_UNSAFE, "weight": 16}
+	],
+	"flood_divine_excess": [
+		{"proposition": HOME_IS_UNSAFE, "weight": 14},
+		# Still evidence that something intervenes. Reading a flood as sent is
+		# not doubt about intervention — it is doubt about its restraint.
+		{"proposition": DIVINE_INTERVENTION_EXISTS, "weight": 10}
 	]
 }
 
@@ -137,6 +148,17 @@ const CONTRADICTS = {
 	],
 	"home_is_in_danger": [
 		{"proposition": CONDITIONS_ARE_IMPROVING, "weight": 12}
+	],
+	# The belief revision path this milestone exists to open. Somebody who came
+	# to believe help arrives when the need is greatest, and then watched far
+	# more arrive than anyone needed, has been given a reason to doubt it. The
+	# belief is not deleted because a flood happened — the flood had to be
+	# perceived, known and INTERPRETED that way first.
+	"flood_divine_excess": [
+		{"proposition": DIVINE_HELP_FOLLOWS_NEED, "weight": 18}
+	],
+	"flood_is_disaster": [
+		{"proposition": CONDITIONS_ARE_IMPROVING, "weight": 14}
 	]
 }
 

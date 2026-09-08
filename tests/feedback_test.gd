@@ -495,7 +495,10 @@ func _test_a_divine_act_reports_itself_clearly() -> void:
 	var state = simulation.state
 	_settle(simulation, 6)
 	state.current_event_location_id = "aster"
-	var result := simulation.resolve_action("send_rain") as Dictionary
+	# Parched, so there is a world change to report. Rain on healthy ground
+	# legitimately reports none.
+	state.set_water("aster", WorldState.WATER_MIN)
+	var result := simulation.resolve_action("send_rain", "aster") as Dictionary
 	var feedback: Dictionary = simulation.feedback_rules.divine_feedback(state, result)
 	assert(not feedback.is_empty(), "the god acted and the player was told nothing")
 	assert(str(feedback["headline"]).begins_with("YOU "))

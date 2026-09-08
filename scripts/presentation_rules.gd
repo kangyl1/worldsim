@@ -99,6 +99,22 @@ static func relationship_label(axis: String, value: int) -> String:
 	return label_for(value, AXIS_BANDS[axis])
 
 
+# How much water is in the ground, in words. The simulation decides the STATE
+# (see `WorldState.water_state`); this only decides what to call it, and the
+# exact number stays in Developer Mode like every other raw value.
+const WATER_LABELS := {
+	"dry": "Dry",
+	"normal": "Stable",
+	"wet": "Wet",
+	"saturated": "Saturated",
+	"flooded": "Flooded"
+}
+
+
+static func water_label(water_state: String) -> String:
+	return str(WATER_LABELS.get(water_state, water_state.capitalize()))
+
+
 static func label_for(value: int, bands: Array) -> String:
 	# Out-of-range values clamp rather than falling through to an empty label.
 	var clamped := clampi(value, VALUE_MIN, VALUE_MAX)

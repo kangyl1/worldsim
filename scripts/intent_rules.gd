@@ -106,7 +106,9 @@ const INTENT_INTERPRETATION_RULES := {
 	"home_is_in_danger": {"protect": 10, "preserve": 6},
 	"home_is_recovering": {"preserve": 6},
 	"instability_is_an_opening": {"acquire": 8},
-	"elsewhere_is_struggling": {"help": 8}
+	"elsewhere_is_struggling": {"help": 8},
+	"flood_is_disaster": {"protect": 12, "preserve": 6},
+	"flood_divine_excess": {"protect": 10}
 }
 
 # What an ESTABLISHED belief does to what someone wants. Deliberately smaller

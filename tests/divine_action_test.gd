@@ -90,6 +90,10 @@ func _world_ready_to_act(years: int = WARMUP_YEARS, target: String = "aster") ->
 		simulation.resolve_action("do_nothing")
 		simulation.advance_year()
 	simulation.state.current_event_location_id = target
+	# Parched, so the rain has something to do. Since the divine sandbox, rain
+	# is a force rather than a remedy: on healthy ground it changes no band at
+	# all, and these tests are about the chain, not about that.
+	simulation.state.set_water(target, WorldState.WATER_MIN)
 	return simulation
 
 

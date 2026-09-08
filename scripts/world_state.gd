@@ -37,6 +37,38 @@ const MAX_KNOWLEDGE_PER_ENTITY := 12
 # into domain management: settlements are places, not political actors.
 const SETTLEMENT_BANDS := ["food", "stability", "prosperity"]
 
+# How much water is in the ground here. The one environmental pressure the
+# simulation carries, added for Send Rain and deliberately not generalised: no
+# fire, wind or blessing pressure exists, and none should until a power needs it.
+#
+# This is NOT a hydrology model. There are no rivers, no elevation, no drainage
+# and no seasons. It is a single bounded number per settlement that remembers
+# how much rain a place has had, so that the same power applied again can mean
+# something different from the first time.
+const WATER_MIN := 0
+const WATER_MAX := 100
+# Where an untended settlement settles. Not "correct" — just the level the
+# world drifts back toward when nobody interferes.
+const WATER_BASELINE := 35
+
+# The qualitative states the number resolves to. SIMULATION semantics, because
+# consequences key off them; the player-facing wording lives in
+# `presentation_rules.gd`, which maps these ids to labels.
+const WATER_DRY := "dry"
+const WATER_NORMAL := "normal"
+const WATER_WET := "wet"
+const WATER_SATURATED := "saturated"
+const WATER_FLOODED := "flooded"
+const WATER_STATES := [WATER_DRY, WATER_NORMAL, WATER_WET, WATER_SATURATED, WATER_FLOODED]
+# Upper bound of each state, in order. Prototype tuning, not final balance.
+const WATER_THRESHOLDS := [
+	{"state": WATER_DRY, "max": 20},
+	{"state": WATER_NORMAL, "max": 50},
+	{"state": WATER_WET, "max": 70},
+	{"state": WATER_SATURATED, "max": 85},
+	{"state": WATER_FLOODED, "max": 100}
+]
+
 var year: int = 12
 var military_level: int = 0
 
@@ -86,6 +118,15 @@ var current_event_id: String = "drought"
 # every year after. Deliberately not a named settlement: a world assembled
 # differently should not have to edit this line.
 var current_event_location_id: String = ""
+# Where the player last aimed a divine act. Kept apart from the event location
+# on purpose: the world decides where events happen, and the god decides where
+# to act, and the two need not agree.
+var last_divine_target_id: String = ""
+# Water thresholds crossed since the player's turn began. Current turn only —
+# the ground drifts back a little every year, so a flood reached at the moment
+# of the rain may already have eased by the time anything reads the level, and
+# the crossing still happened.
+var last_water_events: Array[Dictionary] = []
 var action_taken: bool = false
 var last_result: String = ""
 # The POPULACE's reading of a divine act, owned by DivineReceptionSystem. Not
@@ -451,8 +492,47 @@ func add_location(
 	}
 	for band: String in SETTLEMENT_BANDS:
 		record[band] = clampi(int(conditions.get(band, 1)), 0, FOOD_LABELS.size() - 1)
+	# Generic across any settlement, including ones this file has never heard of.
+	record["water"] = clampi(int(conditions.get("water", WATER_BASELINE)), WATER_MIN, WATER_MAX)
 	locations[location_id] = record
 	return true
+
+
+# --- Water pressure ---------------------------------------------------------
+
+func get_water(location_id: String) -> int:
+	if not locations.has(location_id):
+		return 0
+	return int(locations[location_id].get("water", WATER_BASELINE))
+
+
+func set_water(location_id: String, value: int) -> bool:
+	if not locations.has(location_id):
+		return false
+	locations[location_id]["water"] = clampi(value, WATER_MIN, WATER_MAX)
+	return true
+
+
+# Returns the value actually reached, after clamping. A settlement already at
+# the ceiling absorbs more rain and stays flooded rather than overflowing into
+# a number nothing can read.
+func change_water(location_id: String, delta: int) -> int:
+	if not locations.has(location_id):
+		return 0
+	set_water(location_id, get_water(location_id) + delta)
+	return get_water(location_id)
+
+
+func water_state(location_id: String) -> String:
+	return water_state_for(get_water(location_id))
+
+
+func water_state_for(value: int) -> String:
+	var clamped := clampi(value, WATER_MIN, WATER_MAX)
+	for threshold: Dictionary in WATER_THRESHOLDS:
+		if clamped <= int(threshold["max"]):
+			return str(threshold["state"])
+	return WATER_FLOODED
 
 
 func get_settlement_band(location_id: String, band: String) -> int:

@@ -206,7 +206,13 @@ func _render() -> void:
 	time_value.text = "READY TO ADVANCE" if state.action_taken else "AWAITING CHOICE"
 	time_value.modulate = Color("e8be63") if state.action_taken else Color("76c8d5")
 
-	event_title.text = str(event["title"])
+	# The year's situation names WHERE it is happening. Without the place, a
+	# drought reported in one settlement reads as a statement about whichever
+	# settlement the player happens to have selected — which is how a flooded
+	# place appeared to be having a drought.
+	event_title.text = "%s — %s" % [
+		str(event["title"]), str(event["location_name"]).to_upper()
+	]
 	event_description.text = str(event["description"])
 	result_text.text = _feedback_text(state)
 

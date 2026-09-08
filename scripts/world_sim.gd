@@ -1564,10 +1564,52 @@ const EVENT_WEATHER := {
 	"unrest": {"stability": -1}
 }
 
+# NOT BUILT, on purpose, and recorded here because it is the obvious next
+# thought: a dry year does NOT remove water.
+#
+# Making it do so was tried and reverted. Water currently moves by exactly two
+# forces — divine rain, and drift back toward baseline — and three existing
+# guarantees depend on that being the whole list, including the sandbox's
+# headline one that the gentlest possible standing order, left alone long
+# enough, still floods a settlement. A drought that drained the ground turned
+# that flood into a permanent `wet`, which is a balance decision rather than a
+# consistency fix, so it is the user's to make and not this milestone's.
+#
+# The contradiction is closed from the other side instead: the event may only be
+# declared where the ground already permits it. Water stays the single physical
+# truth, and the event became a READER of it rather than a second author.
+
+# What the world must physically be like for an event to be able to happen at a
+# settlement, checked against the authoritative state rather than assumed.
+#
+# The rule this exists to enforce: an event may not assert a condition the
+# world's own numbers contradict. "No rain has fallen and the wells are drying
+# up" is a claim about the ground, so it may only be made where the ground is
+# not wet. A settlement standing in floodwater is not having a drought, however
+# empty its stores are.
+#
+# `unrest` carries no requirement on purpose. It is a social occurrence, and no
+# amount of water makes an angry crowd impossible.
+const EVENT_REQUIREMENTS := {
+	"drought": {"water_at_most": WorldState.WATER_NORMAL},
+	"good_harvest": {"water_at_most": WorldState.WATER_SATURATED}
+}
+
 
 func _select_next_event() -> void:
 	var cycle := ["drought", "good_harvest", "unrest"]
-	state.current_event_id = cycle[(state.year - 12) % cycle.size()]
+	var scheduled := (state.year - 12) % cycle.size()
+	# The rotation is the world's rhythm and is kept. What changed is that a
+	# scheduled event nowhere in the world can physically host is SKIPPED rather
+	# than declared anyway: a drowned world has no droughts, and says something
+	# else instead. `unrest` carries no physical requirement, so the walk always
+	# finds a valid year somewhere.
+	state.current_event_id = str(cycle[scheduled])
+	for step in range(cycle.size()):
+		var candidate := str(cycle[(scheduled + step) % cycle.size()])
+		if not locations_for_event(candidate).is_empty():
+			state.current_event_id = candidate
+			break
 	state.current_event_location_id = event_location_for(state.current_event_id)
 	_apply_event_weather(state.current_event_id)
 	match state.current_event_id:
@@ -1592,9 +1634,33 @@ func _apply_event_weather(event_id: String) -> void:
 			state.change_settlement_band(location_id, str(band_value), int(weather[band_value]))
 
 
+# Whether this settlement's physical state permits this event at all.
+func event_can_occur_at(event_id: String, location_id: String) -> bool:
+	var requirement: Dictionary = EVENT_REQUIREMENTS.get(event_id, {})
+	if requirement.is_empty():
+		return true
+	if requirement.has("water_at_most"):
+		if not state.water_is_at_most(location_id, str(requirement["water_at_most"])):
+			return false
+	return true
+
+
+func locations_for_event(event_id: String) -> Array[String]:
+	var found: Array[String] = []
+	for location_id: String in state.get_location_ids():
+		if event_can_occur_at(event_id, location_id):
+			found.append(location_id)
+	return found
+
+
 func event_location_for(event_id: String) -> String:
 	var band := str(EVENT_BANDS.get(event_id, "food"))
-	var chosen := state.settlement_with_lowest(band)
+	# Only somewhere the event could physically be happening. Without this the
+	# world singles out the settlement whose stores are thinnest and announces a
+	# drought there even when it is standing in floodwater.
+	var chosen := state.settlement_with_lowest(band, locations_for_event(event_id))
+	if chosen.is_empty():
+		chosen = state.settlement_with_lowest(band)
 	return state.current_event_location_id if chosen.is_empty() else chosen
 
 

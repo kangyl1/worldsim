@@ -653,15 +653,34 @@ func change_settlement_population(location_id: String, delta: int) -> int:
 
 # Where a condition is most pronounced. Events use this to find the settlement
 # their year is actually about, without naming any settlement in code.
-func settlement_with_lowest(band: String) -> String:
+func settlement_with_lowest(band: String, among: Array[String] = []) -> String:
+	# `among` restricts the candidates. Empty means every settlement, which is
+	# what every caller written before event validity existed still passes.
 	var chosen := ""
 	var lowest := 0
 	for location_id: String in get_location_ids():
+		if not among.is_empty() and not among.has(location_id):
+			continue
 		var value := get_settlement_band(location_id, band)
 		if chosen.is_empty() or value < lowest:
 			chosen = location_id
 			lowest = value
 	return chosen
+
+
+# Where a water state sits on the dry -> flooded scale. Comparing states by
+# name is meaningless; comparing them by rank is how a rule can say "no wetter
+# than normal" without naming every state it excludes.
+func water_state_rank(state_name: String) -> int:
+	return WATER_STATES.find(state_name)
+
+
+func water_is_at_most(location_id: String, max_state: String) -> bool:
+	var rank := water_state_rank(water_state(location_id))
+	var limit := water_state_rank(max_state)
+	if rank < 0 or limit < 0:
+		return true
+	return rank <= limit
 
 
 func _weighted_band(band: String) -> int:

@@ -255,3 +255,38 @@ static func belief_sentence(
 			return ""
 		phrase = phrase % subject_name
 	return str(BELIEF_TRANSITIONS[transition]) % [holder_name, phrase]
+
+
+# --- topics in words ---------------------------------------------------------
+#
+# Topic ids are simulation vocabulary: `food_shortage` is how the code refers to
+# a settlement running short, and it has no business appearing in a sentence
+# anybody reads. Summaries were printing them raw, so history said "The King's
+# reading of food_shortage" — technically true and plainly an id leak.
+#
+# The fallback matters as much as the table: an unregistered topic loses its
+# underscores rather than arriving intact, so a topic added later reads
+# awkwardly at worst and never leaks a literal id.
+const TOPIC_PHRASES := {
+	"food_shortage": "the shortage",
+	"danger_unrest": "the unrest",
+	"surplus": "the surplus",
+	"weather_rain": "the rain",
+	"flooding": "the flood",
+	"water_saturation": "the sodden ground",
+	"harvest_yield": "the harvest",
+	"extraordinary_harvest": "the unfailing fields",
+	"mortal_speech": "what was said",
+	"request_accepted": "the agreement",
+	"request_refused": "the refusal",
+	"support_given": "the support offered",
+	"opposition_given": "the opposition"
+}
+
+
+static func topic_phrase(topic: String) -> String:
+	if topic.is_empty():
+		return "what had happened"
+	if TOPIC_PHRASES.has(topic):
+		return str(TOPIC_PHRASES[topic])
+	return topic.replace("_", " ")

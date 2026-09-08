@@ -290,7 +290,7 @@ func _test_relationship_turning_points_survive() -> void:
 	var simulation := _lived_world()
 	var found := false
 	for entry: Dictionary in simulation.personal_chronicle("aster_king"):
-		if str(entry["summary"]).contains("trust toward"):
+		if str(entry["summary"]).contains("their trust in"):
 			found = true
 	assert(found, "the King's relationship turning points were lost")
 	print("  RELATIONSHIPS KEPT: his trust in Mara still appears.")

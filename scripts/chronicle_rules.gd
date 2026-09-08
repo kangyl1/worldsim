@@ -826,7 +826,7 @@ func _divine_summary(state: WorldState, record: Dictionary, changes: Array) -> S
 	var moved: Array[String] = []
 	for change_value in changes:
 		var change: Dictionary = change_value
-		moved.append("%s %s to %s" % [
+		moved.append("%s from %s to %s" % [
 			str(change["field"]),
 			_band_label(str(change["field"]), int(change["before"])),
 			_band_label(str(change["field"]), int(change["after"]))
@@ -840,13 +840,14 @@ func _interpretation_summary(
 	# What the reading DID, never that the reading was right. "Mara's reading of
 	# the rain changed how she regards the King" is objective; "the rain was a
 	# sign" is hers, and stays in her interpretation record.
+	# The topic goes through the presentation layer rather than being printed
+	# as the id the simulation knows it by.
 	var who := _name_of(state, str(record["observer_id"]))
+	var about := PresentationRules.topic_phrase(str(record["topic"]))
 	if effect.is_empty():
-		return "%s's reading of %s went on to shape what they wanted" % [
-			who, str(record["topic"])
-		]
-	return "%s's reading of %s moved their %s toward %s into %s" % [
-		who, str(record["topic"]), str(effect["axis"]),
+		return "%s's reading of %s went on to shape what they wanted" % [who, about]
+	return "%s's reading of %s moved their %s in %s to %s" % [
+		who, about, str(effect["axis"]),
 		_name_of(state, str(effect["target_id"])),
 		PresentationRules.relationship_label(str(effect["axis"]), int(effect["after"]))
 	]

@@ -131,7 +131,7 @@ func _test_a_turning_point_can_be_personal_without_being_public() -> void:
 	var rules = simulation.chronicle_rules
 	var turning: Dictionary = {}
 	for record: Dictionary in rules.personal_chronicle_for(state, "aster_king"):
-		if str(record["summary"]).contains("trust toward"):
+		if str(record["summary"]).contains("their trust in"):
 			turning = record
 			break
 	assert(not turning.is_empty(), "the King's life contains no relationship turning point")

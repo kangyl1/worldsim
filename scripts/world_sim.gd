@@ -903,10 +903,149 @@ func tick_chronicle(conditions_before: Dictionary) -> Array[Dictionary]:
 # Reads interpretation records and nothing else. It does not see the divine
 # action archive, objective truth, or the realm's faith — a belief founded on
 # any of those would be the engine's conclusion wearing a mortal's name.
+# THE STORY OF A LIFE, both halves of it.
+#
+# `chronicle_rules.personal_chronicle_for()` curates what this person DID and
+# what was done to them, from the objective record store. This adds what
+# meaningfully changed INSIDE them, which lives in its own store because a
+# private conviction is not something that happened in the world and history has
+# no business growing a source made of them.
+#
+# The two halves are merged only here, only for one person, and only in a view.
+# Neither store is written to, and nothing about the chronicle changes: a test
+# asserts the record count is identical before and after this is read.
+func personal_chronicle(entity_id: String) -> Array[Dictionary]:
+	var entries: Array[Dictionary] = []
+	entries.append_array(chronicle_rules.personal_chronicle_for(state, entity_id))
+	entries.append_array(_belief_life_entries(entity_id))
+	entries.sort_custom(func(a, b): return int(a["year"]) < int(b["year"]))
+	return entries
+
+
+# One conviction is one thread, however many times it crosses the line.
+#
+# `home_is_unsafe` in the seeded run hovers either side of the established mark
+# and changes status seven times in thirteen years. Every one of those is a real
+# status change and all seven are stored, but a life is not told by saying a man
+# became convinced and unconvinced of the same thing seven times. The same
+# first-and-last rule the rest of the Personal Chronicle uses applies: where the
+# conviction arrived, and where it came to rest.
+func _belief_life_entries(entity_id: String) -> Array[Dictionary]:
+	var threads: Dictionary = {}
+	var order: Array[String] = []
+	for record: Dictionary in state.belief_turning_points_for(entity_id):
+		var key := str(record["belief_id"])
+		if not threads.has(key):
+			threads[key] = [] as Array[Dictionary]
+			order.append(key)
+		(threads[key] as Array).append(record)
+
+	var kept: Array[Dictionary] = []
+	for key: String in order:
+		var thread: Array = threads[key]
+		if thread.size() <= 2:
+			for record: Dictionary in thread:
+				kept.append(_belief_life_entry(record))
+			continue
+		kept.append(_belief_life_entry(thread[0]))
+		kept.append(_belief_life_entry(thread[thread.size() - 1]))
+	return kept
+
+
+# The stored record, plus a sentence built only from what it says. The record
+# itself is never modified: this is a duplicate for a view to read.
+func _belief_life_entry(record: Dictionary) -> Dictionary:
+	var entry := record.duplicate(true)
+	var subject_id := str(record.get("subject_id", ""))
+	var subject_name := ""
+	if not subject_id.is_empty():
+		subject_name = state.location_name(subject_id) if state.locations.has(subject_id) \
+			else str(state.get_notable_entity(subject_id).get("name", subject_id))
+	entry["entry_kind"] = "belief_turning_point"
+	entry["summary"] = PresentationRules.belief_sentence(
+		str(record["proposition"]), str(record["transition"]),
+		str(state.get_notable_entity(str(record["holder_id"])).get("name", record["holder_id"])),
+		subject_name
+	)
+	return entry
+
+
 func tick_beliefs() -> Array[Dictionary]:
+	# What every belief looked like before this year's readings touched it, so a
+	# genuine change of STATE can be told apart from the confidence drift that
+	# happens nearly every year and is nobody's life event.
+	var before := _belief_states()
 	var updates := belief_rules.update_from_interpretations(state, state.last_interpretations)
+	_record_belief_turning_points(before)
 	_log_beliefs(updates)
 	return updates
+
+
+func _belief_states() -> Dictionary:
+	var snapshot := {}
+	for belief: Dictionary in state.mortal_beliefs:
+		snapshot[str(belief["id"])] = {
+			"status": str(belief.get("status", "")),
+			"confidence": int(belief.get("confidence", 0))
+		}
+	return snapshot
+
+
+# The four moments in the life of a conviction.
+#
+# The status machine already draws them: `forming` below the established line,
+# and above it `held` or `weakening` depending on whether the last evidence
+# supported or contradicted. So a turning point is a change in that status, and
+# nothing else is. Confidence moving from 61 to 67 is not a moment in anyone's
+# life; the year a notion became a conviction is.
+#
+# Nothing here reaches the chronicle. History records what happened in the
+# world, and a private conviction changing is not that — it becomes wider
+# history only if the person then DOES something, which is already an
+# occurrence and already judged by the ordinary rules.
+func _record_belief_turning_points(before: Dictionary) -> void:
+	for belief: Dictionary in state.mortal_beliefs:
+		var belief_id := str(belief["id"])
+		var now := str(belief.get("status", ""))
+		var was := str((before.get(belief_id, {}) as Dictionary).get("status", ""))
+		if now == was:
+			continue
+		var transition := _belief_transition(was, now)
+		if transition.is_empty():
+			continue
+		var sources: Array = belief.get("source_interpretation_ids", [])
+		state.record_belief_turning_point({
+			"year": state.year,
+			"holder_id": str(belief["holder_id"]),
+			"belief_id": belief_id,
+			"proposition": str(belief["proposition"]),
+			"subject_id": str(belief.get("subject_id", "")),
+			"transition": transition,
+			"old_status": was,
+			"new_status": now,
+			"old_confidence": int((before.get(belief_id, {}) as Dictionary).get("confidence", 0)),
+			"new_confidence": int(belief["confidence"]),
+			# The evidence that carried it over the line, so a later view can
+			# explain the moment rather than merely assert it.
+			"source_interpretation_id": "" if sources.is_empty() else str(sources[-1])
+		})
+
+
+# Which status changes are moments worth remembering, named from the holder's
+# side. A belief appearing for the first time already below the line is not a
+# turning point — it is a notion being entertained.
+func _belief_transition(was: String, now: String) -> String:
+	if was.is_empty():
+		return "established" if now != BeliefRules.STATUS_FORMING else ""
+	if was == BeliefRules.STATUS_FORMING and now != BeliefRules.STATUS_FORMING:
+		return "established"
+	if was == BeliefRules.STATUS_HELD and now == BeliefRules.STATUS_WEAKENING:
+		return "weakening"
+	if was == BeliefRules.STATUS_WEAKENING and now == BeliefRules.STATUS_HELD:
+		return "steadied"
+	if now == BeliefRules.STATUS_FORMING:
+		return "lapsed"
+	return ""
 
 
 func _log_beliefs(updates: Array[Dictionary]) -> void:

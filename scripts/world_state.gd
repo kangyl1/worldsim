@@ -312,6 +312,21 @@ var chronicle: Array[Dictionary] = []
 # Formation v1 neither reads nor writes the legacy list, nor `faith`, nor
 # `followers`.
 var mortal_beliefs: Array[Dictionary] = []
+
+# The moments a belief meaningfully CHANGED STATE, kept apart from the beliefs
+# themselves and apart from the chronicle.
+#
+# A belief's confidence moves most years and none of that is a life event. What
+# is a life event is the moment a notion became a conviction, a conviction
+# started to give way, or one fell back below the line where it guided anything.
+# Those are the transitions the existing status machine already draws, and this
+# store keeps one entry each time one of them happens.
+#
+# Deliberately NOT the chronicle. Belief is not a historical source: a private
+# conviction is not something that happened in the world, and history must not
+# grow a fifth source made of what people privately concluded. These records
+# reach exactly one lens — the holder's own Personal Chronicle.
+var belief_turning_points: Array[Dictionary] = []
 # What this year's readings did to them. Current year only — a debugging view,
 # not a second archive.
 var last_belief_updates: Array[Dictionary] = []
@@ -1428,6 +1443,31 @@ func get_belief(holder_id: String, proposition: String, subject_id: String = "")
 
 func has_belief(holder_id: String, proposition: String, subject_id: String = "") -> bool:
 	return not get_belief(holder_id, proposition, subject_id).is_empty()
+
+
+func record_belief_turning_point(entry: Dictionary) -> Dictionary:
+	var stored := entry.duplicate(true)
+	stored["id"] = "turn_%04d_%s_%s" % [
+		int(stored["year"]), str(stored["holder_id"]), str(stored["transition"])
+	]
+	# Defensive only, and reported as such: the tick visits each belief once, so
+	# nothing currently CAN record the same transition twice in one year. It
+	# guards against a future caller that does.
+	for existing: Dictionary in belief_turning_points:
+		if str(existing["belief_id"]) == str(stored["belief_id"]) \
+			and str(existing["transition"]) == str(stored["transition"]) \
+			and int(existing["year"]) == int(stored["year"]):
+			return existing
+	belief_turning_points.append(stored)
+	return stored
+
+
+func belief_turning_points_for(holder_id: String) -> Array[Dictionary]:
+	var found: Array[Dictionary] = []
+	for record: Dictionary in belief_turning_points:
+		if str(record["holder_id"]) == holder_id:
+			found.append(record)
+	return found
 
 
 func get_beliefs_for(holder_id: String) -> Array[Dictionary]:

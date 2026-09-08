@@ -1279,15 +1279,36 @@ func _developer_chronicle_lines() -> Array[String]:
 	for entity_id: String in state.notable_entities.keys():
 		# Raw involvement beside the curated life. The gap between them is the
 		# reasoning noise a Personal Chronicle deliberately does not show.
-		lines.append(_dev_field("  person %s" % entity_id, "%d raw  ->  %d personal" % [
+		lines.append(_dev_field("  person %s" % entity_id, "%d raw  ->  %d personal  (+%d belief turns)" % [
 			rules.history_for_person(state, entity_id).size(),
-			rules.personal_chronicle_for(state, entity_id).size()
+			simulation.personal_chronicle(entity_id).size(),
+			state.belief_turning_points_for(entity_id).size()
 		]))
 	for category: String in rules.CATEGORIES:
 		var in_category: int = rules.history_in_category(state, category).size()
 		if in_category > 0:
 			lines.append(_dev_field("  category %s" % category, str(in_category)))
 	lines.append("[color=#73627f]  region: no region entity exists in the world model yet.[/color]")
+
+	# The moments a conviction changed state. Stored apart from the chronicle on
+	# purpose: a private belief is not something that happened in the world, and
+	# these reach only the holder's own Personal Chronicle.
+	lines.append("")
+	lines.append(_dev_heading("BELIEF TURNING POINTS  ·  personal lens only"))
+	if state.belief_turning_points.is_empty():
+		lines.append("[color=#73627f]No conviction has changed state yet.[/color]")
+	for turn: Dictionary in _tail(state.belief_turning_points, DEV_LIST_LIMIT):
+		lines.append("[color=#cfd6d8]  y%-4d %-11s %-26s %s[/color]" % [
+			int(turn["year"]), str(turn["holder_id"]), str(turn["proposition"]),
+			str(turn["transition"]).to_upper()
+		])
+		lines.append("[color=#8d989d]        %s -> %s   confidence %d -> %d   subject %s[/color]" % [
+			_or_none(str(turn["old_status"])), str(turn["new_status"]),
+			int(turn["old_confidence"]), int(turn["new_confidence"]),
+			_or_none(str(turn["subject_id"]))
+		])
+		lines.append("[color=#8d989d]        evidence %s   scopes: personal only[/color]"
+			% _or_none(str(turn["source_interpretation_id"])))
 
 	# And the other half of the question: what was considered and left out. This
 	# year only — keeping it would rebuild the exhaustive log history avoids.

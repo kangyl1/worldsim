@@ -214,3 +214,44 @@ static func personal_title(event_type: String, person_name: String, importance: 
 	if person_name.is_empty():
 		return ""
 	return str(PERSONAL_TITLES[event_type]) % person_name.to_upper()
+
+
+# --- belief turning points ---------------------------------------------------
+#
+# What a conviction changing sounds like, said from the holder's side.
+#
+# Built from exactly two facts the record holds — which proposition, and which
+# transition — plus the name of whoever or wherever it concerns. There is
+# nowhere for a motive to enter: the tables below contain no "because", no cause
+# and no judgement, and a test greps every sentence they can produce. The record
+# knows that a belief became established; it does not know why, and neither may
+# this.
+const BELIEF_PHRASES := {
+	"divine_intervention_exists": "that something answers",
+	"divine_help_follows_need": "that help arrives when it is needed",
+	"home_is_unsafe": "that home stood in danger",
+	"conditions_are_improving": "that conditions were improving",
+	"is_supportive": "that %s stood with them",
+	"is_unreliable": "that %s could not be relied on",
+	"place_is_favoured": "that %s was favoured"
+}
+
+const BELIEF_TRANSITIONS := {
+	"established": "%s became convinced %s.",
+	"weakening": "%s began to doubt %s.",
+	"steadied": "%s was sure again %s.",
+	"lapsed": "%s no longer held %s."
+}
+
+
+static func belief_sentence(
+	proposition: String, transition: String, holder_name: String, subject_name: String
+) -> String:
+	if not BELIEF_PHRASES.has(proposition) or not BELIEF_TRANSITIONS.has(transition):
+		return ""
+	var phrase := str(BELIEF_PHRASES[proposition])
+	if phrase.contains("%s"):
+		if subject_name.is_empty():
+			return ""
+		phrase = phrase % subject_name
+	return str(BELIEF_TRANSITIONS[transition]) % [holder_name, phrase]

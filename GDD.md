@@ -5797,6 +5797,40 @@ objective summary using the rumour. A rumour becomes historical in its own right
 when its SPREAD or its CONSEQUENCES become meaningful — recorded then as its own
 occurrence, not as a correction to the first one.
 
+### Personal belief turning points
+
+A person's important private belief changes may enter their Personal Chronicle.
+
+A king who slowly becomes convinced that conditions are improving has had
+something happen to him, even though nobody else knows it and nothing in the
+world has moved. That is his life, not the capital's history.
+
+    King becomes convinced conditions are improving
+        Personal Chronicle : YES
+        Aster History      : NO
+        World History      : NO
+
+    King later refuses famine relief because of it
+        the REFUSAL is an occurrence, judged by the ordinary rules
+
+Not every confidence update qualifies. A belief's confidence moves most years
+and none of that is a life event; only a meaningful change of STATE is. The four
+moments are a notion becoming a conviction, a conviction beginning to give way,
+a shaken conviction steadying again, and one falling back below the line where
+it guided anything.
+
+A conviction that hovers on that line is still ONE thread. A life is not told by
+saying a man became convinced and unconvinced of the same thing seven times, so
+the Personal Chronicle keeps where a conviction arrived and where it came to
+rest, exactly as it does for every other repeated thread.
+
+**Belief remains outside the Chronicle.** History records what happened in the
+world, and a private conviction is not that. Turning points are stored apart and
+reach exactly one lens — the holder's own — so history never grows a fifth
+source made of what people privately concluded.
+
+> **A belief can be important to a life without being important to the world.**
+
 ### Core distinctions
 
 > **A thought can be important to a person without being important to history.**

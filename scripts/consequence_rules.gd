@@ -238,8 +238,19 @@ func _social_fact(
 	var target_name := _label_for(state, target_id)
 	var first := target_name if str(template["perspective"]) == "target_first" else actor_name
 	var second := actor_name if str(template["perspective"]) == "target_first" else target_name
+	# WORDING ONLY. The subject clause exists to say what the exchange was
+	# ABOUT, which is worth saying when it was about somebody else — "Mara
+	# refused the King's request concerning Renald". When the intent's subject
+	# happens to BE one of the two people already named, the clause names them a
+	# third time and the sentence collapses into "The King refused Mara's
+	# request concerning The King".
+	#
+	# The occurrence is unchanged: `subject_id` is still recorded exactly as
+	# selection chose it, and every other field is untouched. This picks which
+	# of the two claim templates already in the table reads correctly.
 	var claim := ""
-	if subject_id.is_empty():
+	var subject_is_a_participant := subject_id == actor_id or subject_id == target_id
+	if subject_id.is_empty() or subject_is_a_participant:
 		claim = str(template["claim"]) % [first, second]
 	else:
 		claim = str(template["subject_claim"]) % [first, second, _label_for(state, subject_id)]

@@ -19,7 +19,7 @@ The user retains authority over game design, project direction, and GitHub publi
 ## Project reference
 
 - Repository: `kangyl1/worldsim`
-- Current important commit: `PENDING_SANDBOX_COMMIT` — `Add Divine Sandbox and Cumulative Consequences Foundation v1`, where a divine power became a force rather than a remedy
+- Current important commit: `ebceffd2a2a9ecd9c9eff4819f8637c74ac8765b` — `Add Divine Sandbox and Cumulative Consequences Foundation v1`, where a divine power became a force rather than a remedy
 
 The mortal causal chain, one commit per layer, oldest first:
 
@@ -40,7 +40,7 @@ The mortal causal chain, one commit per layer, oldest first:
 - `0529b3543f1aac1e98ba353ef7f8334076af23b6` — `Add Population and Locality Coverage Foundation v1` (the rules stopped knowing which settlements and people happen to exist)
 - `da5abee821793741e9b9d636bb2102e8e5dd71bd` — `Add Broader Interpretation Coverage v1` (the world's own conditions became things a mortal can have an opinion about)
 - `ede5410f3af1734d4b06568e39e11a88922edd31` — `Add Situational Choices and Theatrical Feedback v1` (the player can finally see what the simulation had been doing all along)
-- `PENDING_SANDBOX_COMMIT` — `Add Divine Sandbox and Cumulative Consequences Foundation v1` (the god applies a force, and the world lives with the result)
+- `ebceffd2a2a9ecd9c9eff4819f8637c74ac8765b` — `Add Divine Sandbox and Cumulative Consequences Foundation v1` (the god applies a force, and the world lives with the result)
 
 - Local project path: `/Users/jamienfam/Documents/ChatGPT/worldsim`
 - Tested Godot version: `4.7.1`

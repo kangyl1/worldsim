@@ -4602,3 +4602,348 @@ The desired balance is:
 This is now the preferred cross-platform presentation direction for Worldsim.
 It refines Sections 97 and 99, changes no simulation rule, and does not reorder
 the implementation roadmap in Section 41.
+
+---
+
+## 101. Apostles and Delegated Creation
+
+Apostles are an approved **future direction** for Worldsim's creator-god fantasy. They are not current implementation scope and do not change Section 41's roadmap.
+
+> **Worldsim eventually supports both direct godhood and delegated godhood: the player may personally reshape the world, or create powerful loyal Apostles who interpret and carry out broad divine purposes over centuries.**
+
+### Apostles are created beings, not additional gods
+
+The player remains the only true god-level actor.
+
+An Apostle may be so powerful, ancient, supernatural, or incomprehensible that mortals call it a god, goddess, angel, demon, divine child, spirit, or some other sacred being. Those are **mortal interpretations**. Objectively, the Apostle is a being created by the player and remains beneath the player in the world's causal hierarchy.
+
+This section refines Sections 70, 91, 92 and 98. The earlier prohibition on rival gods and player-equivalent divine actors remains absolute. The earlier blanket wording against autonomous supernatural agents is superseded **only for player-created Apostles and the lesser servants they may later create**. This does not permit rival gods, hidden creator gods, independent divine factions, or a second source of godhood.
+
+### Purpose is chosen by God
+
+When God creates an Apostle, the player chooses its **purpose / domain / duty**.
+
+Examples include:
+
+- forests
+- mountains
+- oceans
+- clouds
+- beasts
+- knowledge
+- war
+- death
+- civilization
+- creation
+
+Purpose is not merely a cosmetic title. It is the answer to:
+
+> **Why did God create me?**
+
+If God asks an Apostle what it is, the Apostle should identify itself according to the purpose God gave it, even if mortals have accumulated completely different names and myths around it.
+
+God may later change or broaden an Apostle's purpose. Mortal interpretation does not automatically change with it.
+
+### Personality and physical form are generated
+
+The player chooses purpose; the Apostle's **personality and physical design are generated**.
+
+Possible personality dimensions include compassion, pride, patience, zeal, curiosity, severity, playfulness, ambition, meticulousness, or hunger for God's approval.
+
+Its physical form may reflect purpose and personality without being locked to a humanoid angel template. A mountain-shaping Apostle may be vast and stone-like; a cloud Apostle may have an unstable or shifting form; another may appear almost mortal.
+
+Physical appearance is objective. What mortals think that appearance signifies is interpretation.
+
+### Loyalty is foundational
+
+Apostles are created with **extreme loyalty to God**.
+
+Their default dramatic question is not:
+
+> Will this servant betray me?
+
+It is:
+
+> How will this servant understand and fulfil what I asked?
+
+They should attempt to follow direct divine orders to the utmost of their ability. Ordinary Apostle drama should not depend on random rebellion.
+
+That does not make them mechanically safe. A deeply loyal Apostle may create enormous unintended consequences by obeying a broad command through its own personality and understanding.
+
+An Apostle may also seek God's favour intensely. Excessive favour-seeking can become a source of behaviour: competition, spectacle, overachievement, jealousy, or attempts to prove that it understands God's will better than another Apostle. This is devotion becoming consequential, not disloyalty.
+
+### Broad orders are interpreted, not scripted step by step
+
+God should eventually be able to issue broad directives such as:
+
+> Protect this bloodline.
+
+> Cover this continent with forests.
+
+> Make this land suitable for intelligent life.
+
+> Guard these people.
+
+> Fill these waters with life.
+
+The Apostle may break that purpose into its own decisions and actions.
+
+Conceptually:
+
+```
+God gives purpose / command
+  ↓
+Apostle interprets what the command requires
+  ↓
+Apostle forms goals and intents
+  ↓
+Apostle chooses executable actions
+  ↓
+World state changes
+  ↓
+Mortals and other actors perceive the results
+  ↓
+Interpretation / belief / behaviour / history
+```
+
+Two Apostles given the same broad order may therefore produce different worlds.
+
+A patient Apostle may transform land over centuries. A zealous Apostle may make sweeping changes quickly. A perfectionist may repeatedly revise its work. A favour-hungry Apostle may go beyond what God expected because it believes more work will please its Creator.
+
+God gives the higher purpose. The simulation determines the execution and consequence.
+
+### Apostles retain autonomy between direct orders
+
+Apostles do not need to become inactive whenever God is silent.
+
+They may continue acting according to:
+
+- their current purpose
+- existing standing directives
+- perceived world conditions
+- their personality
+- their relationships
+- their interpretation of God's earlier words
+- opportunities they believe further God's will
+
+They may also decide what supporting actions are necessary without asking permission each time.
+
+For example, an Apostle ordered to make a continent fertile may independently conclude that it needs rivers, clouds, forests, pollinators, or lesser servants. Whether those conclusions are good ones is for the simulation to reveal.
+
+### God and Apostle can speak directly
+
+Apostles should be able to communicate directly with God.
+
+They may:
+
+- report completed work
+- explain what they are doing
+- ask for clarification
+- request permission
+- seek praise or favour
+- warn God about something they noticed
+- describe disagreement with another Apostle
+
+The player may answer, redirect, praise, ignore, punish, reward, or change the Apostle's purpose.
+
+Communication with God does not make an Apostle omniscient. It still reasons from what it knows unless God directly reveals more.
+
+### Apostles can have relationships with each other
+
+Apostles may form meaningful relationships:
+
+- friendship
+- admiration
+- affection
+- rivalry
+- jealousy
+- respect
+- hostility
+- competition for favour
+- disagreement about the correct interpretation of God's will
+
+Two Apostles may be completely loyal to God while strongly opposing each other's methods.
+
+This permits mythic "pantheon" drama from the mortal perspective without creating multiple actual gods.
+
+### Apostles may enter the mortal world
+
+An Apostle may remain distant from civilization or physically descend among mortals.
+
+God may explicitly order:
+
+> Go to Aster.
+
+> Speak to these people.
+
+> Walk among them.
+
+or the Apostle's own purpose may eventually give it reason to appear physically.
+
+Its arrival should be an objective occurrence. Mortals then decide what the being is and what its presence means.
+
+A civilization may worship an Apostle even when the Apostle explicitly says it serves God. Another civilization may call the same being a monster. Neither label changes objective reality.
+
+### Apostles can die, but doing so is extraordinary
+
+Apostles are not required to be absolutely immortal.
+
+They may be **extremely difficult to kill**, to the point that an Apostle's death should normally be a world-historical event rather than ordinary combat attrition.
+
+If an Apostle is killed, God may later choose how to respond — resurrection, replacement, silence, judgment, or something else — and that response can become another major historical hinge.
+
+No Apostle resurrection mechanic is implied for current scope.
+
+### Delegated creation
+
+Apostles may eventually create or reshape parts of the world within the authority God has given them.
+
+Possible delegated work includes:
+
+- plants
+- forests
+- clouds
+- mountains
+- rivers or terrain features
+- animals and minor life
+- ecological structures
+- lesser supernatural servants
+
+The purpose of delegation is not to make God unable to create these things. It lets God issue broad creative intent without personally placing every cloud, tree, mountain, insect, or minor creature.
+
+> **God handles intention and major creation. Apostles may handle delegated construction, maintenance, and detail. The simulation handles consequences.**
+
+Depth should remain bounded by Section 72. The game does not need a detailed geological, genetic, or ecosystem editor merely because Apostles can create natural structures.
+
+### God retains direct Create Life
+
+God may also create life directly.
+
+The long-term Create Life fantasy should support both:
+
+- creating one important individual / creature
+- creating an entire species or race
+
+For species-scale creation, the player may eventually choose broad meaningful properties such as:
+
+- intelligence
+- temperament
+- lifespan
+- size
+- nocturnal / diurnal tendency
+- environmental suitability
+- other traits that materially affect simulation
+
+Do not require a deep genetics simulator. Player-selected traits create initial conditions; later development and history should remain capable of differentiating populations.
+
+God is more likely to create **major or moving life directly**, while Apostles can be used for broad delegated creation and the many smaller structures needed to make a world function.
+
+### Apostles may create lesser servants
+
+An Apostle may eventually create subordinate beings to help fulfil its purpose.
+
+Conceptual hierarchy:
+
+```
+God
+  ↓
+Apostles
+  ↓
+Lesser created servants
+  ↓
+Mortals / ordinary created life / world
+```
+
+Lesser servants are not automatically Apostles. They should normally be narrower in purpose, autonomy, power, or historical importance.
+
+An Apostle of forests might create woodland spirits to maintain remote regions. An Apostle associated with death might create specialised servants to carry out a narrow duty. An Apostle of seas might create guardians for particular waters.
+
+These descendants of delegated creation remain part of the one-God ontology. Their existence does not create another god-level source of authority.
+
+### Apostles may grant power to mortals
+
+Apostles may eventually empower mortals.
+
+They may grant:
+
+- blessings
+- protection
+- supernatural abilities
+- delegated authority
+- access to a narrow power or miracle
+
+This can naturally create champions, saints, priesthoods, holy orders, chosen individuals, or entire religions centred on an Apostle.
+
+Mortals may sincerely believe the Apostle itself is the source of divinity. Objectively, the Apostle remains a created being operating with power or authority ultimately made possible by God.
+
+Do not force religions to understand that hierarchy correctly.
+
+### Mortal mythology may diverge from Apostle identity
+
+Keep three layers separate:
+
+1. **God-given purpose** — what God created the Apostle to do.
+2. **Apostle self-understanding / personality** — how the Apostle approaches that purpose.
+3. **Mortal reputation and mythology** — what societies think the Apostle is.
+
+Example:
+
+God creates an Apostle to govern weather.
+
+One civilization may call it:
+
+> Lady of Rain.
+
+Another, after generations of flooding, may call it:
+
+> The Drowning Queen.
+
+The Apostle may still tell God:
+
+> I am the servant you charged with the skies.
+
+No mortal title rewrites the objective purpose record.
+
+### Apostle capacity is constrained by Divine Power, not an arbitrary headcount
+
+Do not lock Worldsim to a fixed rule such as "maximum five Apostles."
+
+Creating and sustaining beings of this scale should eventually relate to Divine Power / stored divine capacity. A player may therefore choose between several specialised servants or investing much more divine capacity into fewer exceptionally powerful ones.
+
+The exact economy, upkeep, capacity formula, and whether an Apostle continuously reserves power are **unresolved future design questions**. Do not invent them during current implementation work.
+
+### Broad world-building through delegation
+
+A long-term creator-god play style should allow something as broad as:
+
+> **Create a world suitable for intelligent life.**
+
+God could give that instruction to one or several Apostles, advance decades or centuries, and watch them gradually build toward it through their own actions.
+
+The player remains free to intervene directly at any point:
+
+- change an Apostle's purpose
+- redirect work
+- stop an action
+- personally reshape terrain
+- personally create important life
+- reward or rebuke an Apostle
+- leave the servants to continue without further instruction
+
+This creates two compatible styles of godhood:
+
+**Direct Godhood** — personally manipulate the world in detail.
+
+**Delegated Godhood** — create servants, assign broad purposes, and observe what they build over long spans of history.
+
+### Core Apostle principle
+
+> **God creates the servant and gives the purpose. The Apostle decides how to serve. The world lives with what that service becomes.**
+
+This is the same Worldsim architecture at a higher scale:
+
+> **Create → Delegate → Observe → Intervene → Judge → Reshape → History.**
+
+Apostles are therefore not a shortcut around the simulation. They are another kind of actor for the simulation to interpret.
+
+This section records future direction only. Do not implement Apostles, lesser servants, Apostle power-granting, terrain creation, or Create Life as part of the current simulation-consistency work or unfinished divine-action migrations.

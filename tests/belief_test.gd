@@ -319,6 +319,45 @@ func _test_belief_reaches_later_intent_scoring() -> void:
 	# The loop closes. An established belief weights what its holder wants, and
 	# says so in an explainable factor.
 	var simulation := _believer(5)
+	var state = simulation.state
+	# FIXTURE PRECONDITION, not part of what is being proved.
+	#
+	# A belief can only weight a want that is ELIGIBLE, and Mara's divine
+	# beliefs weight `learn` and `preserve`. `learn` needs a fact she is unsure
+	# of about somebody other than herself; without one it is rejected as
+	# `self_target` before any belief is consulted, and the loop below finds
+	# nothing however well belief formation is working.
+	#
+	# She used to hold such a fact by accident of the deterministic history. The
+	# Natural Drying Foundation changed that history and the accident stopped
+	# happening, so the condition is now stated explicitly instead of relied on:
+	# one ordinary half-credited rumour about another settlement, added through
+	# the normal knowledge API. Nothing here touches the belief, the
+	# interpretation, the factor or the score.
+	state.learn_knowledge("mara", {
+		"id": "aster_food_shortage",
+		"claim": "Aster does not have enough food",
+		"confidence": 30,
+		"truth_state": "true",
+		"source_type": "rumor",
+		"topic": "food_shortage",
+		"subject_id": "aster"
+	})
+	# Assert the precondition itself, so a future world change that removes it
+	# again fails HERE, saying exactly what went missing, rather than looking
+	# like belief formation broke.
+	var doubted: Dictionary = state.get_knowledge("mara", "aster_food_shortage")
+	assert(not doubted.is_empty(), "the fixture's external fact was not stored")
+	assert(int(doubted["confidence"]) < IntentRules.DOUBT_CONFIDENCE,
+		"the fixture's external fact is not in doubt, so `learn` cannot arise")
+	var learn_is_open := false
+	for candidate: Dictionary in simulation.evaluate_intents("mara"):
+		if str(candidate["intent_type"]) == "learn" and bool(candidate["eligible"]):
+			learn_is_open = true
+			break
+	assert(learn_is_open,
+		"fixture precondition lost: no eligible `learn` for a belief to weight")
+
 	var found: Dictionary = {}
 	for candidate: Dictionary in simulation.evaluate_intents("mara"):
 		if not bool(candidate["eligible"]):

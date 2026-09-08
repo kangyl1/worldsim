@@ -71,6 +71,22 @@ const EVENTS := {
 		"description": "For three months, no rain has fallen. %s's wells are drying up. Farmers have gathered outside the old shrine and are asking an unknown god for help.",
 		"ascii": "       _\n      /_\\\n   o  | |  o\n  /|\\ | | /|\\\n  / \\ |_| / \\"
 	},
+	# The same season as `drought`, told without the claim a drought makes.
+	#
+	# A thin year and a settlement whose wells are failing are two different
+	# statements, and only the second is about the ground. When the season is
+	# dry but no settlement is objectively `dry`, the world says THIS instead:
+	# the fields came in light, which is exactly what the weather did, and
+	# nobody's wells are described as failing because none are.
+	#
+	# This is not a second weather system and not a new event family. It is the
+	# existing seasonal force, kept, with the state-dependent local condition
+	# lifted off it.
+	"dry_season": {
+		"title": "A DRY SEASON",
+		"description": "The rains came thin this year. Fields across the realm ripened early and light, and %s felt it first in its stores.",
+		"ascii": "   .   .   .   .\n  ---  ---  ---\n   |    |    |\n  / \\  / \\  / \\"
+	},
 	"good_harvest": {
 		"title": "A PROMISING HARVEST",
 		"description": "Heavy heads of grain bend in the fields. The people wonder whether fortune, labour, or an unseen hand has favoured %s.",
@@ -98,6 +114,19 @@ const EVENTS := {
 # settlement. Someone living elsewhere finds out by being told.
 const EVENT_KNOWLEDGE := {
 	"drought": {
+		"id_suffix": "food_shortage",
+		"topic": "food_shortage",
+		"claim": "%s does not have enough food",
+		"confidence": 90,
+		"truth_state": "true",
+		"fresh_for_years": 3,
+		"observability": "local",
+		"conditions": [{"band": "food", "op": "lte", "value": 1}]
+	},
+	# Identical to the drought year's, because the perceivable fact was always
+	# about FOOD and never about water. A thin season and a drought make a
+	# settlement's stores short in exactly the same way.
+	"dry_season": {
 		"id_suffix": "food_shortage",
 		"topic": "food_shortage",
 		"claim": "%s does not have enough food",
@@ -176,6 +205,21 @@ const RAIN_WATER_BY_INTENSITY := {
 }
 const RAIN_WATER_GAIN := 22
 const WATER_DRIFT_PER_YEAR := 6
+# How fast ground BELOW baseline refills on its own. Deliberately slower than it
+# drains, and the one structural change the Natural Drying Foundation needed.
+#
+# Drift used to be symmetric: ground below baseline climbed back at the same 6 a
+# year it drained from above. That made `dry` unreachable by any drying force
+# whatsoever — a season would have to remove more than 18 water per three years
+# to beat the refill, while gentle rain only clears drift by 4 a year above
+# baseline, so any drying strong enough to dry the world was also strong enough
+# to stop the sandbox flooding. The two requirements were arithmetically
+# incompatible while the ground refilled itself as fast as it drained.
+#
+# Draining is gravity and refilling is rainfall, and they were never the same
+# rate. Above baseline everything is UNCHANGED, so every existing water
+# guarantee still holds exactly.
+const WATER_RECOVERY_PER_YEAR := 2
 
 # What a settlement's water level does to its harvest when rain arrives, keyed
 # by the state it was in BEFORE the rain fell.
@@ -1304,8 +1348,10 @@ func _process_water_drift() -> void:
 		if current == WorldState.WATER_BASELINE:
 			continue
 		var before_state := state.water_state(location_id)
-		var step := mini(WATER_DRIFT_PER_YEAR, absi(current - WorldState.WATER_BASELINE))
-		state.change_water(location_id, -step if current > WorldState.WATER_BASELINE else step)
+		var above := current > WorldState.WATER_BASELINE
+		var rate := WATER_DRIFT_PER_YEAR if above else WATER_RECOVERY_PER_YEAR
+		var step := mini(rate, absi(current - WorldState.WATER_BASELINE))
+		state.change_water(location_id, -step if above else step)
 		var after_state := state.water_state(location_id)
 		# Draining into a state is as objective as raining into one.
 		if before_state != after_state:
@@ -1550,8 +1596,33 @@ const POPULATION_PER_PROSPERITY := 80
 
 const EVENT_BANDS := {
 	"drought": "food",
+	"dry_season": "food",
 	"good_harvest": "food",
 	"unrest": "stability"
+}
+
+# When a scheduled event cannot be declared anywhere, this is what the year
+# becomes instead. The SEASON is not conditional on anybody's ground — a thin
+# year happens whether or not it empties a well — so the dry year keeps its
+# weather and loses only the local claim it could not support.
+const EVENT_SUBSTITUTES := {
+	"drought": "dry_season"
+}
+
+# Natural Drying Foundation. The SEASON removes water; the drought is what the
+# season's drying eventually produces. Deliberately NOT attached to `drought`,
+# which would be circular — a drought that dried the ground would be its own
+# cause — and deliberately not a temperature model, which is a later foundation.
+#
+# Applied only at or below baseline. Above baseline the ground is already
+# shedding water at its natural drainage rate and a thin season adds nothing to
+# that; what a dry season takes is the moisture the ground RETAINS. Keeping the
+# force off the wet half is also what leaves every existing above-baseline
+# guarantee — the drain rate, stopping a flood, gentle rain flooding — exactly
+# as it was.
+const DRY_SEASON_WATER_LOSS := 12
+const EVENT_WATER := {
+	"dry_season": -DRY_SEASON_WATER_LOSS
 }
 
 # What each year's weather does to every settlement, before the event singles
@@ -1560,6 +1631,10 @@ const EVENT_BANDS := {
 # cycle, while the story stays local.
 const EVENT_WEATHER := {
 	"drought": {"food": -1},
+	# The SAME seasonal pressure as a drought year, deliberately. This is the
+	# world's only downward food force, and gating it on whether some settlement
+	# happens to be dry let the world climb to uniform plenty and stay there.
+	"dry_season": {"food": -1},
 	"good_harvest": {"food": 1},
 	"unrest": {"stability": -1}
 }
@@ -1572,12 +1647,22 @@ const EVENT_WEATHER := {
 # guarantees depend on that being the whole list, including the sandbox's
 # headline one that the gentlest possible standing order, left alone long
 # enough, still floods a settlement. A drought that drained the ground turned
-# that flood into a permanent `wet`, which is a balance decision rather than a
-# consistency fix, so it is the user's to make and not this milestone's.
+# that flood into a permanent `wet`.
+#
+# Natural weather and temperature moving the ground is a FOUNDATION of its own,
+# and inventing it inside a consistency audit is how a cleanup becomes a
+# redesign. It is deferred deliberately, not forgotten.
 #
 # The contradiction is closed from the other side instead: the event may only be
 # declared where the ground already permits it. Water stays the single physical
 # truth, and the event became a READER of it rather than a second author.
+#
+# The standing consequence, accepted rather than worked around: nothing in the
+# world currently dries a settlement out. Baseline ground is `normal`, so until
+# some force — natural weather later, or an explicit act now — actually makes a
+# place dry, THE WORLD HAS NO DROUGHTS. A dormant condition is the honest state
+# of a world with no drying force in it; a drought declared on ground that is
+# merely average would be the same unfounded claim in a quieter voice.
 
 # What the world must physically be like for an event to be able to happen at a
 # settlement, checked against the authoritative state rather than assumed.
@@ -1591,7 +1676,7 @@ const EVENT_WEATHER := {
 # `unrest` carries no requirement on purpose. It is a social occurrence, and no
 # amount of water makes an angry crowd impossible.
 const EVENT_REQUIREMENTS := {
-	"drought": {"water_at_most": WorldState.WATER_NORMAL},
+	"drought": {"water_at_most": WorldState.WATER_DRY},
 	"good_harvest": {"water_at_most": WorldState.WATER_SATURATED}
 }
 
@@ -1605,16 +1690,27 @@ func _select_next_event() -> void:
 	# else instead. `unrest` carries no physical requirement, so the walk always
 	# finds a valid year somewhere.
 	state.current_event_id = str(cycle[scheduled])
-	for step in range(cycle.size()):
-		var candidate := str(cycle[(scheduled + step) % cycle.size()])
-		if not locations_for_event(candidate).is_empty():
-			state.current_event_id = candidate
-			break
+	if locations_for_event(state.current_event_id).is_empty():
+		# The year still happens; only the claim changes. A dry season with
+		# nobody's wells failing is a dry season, not a drought and not a
+		# promising harvest, so the substitute keeps the weather and drops the
+		# local condition rather than handing the slot to a different season.
+		var substitute := str(EVENT_SUBSTITUTES.get(state.current_event_id, ""))
+		if not substitute.is_empty():
+			state.current_event_id = substitute
+		else:
+			for step in range(cycle.size()):
+				var candidate := str(cycle[(scheduled + step) % cycle.size()])
+				if not locations_for_event(candidate).is_empty():
+					state.current_event_id = candidate
+					break
 	state.current_event_location_id = event_location_for(state.current_event_id)
 	_apply_event_weather(state.current_event_id)
 	match state.current_event_id:
 		"drought":
 			_begin_drought()
+		"dry_season":
+			_begin_dry_season()
 		"good_harvest":
 			_begin_good_harvest()
 		"unrest":
@@ -1629,9 +1725,19 @@ func _apply_event_weather(event_id: String) -> void:
 	# The season falls on everyone. Nobody is spared a dry year for living in
 	# the wrong settlement, and nobody is singled out for one either.
 	var weather: Dictionary = EVENT_WEATHER.get(event_id, {})
+	var water_delta := int(EVENT_WATER.get(event_id, 0))
 	for location_id: String in state.get_location_ids():
 		for band_value in weather:
 			state.change_settlement_band(location_id, str(band_value), int(weather[band_value]))
+		if water_delta == 0 or state.get_water(location_id) > WorldState.WATER_BASELINE:
+			continue
+		# Ground crossing a threshold because the season was dry is as objective
+		# as one caused by rain, and is recorded the same way.
+		var before_state := state.water_state(location_id)
+		state.change_water(location_id, water_delta)
+		var after_state := state.water_state(location_id)
+		if before_state != after_state:
+			_offer_water_fact(location_id, after_state)
 
 
 # Whether this settlement's physical state permits this event at all.
@@ -1682,7 +1788,24 @@ func _begin_drought() -> void:
 		state.followers += 5
 		state.add_history("As the skies dried over %s, growing numbers gathered at the shrine to pray." % place)
 	else:
-		state.add_history("Cloudless skies returned to %s, and its water began to shrink." % place)
+		# Says only what the season did. It used to claim the ground's water
+		# "began to shrink", which nothing in the world actually recorded — a
+		# dry year takes food and leaves `water` alone, so the line asserted a
+		# physical change that never happened.
+		state.add_history("Cloudless skies returned to %s, and the season gave its fields nothing." % place)
+
+
+# A thin season, stated as a thin season. No wells, no shrine, no families
+# driven out: those belong to a drought, and this is the year that is NOT one.
+# The season's food pressure has already fallen on every settlement through
+# `_apply_event_weather`; nothing further is applied here.
+func _begin_dry_season() -> void:
+	var place := state.location_name(state.current_event_location_id)
+	# NO wells here, deliberately. Wells answer a drought, and this is the year
+	# that is not one; crediting them with surviving a drought that never
+	# objectively happened would be the same unfounded claim this audit exists
+	# to remove.
+	state.add_history("The rains came thin, and %s brought in a lighter harvest than it had hoped." % place)
 
 
 func _begin_good_harvest() -> void:

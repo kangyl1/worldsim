@@ -250,7 +250,12 @@ func _test_records_point_back_at_their_source() -> void:
 	var required := [
 		"id", "year", "event_type", "subject_id", "actor_id", "target_id",
 		"location_id", "summary", "source_record_type", "source_record_id",
-		"importance", "factors", "caused_by", "led_to"
+		"importance", "factors", "caused_by", "led_to",
+		# History Scope Foundation v1. Which histories this one record belongs
+		# to, what kind of thing it was, and whether it is the world's business.
+		# Metadata over the record, never a second copy of it: the ids behind
+		# `scopes` stay in `location_id`, `actor_id` and `target_id`.
+		"scopes", "categories", "world_history"
 	]
 	for record: Dictionary in state.chronicle:
 		for field: String in required:

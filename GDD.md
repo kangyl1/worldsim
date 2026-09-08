@@ -5421,3 +5421,332 @@ Do not fake a power ahead of its dependency merely to make the toolbox larger.
 > **God may eventually be capable of almost anything. Worldsim should only simulate a divine act when the world beneath it is capable of making that act mean something.**
 
 This section records future direction only. The active implementation priority remains the simulation-consistency audit and the unfinished roadmap work in Section 41.
+
+---
+
+## 103. History Scope Foundation — One Past, Many Views
+
+This section approves the **History Scope Foundation** direction. It refines how
+the existing Chronicle and future History interface organise historical events;
+it does not add a new simulation system, replace Section 41, or reorder the
+roadmap. History / Chronicle remains item 13, and the unfinished shared-pipeline
+divine-action work in item 12 remains ahead of it unless the user explicitly
+changes that order.
+
+The useful WorldBox reference is its information architecture: history can be
+filtered by subject, and relevant history can be reached directly from the
+entity it concerns. Worldsim should borrow that clarity without reducing history
+to several unrelated logs.
+
+### One underlying historical record
+
+An event becomes history once. Every historical entry should have one stable
+identity and one underlying structured record.
+
+That record may be associated with several scopes at the same time, such as:
+
+- World
+- region
+- settlement
+- person
+- kingdom
+- war
+- belief or religion
+- species
+- Divine
+- Apostle
+- disaster
+
+Only scopes backed by real entities and systems should be exposed. Kingdoms,
+wars, religions, species, Apostles and other later subjects must not be faked in
+order to fill a History menu before their roadmap dependencies exist.
+
+A drought ending after divine rain might therefore appear in:
+
+- World History, if its world-level importance clears that view's threshold
+- the affected region's history
+- the settlement's history
+- the histories of people who became genuine historical actors in it
+- Divine History, because a recorded divine intervention belongs to its causal
+  chain
+- Disaster History, because the drought is the subject of that chain
+
+These are filtered views of the **same record**, not copied entries. Correcting,
+linking, presenting or eventually contesting that record must not require
+separate logs to be kept in sync.
+
+### Scope-specific importance
+
+Historical importance is relative to scope.
+
+> **An event may define a village and barely disturb the world.**
+
+Each historical record should be able to hold or derive importance for every
+relevant scope. A local flood may be major settlement history, notable regional
+history and absent from the World view. A world age, mass resurrection or
+continent-wide disaster may be major in every affected scope.
+
+Filtering should therefore ask two separate questions:
+
+1. Does this record concern the selected scope or entity?
+2. Is it important enough to appear at the selected level of summary?
+
+The World view must not become a dump of every local occurrence, and a
+settlement view must not hide the events that defined that settlement merely
+because they were minor globally. Importance controls prominence and inclusion
+in a view; it does not create a second version of the event.
+
+### Filtered History and entity drill-down
+
+History should be reachable in two complementary ways.
+
+**History app / master view**
+
+The player may filter the same historical collection by supported subjects such
+as World, regions, settlements, people, Divine and disasters. Later filters may
+appear when their underlying systems exist.
+
+**Entity drill-down**
+
+An entity view should expose its own History destination beside its current
+state. Opening a settlement, person or later kingdom should let the player read
+the history that concerns that entity without leaving it and manually searching
+the master timeline.
+
+Both routes resolve to the same records and preserve the same chronology and
+causal links. Navigation context may change ordering, headings, prominence and
+wording, but it must not change what objectively happened.
+
+### The Chronicle is not the Archive
+
+The terms must remain distinct.
+
+**Chronicle** is the simulation-owned, objective historical spine: selected
+records of what actually happened, grounded in causal events and state changes.
+It exists so the engine can retain truth and causal continuity even when no
+mortal remembers them correctly.
+
+**History** is the player-facing presentation and navigation of the remembered
+past. In the foundation it may present Chronicle records directly. Later it may
+also show mortal accounts, myths, disputes and cultural memory, clearly
+distinguished from objective truth as required by Sections 51–53 and 93–96.
+
+**Archive** is surviving in-world evidence: records, inscriptions, documents,
+relics and preserved accounts. Archive contents have authors, perspectives,
+survival conditions and potentially false claims. An Archive item may outlive
+cultural memory; a historical belief may outlive every Archive item that once
+supported it.
+
+The Chronicle must not be implemented as a folder of mortal documents, and the
+Archive must not expose the engine's omniscient truth merely because it contains
+something written down. History Scope Foundation v1 does not require Archive
+simulation, institutional memory, competing accounts, myth or forgetting.
+
+### Theatrical history, factual foundation
+
+The player should not experience History as a raw database log. The Chronicle
+stores structured facts; the History interface presents those facts as a legend
+being written.
+
+A factual record might retain:
+
+```text
+event: flood
+year: 83
+settlement: Westfield
+cause: sustained rain
+importance: major in Westfield, minor in World
+```
+
+The settlement view may present it as:
+
+```text
+THE GREAT FLOOD OF WESTFIELD
+Year 83
+
+The rains did not relent.
+At last, the earth could hold no more.
+Westfield drowned beneath the water.
+```
+
+The World view may omit the entry or present it more briefly because its
+importance is lower at that scope. The same historical record can therefore
+receive scope-aware titles, summaries and emphasis without becoming different
+facts.
+
+The History presentation should follow Section 97's theatrical guardrails:
+short lines, memorable titles, restrained narration and dramatic contrast. Most
+events should remain ordinary enough that the major ones retain weight.
+
+### Dramatic presentation must never invent causality
+
+This is an absolute trust rule.
+
+> **The Chronicle stores what happened. Presentation may heighten it, but may
+> never invent why it happened.**
+
+If the simulation knows that sustained divine rain caused a flood, the History
+view may dramatise the rain, the saturation and the flood. It may not call the
+flood a punishment, reward, warning or answered prayer unless the relevant
+causal or interpretive record actually supports that claim.
+
+Objective narration and mortal interpretation must remain visibly different:
+
+```text
+Objective Chronicle:
+The rains continued until Westfield flooded.
+
+Attributed mortal account:
+"God drowned them for their sins."
+```
+
+The second line is allowed only when a real mortal or culture holds or records
+that interpretation, and it must be presented as their account rather than as
+omniscient narration. Theatrical language may intensify known consequence,
+scale, sequence and emotion; it may not create motive, guilt, divine intent,
+social consensus or causal links that the simulation never established.
+
+### Scopes supported in v1
+
+The scope vocabulary above describes where this is going. The FIRST pass
+supports only the scopes backed by something the simulation actually holds:
+
+- `world`
+- `region`
+- `location`
+- `person`
+- `divine`
+
+Kingdom, religion, species, culture, war and Apostle scopes are deliberately
+absent, because the systems that would give them meaning do not exist. The
+architecture must leave room for them; nothing may pretend they are here.
+
+### Categories are not scopes
+
+A scope answers *whose history is this, and at what scale*. A category answers
+*what kind of event was this*. They are different questions and must not be
+merged into one field.
+
+The initial category vocabulary is deliberately small:
+
+- `environment`
+- `crisis`
+- `social`
+- `belief`
+- `divine`
+- `recovery`
+
+A record may carry more than one where that is genuinely true, and need not
+carry any it has not earned. Later categories may include war, politics,
+religion, creation, migration and extinction — none of them in v1.
+
+**Categories are derived from the objective record, never from its wording.**
+Reading a category out of dramatic presentation would let the surface layer
+decide what the archive contains, which is backwards.
+
+### Each view keeps its own scale
+
+The answer to a crowded history is not to delete local detail. It is to keep
+each view appropriate to its own scale:
+
+- **World History** — very sparse; world-scale or genuinely era-defining only
+- **Region History** — moderately selective
+- **Settlement History** — richer local detail
+- **Person History** — biographical detail where it is meaningful
+- **Divine History** — significant acts of God and what followed from them
+
+A settlement being destroyed may be *major* in that settlement's history,
+*significant* in its region's, and absent from the world's. That is the system
+working. `historically important` and `world history` are not the same claim.
+
+### Chronicle density and the order of work
+
+Measured on the deterministic 40-year autonomous fixture, the Chronicle holds
+**80 entries over 40 years — 2.00 a year**. That passes the existing guardrail
+of two a year with no headroom left.
+
+The guardrail is NOT to be moved to accommodate this, and episode compression is
+NOT the work of the scope milestone. The intended order is:
+
+1. History Scope Foundation v1
+2. Scoped history-density measurement — what are those 80 records actually FOR
+3. Episode Compression v2
+4. Return to divine actions, likely Smite
+
+Establishing scope first is what makes the density question answerable: a record
+that is crowding World History and a record that is ordinary local detail are
+different problems, and today nothing can tell them apart.
+
+### Episode compression, recorded for later
+
+A continuing situation should eventually be able to become one historical
+episode rather than one entry per year of it:
+
+    Year 20 — drought        THE FOUR-YEAR DROUGHT
+    Year 21 — drought   ->   Years 20-23
+    Year 22 — drought
+    Year 23 — drought
+
+**Compression must never delete objective simulation truth.** The raw
+occurrences still happened and the underlying records still exist; the history
+layer decides only how they are PRESENTED. This is a presentation and selection
+question, not a licence to forget.
+
+### Presentation strength follows importance
+
+Not every entry should be written as though the world were ending. Presentation
+strength should follow the record's own importance:
+
+- **mundane** — `Year 31 — A dry season came to Westfield.`
+- **notable** — `THE DROUGHT OF WESTFIELD` / *The wells began to fail.*
+- **major** — `THE GREAT FLOOD`
+- **legendary** — `THE DAY THE DEAD RETURNED`
+
+The quiet entries are what make the loud ones land. No prose system is to be
+built for this now; the direction is recorded so that later work has a scale to
+aim at rather than one dramatic register for everything.
+
+### Eras must emerge, never be rolled
+
+Worldsim may eventually name its own periods:
+
+    THE AGE OF FIRST MIRACLES     Years 18-104
+    THE CENTURIES OF SILENCE      Years 602-911
+
+These should be RECOGNISED from what the history actually contains, not applied
+as global modifiers the way a sandbox game rolls an age. Nothing about era
+generation is to be built now.
+
+### Core principle
+
+> **Reality happens once. History may be viewed through many lenses.**
+
+> **One event underneath. Many historical views above it.**
+
+### History Scope Foundation v1 boundary
+
+The first implementation pass should be deliberately narrow:
+
+- extend or adapt existing Chronicle entries so one record can identify every
+  currently supported relevant scope
+- support scope-specific importance without duplicating the entry
+- provide filtered access for the currently real scopes and entity types
+- provide entity-to-history drill-down for currently inspectable entities
+- add deterministic, scope-aware theatrical presentation derived only from
+  record data and existing causal links
+- preserve an objective/debug explanation of why an entry appears in each scope
+- keep the presentation layer read-only
+
+It should not yet implement:
+
+- fabricated placeholder scopes for future systems
+- mortal authorship or physical Archive objects
+- myths, competing accounts or collective cultural memory
+- historical decay, forgetting or rediscovery
+- eras generated from unsupported social or political systems
+- new divine powers, new event causes or changes to simulation outcomes
+
+The foundation succeeds when one real Chronicle entry can be opened from each
+relevant supported scope, can matter differently at those scopes, and can be
+presented memorably without duplicating the record or claiming anything the
+simulation does not know.

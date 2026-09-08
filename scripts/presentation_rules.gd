@@ -134,3 +134,61 @@ static func label_for(value: int, bands: Array) -> String:
 		if clamped <= int(band["max"]):
 			return str(band["label"])
 	return str(bands[bands.size() - 1]["label"])
+
+
+# --- historical presentation -------------------------------------------------
+#
+# History is structured like an archive underneath and presented like a
+# chronicle on the surface. This is the surface, and it is deliberately small:
+# a strength band and a restrained title, both derived from fields the record
+# already holds. No prose is generated, nothing is invented, and the objective
+# summary remains available underneath for any view that wants the plain fact.
+#
+# THE ABSOLUTE RULE: exaggeration may amplify presentation; it may NEVER
+# fabricate causality. Nothing here may say a flood was punishment, a harvest
+# was mercy, a settlement deserved anything, or that any act was intended,
+# deserved, foretold or judged. Those are mortal accounts and belong to the
+# interpretation and belief layers, where they can be disagreed with. A test
+# greps every string this file can produce for that vocabulary.
+
+const HISTORY_MUNDANE := "mundane"
+const HISTORY_NOTABLE := "notable"
+const HISTORY_MAJOR := "major"
+const HISTORY_LEGENDARY := "legendary"
+
+# Presentation strength follows the record's own importance. The quiet entries
+# are what make the loud ones land, so most history is mundane on purpose.
+const HISTORY_STRENGTH_BANDS := [
+	{"max": 59, "label": HISTORY_MUNDANE},
+	{"max": 79, "label": HISTORY_NOTABLE},
+	{"max": 99, "label": HISTORY_MAJOR},
+	{"max": 100000, "label": HISTORY_LEGENDARY}
+]
+
+# Titles by what OBJECTIVELY happened. A type with no entry has no title, and
+# the caller shows the record's plain summary instead — which is the honest
+# default rather than a gap.
+const HISTORY_TITLES := {
+	"crisis_entered": "THE HARD YEARS IN %s",
+	"crisis_lifted": "THE RECOVERY OF %s",
+	"divine_action": "THE HAND OF GOD OVER %s"
+}
+
+
+static func history_strength(importance: int) -> String:
+	for band: Dictionary in HISTORY_STRENGTH_BANDS:
+		if importance <= int(band["max"]):
+			return str(band["label"])
+	return HISTORY_LEGENDARY
+
+
+# A title only where the record is strong enough to carry one. A mundane year
+# gets no headline: it is a line of history, not an event in a legend.
+static func history_title(event_type: String, place_name: String, importance: int) -> String:
+	if history_strength(importance) == HISTORY_MUNDANE:
+		return ""
+	if not HISTORY_TITLES.has(event_type):
+		return ""
+	if place_name.is_empty():
+		return ""
+	return str(HISTORY_TITLES[event_type]) % place_name.to_upper()

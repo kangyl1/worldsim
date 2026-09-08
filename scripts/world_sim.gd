@@ -875,6 +875,14 @@ func tick_chronicle(conditions_before: Dictionary) -> Array[Dictionary]:
 		# Written first, so a parent recorded earlier this year is already
 		# findable when the next record looks for its cause.
 		var parent_id := chronicle_rules.parent_for(state, candidate)
+		# Which histories this record belongs to, decided once, here, because
+		# the causal parent is known at this point and a divine cause is
+		# inherited one step. Classification writes only `scopes`, `categories`
+		# and `world_history`; nothing objective about the record changes.
+		var scope := chronicle_rules.classify(state, candidate, parent_id)
+		candidate["scopes"] = scope["scopes"]
+		candidate["categories"] = scope["categories"]
+		candidate["world_history"] = bool(scope["world_history"])
 		var stored := state.record_chronicle(candidate)
 		if not parent_id.is_empty():
 			state.link_chronicle(parent_id, str(stored["id"]))

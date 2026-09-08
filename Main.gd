@@ -1245,6 +1245,13 @@ func _developer_chronicle_lines() -> Array[String]:
 			])
 		lines.append(_dev_field("      event_type", str(entry["event_type"])))
 		lines.append(_dev_field("      location", _or_none(str(entry["location_id"]))))
+		# Which histories this one record belongs to. One record, several views;
+		# the views are filters over this list and never copies of the record.
+		lines.append(_dev_field("      scopes", _or_none(", ".join(entry.get("scopes", [])))))
+		lines.append(_dev_field("      categories",
+			_or_none(", ".join(entry.get("categories", [])))))
+		lines.append(_dev_field("      world history",
+			"YES" if bool(entry.get("world_history", false)) else "no"))
 		# The record this was drawn from, never a copy of it.
 		lines.append(_dev_field("      source", "%s  %s" % [
 			str(entry["source_record_type"]), str(entry["source_record_id"])
@@ -1255,6 +1262,28 @@ func _developer_chronicle_lines() -> Array[String]:
 		if not entry["led_to"].is_empty():
 			lines.append("[color=#76c8d5]      led_to     %s[/color]"
 				% ", ".join(entry["led_to"]))
+
+	# The same records counted by lens. These are FILTERS over the chronicle
+	# above, not stored histories: the numbers overlap on purpose, because one
+	# record belongs to as many views as it honestly belongs to.
+	var rules = simulation.chronicle_rules
+	lines.append("")
+	lines.append(_dev_heading("HISTORY SCOPE  ·  views over the one record store"))
+	lines.append(_dev_field("  world history", "%d of %d" % [
+		rules.world_history(state).size(), state.chronicle.size()
+	]))
+	lines.append(_dev_field("  divine history", str(rules.divine_history(state).size())))
+	for location_id: String in state.get_location_ids():
+		lines.append(_dev_field("  location %s" % location_id,
+			str(rules.history_for_location(state, location_id).size())))
+	for entity_id: String in state.notable_entities.keys():
+		lines.append(_dev_field("  person %s" % entity_id,
+			str(rules.history_for_person(state, entity_id).size())))
+	for category: String in rules.CATEGORIES:
+		var in_category: int = rules.history_in_category(state, category).size()
+		if in_category > 0:
+			lines.append(_dev_field("  category %s" % category, str(in_category)))
+	lines.append("[color=#73627f]  region: no region entity exists in the world model yet.[/color]")
 
 	# And the other half of the question: what was considered and left out. This
 	# year only — keeping it would rebuild the exhaustive log history avoids.

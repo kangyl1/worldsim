@@ -32,6 +32,52 @@ extends RefCounted
 #     because a record that carries its own year, source and causal links can
 #     later be faded, contested or half-remembered without being rewritten
 
+# --- History Scope Foundation v1 ---------------------------------------------
+#
+# Reality happens once. History may be viewed through many lenses.
+#
+# A record is STORED ONCE and belongs to as many scopes as it honestly belongs
+# to. There is no world_history[], no location_history[] and no person_history[]
+# holding copies; every view below is a FILTER over the one chronicle, and a
+# test asserts that reading the views never changes how many records exist.
+#
+# `scopes` says WHICH KINDS of history a record is part of. It deliberately does
+# NOT carry the ids — those are already on the record as `location_id`,
+# `actor_id`, `target_id` and `subject_id`, and copying them into a second
+# structure would create exactly the duplicate truth this layer exists to avoid.
+# The ids are read back out through `locations_of()` and `persons_of()`.
+const SCOPE_WORLD := "world"
+const SCOPE_REGION := "region"
+const SCOPE_LOCATION := "location"
+const SCOPE_PERSON := "person"
+const SCOPE_DIVINE := "divine"
+const SCOPES := [SCOPE_WORLD, SCOPE_REGION, SCOPE_LOCATION, SCOPE_PERSON, SCOPE_DIVINE]
+
+# A scope asks whose history this is and at what scale. A CATEGORY asks what
+# kind of thing happened. Two different questions, kept in two fields.
+#
+# Derived from the objective record — its source and its event type — and never
+# from the wording of a summary. Reading a category out of presentation would
+# let the surface decide what the archive contains.
+const CATEGORY_ENVIRONMENT := "environment"
+const CATEGORY_CRISIS := "crisis"
+const CATEGORY_SOCIAL := "social"
+const CATEGORY_BELIEF := "belief"
+const CATEGORY_DIVINE := "divine"
+const CATEGORY_RECOVERY := "recovery"
+const CATEGORIES := [
+	CATEGORY_ENVIRONMENT, CATEGORY_CRISIS, CATEGORY_SOCIAL,
+	CATEGORY_BELIEF, CATEGORY_DIVINE, CATEGORY_RECOVERY
+]
+
+# World history is a HIGHER BAR, not the same bar seen from further away. A
+# settlement starving is major history for that settlement and no business of
+# the world's, so clearing `IMPORTANCE_THRESHOLD` never implies world scale.
+#
+# Two conditions must both hold: the occurrence has to be world-scale in KIND
+# (see `_is_world_scale`), and it has to clear this. Nothing local reaches it.
+const WORLD_HISTORY_THRESHOLD := 70
+
 const SOURCE_CONDITION := "settlement_condition"
 const SOURCE_DIVINE := "divine_action"
 const SOURCE_CONSEQUENCE := "consequence"
@@ -381,8 +427,222 @@ func _candidate(state: WorldState, fields: Dictionary) -> Dictionary:
 		"importance": importance,
 		"factors": factors,
 		"caused_by": [] as Array[String],
-		"led_to": [] as Array[String]
+		"led_to": [] as Array[String],
+		# Filled in by `classify()` once the record's causal parent is known.
+		"scopes": [] as Array[String],
+		"categories": [] as Array[String],
+		"world_history": false
 	}
+
+
+# --- history scope ----------------------------------------------------------
+
+# Which histories this record belongs to, which kind of thing it was, and
+# whether it is any of the world's business.
+#
+# Called once, when the record is written and its causal parent is known.
+# Classification READS the record and writes only these three fields: it never
+# alters a summary, an importance, a factor, a source pointer or a causal link,
+# and a test compares every objective field before and after.
+func classify(state: WorldState, record: Dictionary, parent_id: String) -> Dictionary:
+	var scopes: Array[String] = []
+	var categories: Array[String] = []
+	var source := str(record["source_record_type"])
+
+	# LOCATION. The place the occurrence happened in, when there is one.
+	if not locations_of(state, record).is_empty():
+		scopes.append(SCOPE_LOCATION)
+
+	# REGION. Supported by the schema and unreachable today: see
+	# `region_of()`. Nothing is invented to fill it.
+	if not region_of(state, record).is_empty():
+		scopes.append(SCOPE_REGION)
+
+	# PERSON. Only people the record itself names as having acted or been acted
+	# upon. Perceiving something is not taking part in it.
+	if not persons_of(state, record).is_empty():
+		scopes.append(SCOPE_PERSON)
+
+	# DIVINE. The god's own acts, and what those acts directly caused. A flood
+	# that a standing order produced is divine history as well as local history;
+	# inheritance stops at one step, so an ordinary quarrel years later does not
+	# become an act of God because a drought once preceded it.
+	if source == SOURCE_DIVINE:
+		scopes.append(SCOPE_DIVINE)
+		categories.append(CATEGORY_DIVINE)
+		categories.append(CATEGORY_ENVIRONMENT)
+	elif not parent_id.is_empty():
+		var parent: Dictionary = state.get_chronicle(parent_id)
+		if not parent.is_empty() and str(parent["source_record_type"]) == SOURCE_DIVINE:
+			scopes.append(SCOPE_DIVINE)
+
+	match source:
+		SOURCE_CONDITION:
+			match str(record["event_type"]):
+				"crisis_entered":
+					categories.append(CATEGORY_CRISIS)
+				"crisis_lifted":
+					categories.append(CATEGORY_RECOVERY)
+		SOURCE_CONSEQUENCE:
+			categories.append(CATEGORY_SOCIAL)
+		SOURCE_INTERPRETATION:
+			categories.append(CATEGORY_BELIEF)
+
+	# WORLD, last, because it depends on nothing else here and is refused far
+	# more often than it is granted.
+	var qualifies := _is_world_scale(state, record) \
+		and int(record["importance"]) >= WORLD_HISTORY_THRESHOLD
+	if qualifies:
+		scopes.append(SCOPE_WORLD)
+
+	return {
+		"scopes": scopes,
+		"categories": categories,
+		"world_history": qualifies
+	}
+
+
+# World-scale in KIND, before importance is even consulted.
+#
+# An occurrence confined to one settlement is that settlement's history however
+# large it was there. What reaches the world is a condition that took hold
+# EVERYWHERE at once — every settlement crossing the same way in the same year —
+# which is the only thing the current model can honestly call world-scale.
+#
+# Consequence: in a quiet autonomous run this answers false for everything, and
+# World History is empty. That is the view working, not a gap to be filled.
+func _is_world_scale(state: WorldState, record: Dictionary) -> bool:
+	if str(record["source_record_type"]) != SOURCE_CONDITION:
+		return false
+	var event_type := str(record["event_type"])
+	if event_type != "crisis_entered" and event_type != "crisis_lifted":
+		return false
+	var location_ids: Array = state.locations.keys()
+	if location_ids.size() < 2:
+		return false
+	# Every settlement, this year, the same way.
+	for location_id_value in location_ids:
+		var location_id := str(location_id_value)
+		var matched := false
+		for other_value in state.chronicle:
+			var other: Dictionary = other_value
+			if int(other["year"]) != int(record["year"]):
+				continue
+			if str(other["event_type"]) != event_type:
+				continue
+			if str(other["location_id"]) == location_id:
+				matched = true
+				break
+		if location_id == str(record["location_id"]):
+			continue
+		if not matched:
+			return false
+	return true
+
+
+# The settlements this record is history FOR. Read from the fields the record
+# already carries; nothing is stored twice.
+func locations_of(state: WorldState, record: Dictionary) -> Array[String]:
+	var found: Array[String] = []
+	for key: String in ["location_id", "subject_id", "target_id"]:
+		var candidate := str(record.get(key, ""))
+		if candidate.is_empty() or found.has(candidate):
+			continue
+		if state.locations.has(candidate):
+			found.append(candidate)
+	return found
+
+
+# The people this record is history FOR.
+#
+# Involvement, not awareness. `actor_id` and `target_id` are the people the
+# record says did something or had something done to them; a bystander who
+# merely perceived the occurrence is not in its history, and a test proves that
+# perceiving an event adds nobody.
+func persons_of(state: WorldState, record: Dictionary) -> Array[String]:
+	var found: Array[String] = []
+	for key: String in ["actor_id", "target_id"]:
+		var candidate := str(record.get(key, ""))
+		if candidate.is_empty() or found.has(candidate):
+			continue
+		if state.notable_entities.has(candidate):
+			found.append(candidate)
+	return found
+
+
+# The region this record belongs to.
+#
+# KNOWN LIMITATION, reported rather than faked: the world model has no region
+# entity. Locations carry an id, a name, a kind and a role, and nothing above
+# them. Rather than invent a geography to fill a scope, this answers empty for
+# every current record, `region` is never assigned, and the API is here so that
+# world generation can supply real regions later without the chronicle changing.
+func region_of(state: WorldState, record: Dictionary) -> String:
+	for location_id: String in locations_of(state, record):
+		var location: Dictionary = state.get_location(location_id)
+		var region := str(location.get("region_id", ""))
+		if not region.is_empty():
+			return region
+	return ""
+
+
+# --- filtered views ---------------------------------------------------------
+#
+# Every one of these SELECTS from `state.chronicle`. None of them stores
+# anything, and none may be turned into a second history.
+
+func world_history(state: WorldState) -> Array[Dictionary]:
+	var found: Array[Dictionary] = []
+	for record_value in state.chronicle:
+		var record: Dictionary = record_value
+		if bool(record.get("world_history", false)):
+			found.append(record)
+	return found
+
+
+func history_for_location(state: WorldState, location_id: String) -> Array[Dictionary]:
+	var found: Array[Dictionary] = []
+	for record_value in state.chronicle:
+		var record: Dictionary = record_value
+		if locations_of(state, record).has(location_id):
+			found.append(record)
+	return found
+
+
+func history_for_person(state: WorldState, entity_id: String) -> Array[Dictionary]:
+	var found: Array[Dictionary] = []
+	for record_value in state.chronicle:
+		var record: Dictionary = record_value
+		if persons_of(state, record).has(entity_id):
+			found.append(record)
+	return found
+
+
+func history_for_region(state: WorldState, region_id: String) -> Array[Dictionary]:
+	var found: Array[Dictionary] = []
+	for record_value in state.chronicle:
+		var record: Dictionary = record_value
+		if region_of(state, record) == region_id:
+			found.append(record)
+	return found
+
+
+func divine_history(state: WorldState) -> Array[Dictionary]:
+	var found: Array[Dictionary] = []
+	for record_value in state.chronicle:
+		var record: Dictionary = record_value
+		if (record.get("scopes", []) as Array).has(SCOPE_DIVINE):
+			found.append(record)
+	return found
+
+
+func history_in_category(state: WorldState, category: String) -> Array[Dictionary]:
+	var found: Array[Dictionary] = []
+	for record_value in state.chronicle:
+		var record: Dictionary = record_value
+		if (record.get("categories", []) as Array).has(category):
+			found.append(record)
+	return found
 
 
 # --- causality -------------------------------------------------------------

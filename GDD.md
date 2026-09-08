@@ -21,6 +21,12 @@ The player is not a king, mayor, or commander.
 
 The core experience is interfering with the world and watching civilizations interpret those actions.
 
+Humans are the current leading actors in the prototype era, not Worldsim's
+protagonist species. No species permanently owns the simulation. The enduring
+subject is the world itself under God's influence; civilizations, species and
+races are the cast of particular eras, able to enter, dominate, coexist, decline
+and leave the stage.
+
 ---
 
 ## 2. Core Fantasy
@@ -233,6 +239,11 @@ Example:
 
 Population is simulated primarily as groups.
 
+The prototype's population and named characters are human fixtures used to
+prove the simulation. They do not establish a human-only world model or a
+permanent protagonist species. Additional species, races and multiple leading
+actors remain later roadmap work under Section 41.
+
 Do not simulate hundreds of complete individual NPC lives in Version 0.1.
 
 Important characters may exist individually.
@@ -332,8 +343,17 @@ Effects:
 
 Effects:
 
-- increases food
-- may make agriculture religiously important
+- creates or strengthens objective agricultural abundance / extraordinary yield
+- increases food where that yield can be realised
+- is intended to become freely targetable and repeatable through the shared
+  divine-action pipeline
+- may later become religiously, socially, politically or ecologically important
+  when those downstream systems exist
+
+Repeated blessing does not inherently exhaust the soil. If God directly blesses
+a harvest, the design must not invent depletion merely to give the power an
+overuse penalty. Sections 45, 56, 57 and 68 define how consequences instead
+arise from the condition the blessing creates.
 
 ### 3. Divine Revelation
 
@@ -729,9 +749,10 @@ Two conflicting beliefs:
 
 → religious dispute
 
-Player repeatedly blessing one settlement:
+Sustained extraordinary abundance + outsiders who know about it + relevant
+belief or political pressure:
 
-→ jealousy from another settlement
+→ possible jealousy, attraction, alignment, investigation or conflict
 
 Avoid relying entirely on random disconnected events.
 
@@ -881,6 +902,9 @@ Everything else comes later.
 **The world should try to understand the player.**
 
 That is the identity of the game.
+
+The world is the continuing subject of that identity. Humans are one current
+cast, not its main characters forever.
 
 ---
 
@@ -1756,9 +1780,9 @@ The current dependency order. This is not an immutable schedule.
 | 8 | Consequence Engine | **Built** — objective change only, no reactions |
 | 9 | Minimal Settlement State | **Built** — local food, order, wealth, people |
 | 10 | Event → Perception → Knowledge pipeline | **Built** — selective, no global teaching |
-| 11 | Autonomous Feedback Loop | |
-| 12 | Divine Actions integrated into the same causal pipeline | |
-| 13 | History / Chronicle generated from causal events | |
+| 11 | Autonomous Feedback Loop | **Built** — the Autonomous Story Test passes |
+| 12 | Divine Actions integrated into the same causal pipeline | **Partial** — the road is generic; Send Rain alone uses it |
+| 13 | History / Chronicle generated from causal events | **Partial** — objective selection and causal links are built; myth, competing accounts, cultural memory and gradual forgetting are not |
 | 14 | Deeper religion / interpretation | |
 | 15 | Factions / politics | |
 | 16 | Multiple kingdoms | |
@@ -1770,10 +1794,15 @@ eventually run through the same causal pipeline as mortal actions, rather than
 existing as a separate special case. The god should be an actor in the world's
 causality, not an exception to it.
 
-**This table is the whole roadmap.** Part III records long-term direction and
-adds nothing to it: no section from 44 to 72 appears here, and none should be
-read as scheduled work. If a Part III idea starts to feel urgent, that is a
-reason to finish the layer currently in progress.
+The next approved design target within item 12 is **Bless Harvest —
+Shared-Pipeline Sandbox v1**: freely chosen settlement targeting, repeatable use,
+and an objective abundance / extraordinary-yield condition. This names the next
+milestone; it does not implement it or move any later system forward.
+
+**This table is the whole roadmap.** Part III and the later direction sections
+add nothing to it: no future-direction section should be read as scheduled
+work. If one starts to feel urgent, that is a reason to finish the layer
+currently in progress.
 
 ---
 
@@ -1804,6 +1833,11 @@ The point is:
 
 The final condition is the strict one. A world that produces events nobody can
 explain has not passed; it has only produced noise.
+
+**Current status: passed.** The deterministic Chronicle test now demonstrates
+all of these conditions. Passing this gate permits the roadmap to continue; it
+does not skip the unfinished divine-action and history layers in items 12 and 13
+or promote later scope ahead of them.
 
 Only after this loop works do the following become priorities:
 
@@ -1854,6 +1888,25 @@ with real consequences.
 
 The player remains the god, interacting with an autonomous world.
 
+Humans are not the protagonist species of that world. They are the current
+leading actors in this prototype era and may remain the seeded test fixture, but
+future eras may centre another species or several civilizations and species at
+once. God may later create, introduce or replace species, or allow several kinds
+of actor to share the stage. Systems should therefore model actors by the
+capabilities they actually have — perception, knowledge, interpretation,
+belief, action, ecological
+response or social organisation — rather than by a hidden assumption that the
+actor is human.
+
+The theatrical framing is structural, not decorative:
+
+> **The sandbox is the drama. Civilizations, species and races are actors who
+> may enter, dominate, decline, coexist and leave the stage.**
+
+The world under God's influence persists across changes of cast. The player
+remains the only god-level actor; this principle does not introduce a rival god
+or any god-equivalent being.
+
 Section 28 still has the last word:
 
 **The world should not simply react to the player's powers.**
@@ -1895,7 +1948,7 @@ Interpretation          what they take it to mean
   ↓
 Knowledge / Belief      what they now hold
   ↓
-Sharing / Distortion    what reaches other people
+Sharing / Distortion    what reaches other actors
   ↓
 Decision
   ↓
@@ -1914,14 +1967,18 @@ Two laws follow, and both are load-bearing:
 > **The player controls their actions and words. They do not control what
 > history says those actions and words meant.**
 
-> **The player creates conditions and possibilities. Intelligent beings create
-> institutions and meaning.**
+> **The player creates conditions and possibilities. Perceiving and social
+> actors create institutions and meaning.**
+
+The law governing divine powers is:
+
+> **Divine actions create conditions. Systems create consequences.**
 
 The identity that emerges from those, recorded as an internal design principle
 and **not** as finished marketing copy:
 
-> **The player changes the world. People decide what those changes mean. Those
-> meanings shape decisions. Those decisions become history.**
+> **The player changes the world. Its actors decide what those changes mean.
+> Those meanings shape decisions. Those decisions become history.**
 
 Or shorter:
 
@@ -1963,6 +2020,46 @@ not the same event.
 The existing powers in Section 9 already follow this shape — rain, harvest,
 revelation, voice, smite, silence are all conditions or communications, never
 outcomes. That is worth protecting when powers are added.
+
+### Divine forces accumulate according to their nature
+
+No design rule requires every power to carry an artificial drawback or to turn
+into a punishment after enough uses. Repeated divine intervention should
+accumulate consequences appropriate to the force being applied, and danger may
+come from physical, ecological or social systems reacting to the resulting
+world state.
+
+Send Rain applies water. Water accumulates physically, so relief can become
+saturation and flooding when the ground can take no more.
+
+Bless Harvest is different. It should create or strengthen an objective local
+condition of **agricultural abundance / extraordinary yield**. Repeating the
+blessing should deepen or sustain that abundance, not automatically exhaust the
+soil merely because the action was repeated. The foundational power should
+record the extraordinary yield and affect only systems that already exist.
+Later systems may read the same condition without Bless Harvest scripting their
+answers.
+
+Possible ecological reactions include pests, locusts, rodents, the predators
+that follow them, wildlife imbalance and spoilage when production or storage
+exceeds what the surrounding world can absorb. These must emerge, if supported,
+from future ecology and world-condition systems. Never encode a shortcut such
+as `N blessings = locust plague`, and do not implement ecology for the Bless
+Harvest foundation.
+
+Possible social reactions include rejoicing, a belief in divine favour or
+chosen status, pride or arrogance, complacency or dependence, generosity,
+outsider envy, pilgrimage, alliance or vassal-like legitimacy among
+co-believers, and investigation or aggression by non-believers who explain the
+fertility differently. These are possibilities, not a scripted progression.
+They require later belief, religion, social and political systems and must not
+be implemented inside the power.
+
+This clarification sets the next item-12 milestone: migrate Bless Harvest onto
+the shared sandbox pipeline, let the player target any supported settlement and
+repeat it freely, remove predetermined faith or meaning writes, and establish
+objective abundance / extraordinary yield. Exact ecological and social outcomes
+remain deliberately deferred.
 
 ---
 
@@ -2218,6 +2315,14 @@ interesting cost is what the act does to the world:
 
 **The player should stay powerful. Power should not be consequence-free.**
 
+Consequence does not mean every power must contain an equal-and-opposite
+punishment, a mandatory overuse debuff or a hidden balance tax. It means the
+world retains what the player changed and its systems are allowed to respond.
+The form of response follows the nature of the condition: water can flood;
+abundance can remain beneficial while also becoming a fact that ecosystems and
+societies react to. A consequence may be opportunity, adaptation, expectation,
+conflict or harm — not necessarily a built-in drawback.
+
 ### Recorded tension: Divine Power
 
 Section 8 establishes Divine Power as a spending limit, and it is built and
@@ -2255,6 +2360,14 @@ Which happens should follow from traits, institutions, knowledge and history.
 should emerge from what the world already records — historical precedent,
 belief, knowledge, relationships, decisions. If it cannot emerge from those, the
 answer is that those systems are not deep enough yet.
+
+Bless Harvest is the clearest future example. Sustained extraordinary yield may
+be celebrated, interpreted as evidence of chosen status, used generously,
+treated with pride, relied upon complacently, envied by outsiders, or used to
+justify pilgrimage, alliance, submission, investigation or attack. Different
+actors may reach different responses to the same abundance. None of these
+responses belongs in Bless Harvest itself, and none is current implementation
+scope.
 
 ---
 
@@ -2417,7 +2530,9 @@ failure should generate history. The stronger form:
 
 Political and cultural development must not make the environment irrelevant.
 Mature civilizations still face disease, famine, predators, drought, floods,
-resource shortage, environmental collapse and migration pressure.
+resource shortage, environmental collapse and migration pressure. Other living
+actors and ecosystems also respond to changed conditions whether or not a human
+society is present to notice first.
 
 **Civilization changes how a problem is handled. It does not remove the
 problem.** Detailed ecology remains future scope.
@@ -2467,15 +2582,24 @@ ecological change, species adaptation, extinction, behavioural adaptation,
 protected refuges, artificial habitats, planetary causality, deeper biological
 simulation.
 
-**None of this is on the implementation roadmap.** It may be explored only after
-the existing people, knowledge, decision and history simulation is proven fun.
-Section 42's Autonomous Story Test is the gate, and it has not been passed.
+**None of this is on the implementation roadmap.** Section 42's Autonomous Story
+Test now passes, but that gate did not promote ecology ahead of the unfinished
+divine-action and history work in Sections 41 and 71. Ecology may be explored
+only after the existing actor, knowledge, decision and history simulation is
+proven fun and the user explicitly scopes an ecology design pass.
 
 **Worldsim is not becoming an evolution simulator.** Ecology, if it ever arrives,
-arrives as pressure on societies — a reason for people to move, argue, believe
-and decide — not as a subject in its own right. The moment a planetary system
-stops producing human consequences it has failed Section 39 and should be cut,
-however correct it is.
+must remain legible to and interactable by the player, but it is not merely a
+machine for producing human consequences. Plants, animals, pests, predators and
+other species may respond to conditions and become historically important
+actors in the sandbox. A planetary system still fails Section 39 if it produces
+nothing the player can notice, understand or act upon, however correct it is.
+
+Sustained supernatural abundance is one recorded future input: more crops or
+stored food may support pest, locust or rodent growth; predators may follow;
+surplus may spoil; wildlife populations may shift. These are causal possibilities
+for a future ecology / world-condition design pass, not a promise of any fixed
+outcome and not permission to implement ecology now.
 
 ---
 
@@ -2568,8 +2692,10 @@ Nothing in Part III may reorder that. Interpretation is the important future
 bridge — Section 46 — but stable systems must not be restructured for it before
 the current foundation is proven.
 
-Planetary, ecological and evolutionary systems sit behind all of it, and behind
-the Autonomous Story Test.
+The Autonomous Story Test has passed, but passing one gate does not erase the
+dependency order. Planetary, ecological and evolutionary systems remain behind
+the unfinished item-12 divine migrations, the remaining item-13 history work,
+and the later roadmap layers that make their consequences meaningful.
 
 If a Part III idea starts to feel urgent, that is a signal to finish the layer in
 progress, not to reorder the list.
@@ -3154,7 +3280,7 @@ Preserve these internal principles:
 > **The player controls what they do. They do not control what history says they
 > did.**
 
-> **The player changes the world. People decide what those changes mean.**
+> **The player changes the world. Its actors decide what those changes mean.**
 
 > **Reality happens once. History does not.**
 
@@ -3529,8 +3655,8 @@ the Chronicle store: it may present existing causal state dramatically, but it
 reads that state and never becomes another record of it. Do not implement a
 second history.
 
-**3. World Voice** — collective human texture: crowds, rumours, prayers,
-repeated sayings, public reactions, fragments of what people tell each other.
+**3. World Voice** — collective social texture: crowds, rumours, prayers,
+repeated sayings, public reactions, fragments of what actors tell each other.
 
 ```text
 "He heard us."

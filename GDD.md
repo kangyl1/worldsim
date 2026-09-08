@@ -4947,3 +4947,477 @@ This is the same Worldsim architecture at a higher scale:
 Apostles are therefore not a shortcut around the simulation. They are another kind of actor for the simulation to interpret.
 
 This section records future direction only. Do not implement Apostles, lesser servants, Apostle power-granting, terrain creation, or Create Life as part of the current simulation-consistency work or unfinished divine-action migrations.
+
+---
+
+## 102. God Power Toolbox — Nature, Life, Geography, and Reality Laws
+
+This section records approved **future divine-power direction**. It does not reorder Section 41, does not authorise current implementation of these powers, and does not require terrain, ecology, mortality, genetics, or reality-law systems before their roadmap dependencies exist.
+
+The toolbox should ultimately allow broad godhood rather than confining the player to one domain. Presentation may group powers under categories such as Nature, Life, Creation, Judgment, Communication, and Reality, but those headings are not moral truth. A blessing may create harmful downstream conditions; a destructive act may produce beneficial history. The simulation owns consequence and interpretation.
+
+> **God chooses the important force or property. The simulation supplies the detail and determines what follows.**
+
+### Forces should produce conditions rather than naming their outcomes
+
+Where the simulation already models an underlying physical cause, divine powers should normally manipulate that cause rather than directly declare the consequence.
+
+The clearest example is drought.
+
+**Drought is not intended to be a direct God power.** God may create heat, suppress or withhold rain, alter temperature, or otherwise change the conditions that control water. If those forces make the land sufficiently dry, drought emerges from the world state.
+
+Conceptually:
+
+```
+God raises temperature / withholds rain
+  ↓
+water declines
+  ↓
+dry conditions deepen
+  ↓
+drought emerges
+```
+
+This is the same law already proven by Send Rain:
+
+```
+God sends rain
+  ↓
+water rises
+  ↓
+saturation / flooding may emerge
+```
+
+Do not implement a shortcut in which God simply sets `drought = true` while a contradictory water state exists.
+
+### Temperature is a direct divine control
+
+God should eventually be able to raise or lower temperature directly, at supported scopes and magnitudes.
+
+Temperature itself is the divine force. Consequences such as:
+
+- heatwaves
+- cold snaps
+- snow
+- ice
+- frozen rivers
+- evaporation
+- crop damage
+- thawing
+- altered habitability
+
+should arise only where the underlying world systems support them.
+
+**Snow does not need to be a separate foundational force if temperature + moisture can honestly produce it.** The player may still receive convenient higher-level actions later, but the simulation underneath should retain one physical truth.
+
+### Storms support both convenience and underlying forces
+
+Storm should eventually be available as a convenient divine action, but its existence should not erase the more primitive controls.
+
+God may separately manipulate:
+
+- rain
+- wind
+- lightning
+- temperature
+- clouds, once clouds exist
+
+and may also invoke a **Storm** action for convenience.
+
+A direct Storm should create or coordinate the underlying forces instead of bypassing them with a disconnected `storm_damage` result.
+
+This follows a general toolbox principle:
+
+> **Convenient compound powers may exist, but they should resolve through the same underlying world state as their component forces.**
+
+### Wind can reach extreme scales
+
+Wind should eventually range from minor atmospheric movement through severe and world-shaping phenomena.
+
+Possible expressions include:
+
+- breeze
+- strong wind
+- gale
+- hurricane-scale wind
+- tornadoes, where supported
+- extremely large atmospheric effects at high divine scale
+
+The exact classification should follow whatever atmospheric model eventually exists. Do not build meteorological detail merely to support labels.
+
+### Fire is a direct scalable force
+
+God should eventually be able to create fire directly.
+
+Its target scale may range, once the world supports the relevant objects, from:
+
+- one object
+- one individual or immediate area
+- a building or local site
+- a settlement-scale fire
+- a regional conflagration
+
+Intensity and scale are separate questions. Fire should interact with material, weather, terrain, life, and later ecology only when those systems actually exist.
+
+Do not reduce every fire action to a generic stability penalty once a richer physical target exists.
+
+### Heal supports individuals and populations
+
+Heal should eventually work at more than one scale.
+
+God may heal:
+
+- one individual
+- a group
+- a settlement or population, when the simulation supports population health
+
+The Divine Power cost may rise with precision, scale, and impossibility under Section 98.
+
+High divine magnitude is allowed to exceed ordinary biological recovery. Depending on the future health model, healing may eventually:
+
+- close wounds
+- cure illness
+- restore lost function
+- regrow a lost limb
+- restore sight or hearing
+- cure otherwise incurable conditions
+- reverse or repair age-related decline
+
+Do not implement these effects before injury, disease, aging, or body-state systems exist. A divine power may only modify something the world can actually represent.
+
+### Take Life is distinct from Smite
+
+Worldsim should distinguish deliberate divine death from destructive manifestation.
+
+**Take Life** means God directly causes the chosen living target to die.
+
+**Smite** means God applies destructive divine force to a target or location. Death may result from that destruction, but death is not the only possible consequence.
+
+This distinction should survive future implementation because it creates different objective events and therefore different histories.
+
+For example:
+
+```
+TAKE LIFE — Mara
+→ Mara dies through direct divine intervention.
+```
+
+is not the same event as:
+
+```
+SMITE — Mara — OVERWHELMING
+→ destructive force strikes where Mara is.
+→ Mara may die.
+→ surrounding things may also be damaged if the world models them.
+```
+
+Do not make one merely a differently named button for the other.
+
+### Resurrection has no arbitrary age limit
+
+God should eventually be able to resurrect any dead individual whose identity is still represented well enough for the simulation to refer to them.
+
+The player does not need to have personally known, marked, or protected the person before death.
+
+A person dead for thousands of years may be restored if the world still has a meaningful identity record for them.
+
+This can create especially strong historical contradictions: a resurrected ruler may discover that later religions, institutions, or descendants remember them incorrectly. The resurrected person's testimony becomes a new present-day claim; it does not automatically overwrite cultural memory.
+
+### Resurrection can scale
+
+Resurrection should eventually support increasingly extraordinary scopes, with Divine Power / stored divine capacity rising accordingly.
+
+Possible scales include:
+
+- one dead person
+- several people
+- everyone killed in a particular battle or disaster
+- a large dead population
+- an extinct civilization or species, if the simulation still has enough identity and biological information to restore it
+
+Mass resurrection must not resolve as only `population + N`. It should produce objective returns to life that existing belief, history, politics, ecology, and social systems may later react to.
+
+### Alter Life is a separate creative power
+
+God should eventually be able to modify existing living beings without needing to kill and recreate them.
+
+Possible alterations include:
+
+- wings
+- size
+- lifespan
+- senses
+- resistance to heat or cold
+- biological abilities
+- environmental adaptation
+- other properties that the life model actually represents
+
+Alter Life may target an individual, population, or species depending on scale and future system support.
+
+This is distinct from Heal. Heal restores or improves a living body; Alter Life changes what that body or lineage is capable of being.
+
+### Create Life supports individuals and entire species
+
+God retains direct Create Life even if Apostles later perform delegated creation under Section 101.
+
+The player may eventually create:
+
+- one important creature or individual
+- a population
+- an entirely new species or intelligent race
+
+The player should choose **important simulation-relevant properties**, not micromanage hundreds of biological parameters.
+
+Possible high-level properties include:
+
+- body form
+- intelligence
+- temperament
+- size
+- lifespan
+- reproduction tendency
+- social tendency
+- nocturnal / diurnal behaviour
+- environmental adaptation
+- senses
+- a small number of distinctive biological traits
+
+The simulation should fill in minor detail consistently.
+
+> **God specifies what matters. The world fills in what does not need divine attention.**
+
+Do not turn Create Life into a deep genetics editor unless a later design pass proves that such depth creates meaningful player decisions and history under Section 72.
+
+### Geography should be coarse, systemic, and deferred until World Generation
+
+Terrain-manipulation powers are approved future ideas, but the current settlement map is not yet a physical geography simulation capable of supporting them honestly.
+
+Do not bolt a tile-scale terrain editor onto the current prototype simply because God should eventually be able to raise mountains or create rivers.
+
+The preferred future foundation is **region-based physical geography**.
+
+A region or world location may eventually carry a small set of objective properties such as:
+
+- elevation
+- temperature
+- water
+- moisture
+- terrain classification
+- vegetation
+- adjacency / neighbouring regions
+
+The exact fields are not locked. Their purpose is to create one coarse physical truth that divine powers and world systems can both read.
+
+This should be enough to support meaningful geography without requiring millions of independently simulated cells.
+
+### Raise and Lower Land modify elevation
+
+God should eventually be able to raise or lower land at a supported geographic scope.
+
+The power changes elevation; terrain classification follows from the resulting state.
+
+Conceptually:
+
+```
+Raise Land
+→ elevation increases
+→ plain may become hills
+→ hills may become mountains
+```
+
+or:
+
+```
+Lower Land
+→ elevation falls
+→ basin may form
+→ if connected water can enter, lake or sea conditions may emerge
+```
+
+Do not make `Create Mountain` permanently separate from elevation if both systems would then claim authority over the same terrain.
+
+A convenient Create Mountain action may later exist, but it should resolve through the same underlying geography.
+
+### Rivers may be direct conveniences over real geography
+
+Worldsim may eventually support both:
+
+- directly creating or drawing a river for divine convenience
+- producing rivers indirectly through terrain, water sources, rainfall, and flow
+
+The direct action should not create a decorative river disconnected from the geography model. It should establish the physical conditions or river connection needed for the same downstream systems to recognise it.
+
+Detailed hydrodynamics are not required. Coarse region-to-region flow is sufficient if it creates meaningful world consequences.
+
+### Oceans, seas, islands, and coastlines follow the same principle
+
+God may eventually create or remove major bodies of water and reshape coastlines.
+
+Where possible, this should be expressed through elevation, water, and region connectivity rather than through disconnected labels.
+
+For example, raising enough submerged land may create an island. Lowering connected land may allow a sea to spread into it.
+
+Do not implement expensive continuous fluid simulation unless later gameplay demonstrates a real need.
+
+### Plants and vegetation support both existing and new life
+
+God should eventually be able to:
+
+- place/spread an existing plant species
+- create an entirely new plant species
+
+New plant creation follows the same rule as Create Life: choose a small set of meaningful properties and let the simulation provide minor detail.
+
+Possible properties might include:
+
+- tree / grass / crop-like form
+- climate tolerance
+- growth rate
+- lifespan
+- edible or non-edible output
+- size
+- resilience
+
+Only properties that later matter to the world should become player choices.
+
+### Clouds may become manipulable world objects or regional conditions
+
+Once the weather model has enough structure to support them, God may directly:
+
+- create clouds
+- remove clouds
+- move clouds
+- increase or decrease cloud cover
+
+Apostles may also use such capabilities when delegated authority allows it.
+
+Clouds should interact with moisture, wind, temperature, and rain only to the depth justified by gameplay. Do not build full atmospheric simulation merely because clouds exist.
+
+### Reality Laws are the highest form of divine intervention
+
+Very late in Worldsim, God should be able to do more than cause events or create things. God may alter **the rules by which reality operates**.
+
+A useful conceptual distinction is:
+
+- **Miracle** — God temporarily or locally overrides ordinary reality.
+- **Creation** — God adds or reshapes something within reality.
+- **Reality Law** — God changes how a rule of reality operates for a target scope.
+
+Reality Laws may persist for centuries or thousands of years and normally remain active until God revokes them, unless their original declaration contains another duration.
+
+They should use the same broad standing-order philosophy established by Section 98, but their implementation must be more fundamental than repeatedly firing an ordinary action once per year when the rule itself needs to change.
+
+### Reality Laws can target multiple scopes
+
+A future Reality Law may apply to:
+
+- one individual
+- a group
+- a species
+- a settlement
+- a region
+- a civilization
+- the entire world
+
+The scope should be explicit and materially affect Divine Power cost and consequence.
+
+Examples of approved long-term fantasies include:
+
+> No one in Westfield shall die naturally.
+
+> Fire cannot harm this species.
+
+> The dead in this land rise after three days.
+
+> No child shall be born in Aster.
+
+> All who enter this valley forget their names.
+
+> Night shall never end here.
+
+> Rain shall never cease over this region.
+
+These are examples of possible reality manipulation, not promises that each exact law will be implemented.
+
+### Reality Laws must modify real modeled rules
+
+This is the critical implementation guardrail.
+
+> **A Reality Law may only alter a rule the simulation actually models.**
+
+Worldsim cannot honestly implement:
+
+> No one dies naturally.
+
+until aging / natural death exist.
+
+It cannot honestly implement:
+
+> Fire cannot burn this species.
+
+until fire and susceptibility to fire exist.
+
+It cannot honestly implement:
+
+> The dead rise after three days.
+
+until death, identity persistence, and resurrection are represented.
+
+This prevents Reality Laws from becoming arbitrary flags that produce text without causal support.
+
+### Reality Laws do not dictate interpretation
+
+Even when God genuinely rewrites reality, actors remain free to misunderstand what happened.
+
+A civilization living under permanent night may believe:
+
+- God cursed them
+- their Apostle failed
+- the sun died
+- a natural cosmic age began
+- their ancestors caused it
+- the darkness is sacred
+
+The objective rule and the social explanation remain separate.
+
+Reality manipulation therefore remains inside Worldsim's core chain rather than bypassing it.
+
+### Terrain and planetary depth remain bounded
+
+Worldsim should not become a high-resolution planetary physics simulator merely because the God toolbox eventually includes terrain and weather manipulation.
+
+Prefer enough geography to support:
+
+- divine choices
+- movement and settlement
+- resources and habitability
+- disasters
+- ecology when it eventually exists
+- civilization history
+- visibly changing maps
+
+Avoid complexity that only produces more simulation detail without more player meaning.
+
+A coarse map with tens or hundreds of meaningful regions may ultimately serve Worldsim better than millions of individually simulated terrain cells.
+
+### Dependency rule
+
+The toolbox is a **capability direction**, not an implementation queue.
+
+Examples:
+
+- Temperature requires an environmental state able to represent temperature.
+- Snow/freezing require temperature plus relevant water/moisture state.
+- Fire requires targets/material or life state worth burning.
+- Heal requires health/injury/disease/aging state.
+- Take Life requires mortality.
+- Resurrection requires death plus persistent identity/history.
+- Alter Life and Create Life require a life/species foundation.
+- Terrain manipulation requires World Generation / geography.
+- Reality Laws require the underlying rule they modify.
+
+Do not fake a power ahead of its dependency merely to make the toolbox larger.
+
+> **God may eventually be capable of almost anything. Worldsim should only simulate a divine act when the world beneath it is capable of making that act mean something.**
+
+This section records future direction only. The active implementation priority remains the simulation-consistency audit and the unfinished roadmap work in Section 41.

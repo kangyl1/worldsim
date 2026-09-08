@@ -449,8 +449,9 @@ func classify(state: WorldState, record: Dictionary, parent_id: String) -> Dicti
 	var categories: Array[String] = []
 	var source := str(record["source_record_type"])
 
-	# LOCATION. The place the occurrence happened in, when there is one.
-	if not locations_of(state, record).is_empty():
+	# LOCATION. Only when the occurrence happened TO or IN the place. A private
+	# conclusion is not something that happened to a settlement.
+	if not location_history_ids(state, record).is_empty():
 		scopes.append(SCOPE_LOCATION)
 
 	# REGION. Supported by the schema and unreachable today: see
@@ -540,8 +541,34 @@ func _is_world_scale(state: WorldState, record: Dictionary) -> bool:
 	return true
 
 
-# The settlements this record is history FOR. Read from the fields the record
-# already carries; nothing is stored twice.
+# --- history relevance ------------------------------------------------------
+#
+# History records what happened. A Personal Chronicle may also record what
+# happened INSIDE someone. The two are different lenses over the same store, and
+# the boundary between them is what this section draws.
+
+# The settlements this record is HISTORY for, which is narrower than the
+# settlements it merely mentions.
+#
+# An interpretation is excluded on purpose. It is a private conclusion, and it
+# was being filed at the OBSERVER'S HOME — so the King, sitting in the capital
+# and forming an opinion about a famine on the Frontier, was writing Aster's
+# history. That is how Aster reached 56 records against Westfield's 3. The
+# famine itself is already the Frontier's history as a condition record; the
+# King's opinion of it is his own business and belongs to his chronicle.
+#
+# A thought enters a PLACE'S history when it produces something that happens
+# there — a refusal, an act, a consequence — and those are consequence records,
+# which are not excluded.
+func location_history_ids(state: WorldState, record: Dictionary) -> Array[String]:
+	if str(record["source_record_type"]) == SOURCE_INTERPRETATION:
+		return [] as Array[String]
+	return locations_of(state, record)
+
+
+# Every settlement the record names, whether or not the record is that
+# settlement's history. Objective, and unchanged: the interpretation record
+# still truthfully carries where its observer was.
 func locations_of(state: WorldState, record: Dictionary) -> Array[String]:
 	var found: Array[String] = []
 	for key: String in ["location_id", "subject_id", "target_id"]:
@@ -604,16 +631,7 @@ func history_for_location(state: WorldState, location_id: String) -> Array[Dicti
 	var found: Array[Dictionary] = []
 	for record_value in state.chronicle:
 		var record: Dictionary = record_value
-		if locations_of(state, record).has(location_id):
-			found.append(record)
-	return found
-
-
-func history_for_person(state: WorldState, entity_id: String) -> Array[Dictionary]:
-	var found: Array[Dictionary] = []
-	for record_value in state.chronicle:
-		var record: Dictionary = record_value
-		if persons_of(state, record).has(entity_id):
+		if location_history_ids(state, record).has(location_id):
 			found.append(record)
 	return found
 
@@ -625,6 +643,83 @@ func history_for_region(state: WorldState, region_id: String) -> Array[Dictionar
 		if region_of(state, record) == region_id:
 			found.append(record)
 	return found
+
+
+# Everything the record store says this person was involved in, unfiltered.
+#
+# The RAW involvement list. Useful for machinery and Developer Mode; it is not
+# the thing to put in front of the player, because a mortal who reads the same
+# recurring condition every third year for forty years appears here forty
+# times. `personal_chronicle_for()` is the curated view.
+func history_for_person(state: WorldState, entity_id: String) -> Array[Dictionary]:
+	var found: Array[Dictionary] = []
+	for record_value in state.chronicle:
+		var record: Dictionary = record_value
+		if persons_of(state, record).has(entity_id):
+			found.append(record)
+	return found
+
+
+# THE STORY OF A LIFE, rather than a trace of the reasoning behind it.
+#
+# A Personal Chronicle may be denser than World History and may contain things
+# no place or world would record — what someone concluded, came to accept, or
+# changed their mind about. What it may NOT be is every processing tick.
+#
+# The King reading `aster_surplus` for the thirteenth time is not the thirteenth
+# event of his life; it is the same conviction settling further. So a run of
+# entries sharing one personal key keeps its FIRST and its LAST — when he began
+# to think it, and where it came to rest — and drops the identical middle. A key
+# that occurs once or twice is never touched, so genuine turning points, which
+# are one-offs by nature, always survive.
+#
+# Nothing is deleted. This is a FILTER: the raw records remain in the chronicle,
+# reachable through `history_for_person()`, and a test asserts the store is the
+# same size before and after this view is read.
+func personal_chronicle_for(state: WorldState, entity_id: String) -> Array[Dictionary]:
+	var involved := history_for_person(state, entity_id)
+	var runs: Dictionary = {}
+	var order: Array[String] = []
+	for record: Dictionary in involved:
+		var key := personal_key(record, entity_id)
+		if not runs.has(key):
+			runs[key] = [] as Array[Dictionary]
+			order.append(key)
+		(runs[key] as Array).append(record)
+
+	var kept: Array[Dictionary] = []
+	for key: String in order:
+		var run: Array = runs[key]
+		if run.size() <= 2:
+			kept.append_array(run)
+			continue
+		# The beginning and the end of one continuing personal thread.
+		kept.append(run[0])
+		kept.append(run[run.size() - 1])
+	kept.sort_custom(func(a, b): return int(a["year"]) < int(b["year"]))
+	return kept
+
+
+# What makes two entries "the same thread" in one person's life.
+#
+# Deliberately built from ids the record already carries. A recurring reading
+# repeats its `subject_id` exactly (`aster_surplus` every third year), while a
+# one-off conclusion about a particular occurrence carries that occurrence's own
+# id and can never collide with anything.
+func personal_key(record: Dictionary, entity_id: String) -> String:
+	match str(record["source_record_type"]):
+		SOURCE_INTERPRETATION:
+			return "read/%s/%s" % [str(record["actor_id"]), str(record["subject_id"])]
+		SOURCE_CONSEQUENCE:
+			# A repeated social beat between the same two people. Once trust and
+			# respect have saturated, the fourteenth agreement is not news about
+			# either of their lives.
+			return "social/%s>%s/%s" % [
+				str(record["actor_id"]), str(record["target_id"]), str(record["event_type"])
+			]
+		SOURCE_DIVINE:
+			return "divine/%s/%s" % [str(record["event_type"]), str(record["location_id"])]
+	return "%s/%s" % [str(record["source_record_type"]), str(record["id"])]
 
 
 func divine_history(state: WorldState) -> Array[Dictionary]:

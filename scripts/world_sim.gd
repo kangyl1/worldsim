@@ -1468,9 +1468,26 @@ func _apply_interpretation(interpretation: Dictionary) -> Array[String]:
 	# kingdom view and adding to it would broadcast one number back over every
 	# settlement and flatten the whole world.
 	var location_id := state.current_event_location_id
-	state.change_settlement_band(location_id, "food", int(effects.get("food", 0)))
-	state.change_settlement_band(location_id, "stability", int(effects.get("stability", 0)))
-	state.change_settlement_band(location_id, "prosperity", int(effects.get("prosperity", 0)))
+	# These outcomes are MORTAL work — local leaders settling a crisis, farmers
+	# digging wells, villagers organising themselves — so they need mortals. A
+	# settlement with no notable resident has nobody who can perceive, want or
+	# act, which is the locality rule this file already lives by everywhere
+	# else, and granting it their labour anyway was inventing people to fill it.
+	#
+	# The bug this fixes: the Frontier has no residents and sat at Destitute
+	# prosperity for forty years, yet received a +1 every time silence was read
+	# as local self-reliance. World drift removed it within the same turn, and
+	# the chronicle honestly recorded "Frontier's prosperity fell from Poor to
+	# Destitute" — five times, for a level the place never actually held. The
+	# false record came from a false transition, so the transition is what goes.
+	#
+	# Realm-level consequences (faith, followers, growth, world flags) are
+	# untouched: those describe the kingdom's populace rather than one
+	# settlement's, and the divine belief bootstrap depends on them.
+	if state.has_residents(location_id):
+		state.change_settlement_band(location_id, "food", int(effects.get("food", 0)))
+		state.change_settlement_band(location_id, "stability", int(effects.get("stability", 0)))
+		state.change_settlement_band(location_id, "prosperity", int(effects.get("prosperity", 0)))
 	state.faith += int(effects.get("faith", 0))
 	state.followers += int(effects.get("followers", 0))
 	state.population_growth_bonus += int(effects.get("population_growth_bonus", 0))

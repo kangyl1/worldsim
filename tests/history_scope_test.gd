@@ -62,7 +62,11 @@ func _test_one_record_belongs_to_several_views() -> void:
 	var rules = simulation.chronicle_rules
 	var shared := {}
 	for record: Dictionary in state.chronicle:
-		var places: Array = rules.locations_of(state, record)
+		# The HISTORY-relevance ids, not every location the record mentions.
+		# A private conclusion names the place its observer was sitting in and
+		# is deliberately not that place's history, so it cannot serve as a
+		# record reachable from both lenses.
+		var places: Array = rules.location_history_ids(state, record)
 		var people: Array = rules.persons_of(state, record)
 		if places.is_empty() or people.is_empty():
 			continue

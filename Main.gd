@@ -1277,8 +1277,12 @@ func _developer_chronicle_lines() -> Array[String]:
 		lines.append(_dev_field("  location %s" % location_id,
 			str(rules.history_for_location(state, location_id).size())))
 	for entity_id: String in state.notable_entities.keys():
-		lines.append(_dev_field("  person %s" % entity_id,
-			str(rules.history_for_person(state, entity_id).size())))
+		# Raw involvement beside the curated life. The gap between them is the
+		# reasoning noise a Personal Chronicle deliberately does not show.
+		lines.append(_dev_field("  person %s" % entity_id, "%d raw  ->  %d personal" % [
+			rules.history_for_person(state, entity_id).size(),
+			rules.personal_chronicle_for(state, entity_id).size()
+		]))
 	for category: String in rules.CATEGORIES:
 		var in_category: int = rules.history_in_category(state, category).size()
 		if in_category > 0:

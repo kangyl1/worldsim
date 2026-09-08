@@ -192,3 +192,25 @@ static func history_title(event_type: String, place_name: String, importance: in
 	if place_name.is_empty():
 		return ""
 	return str(HISTORY_TITLES[event_type]) % place_name.to_upper()
+
+
+# A Personal Chronicle is told closer in than world history: it is one life
+# rather than one world, so its register is intimate rather than monumental.
+# Same absolute rule, though — these state what the record holds and nothing
+# about why, whose fault it was, or what it meant.
+const PERSONAL_TITLES := {
+	"interpretation_took_effect": "WHAT %s CAME TO THINK",
+	"request_accepted": "AN UNDERSTANDING WITH %s",
+	"request_refused": "A REFUSAL BETWEEN %s AND ANOTHER",
+	"support_expressed": "%s STOOD WITH ANOTHER"
+}
+
+
+static func personal_title(event_type: String, person_name: String, importance: int) -> String:
+	if history_strength(importance) == HISTORY_MUNDANE:
+		return ""
+	if not PERSONAL_TITLES.has(event_type):
+		return ""
+	if person_name.is_empty():
+		return ""
+	return str(PERSONAL_TITLES[event_type]) % person_name.to_upper()

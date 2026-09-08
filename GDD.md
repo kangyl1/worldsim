@@ -5723,6 +5723,89 @@ generation is to be built now.
 
 > **One event underneath. Many historical views above it.**
 
+### History and Personal Chronicle are different lenses
+
+World, Region and Settlement History ask *what happened in this place*. A
+Personal Chronicle asks *what happened to this person, what did they do, and how
+did they change*. They are two lenses over one record store, and the second may
+legitimately be denser than the first.
+
+    King becomes suspicious of Mara     -> Personal Chronicle. Not Aster. Not the world.
+    King arrests Mara over it           -> Personal Chronicle AND Aster history.
+    The arrest starts a civil war       -> Personal, Kingdom, Region; the world if the scale earns it.
+
+### Internal state is not automatically public history
+
+A king being angry, confident or afraid; a mortal privately distrusting another;
+somebody reading rain as judgement; a belief gaining confidence — these are
+simulation state. They may appear in that person's chronicle when meaningful.
+They enter broader history only when they PRODUCE something.
+
+> **"King A is angry" is internal state. "King A slew a man in rage" is history.**
+
+### Location History describes the location
+
+A resident's private reaction is not something that happened to the place they
+live in. The Frontier starving is the Frontier's history; a king in the capital
+forming an opinion about it is his own.
+
+This was a real defect rather than a hypothetical: interpretation records were
+filed at the OBSERVER'S HOME, so every conclusion the King reached became the
+capital's history. Aster held 56 records to Westfield's 3, and most of the
+difference was one man thinking.
+
+### A Personal Chronicle is not a debug trace
+
+It may hold interpretations, belief changes, relationship changes, actions and
+things witnessed. It may not hold every reasoning tick.
+
+    Bad                                  Better
+    Y20 interpreted surplus              Years 20-27 - the King grew steadily more
+    Y21 interpreted shortage             confident the kingdom was recovering.
+    Y22 interpreted surplus              Year 28 - that confidence became settled.
+    Y23 interpreted shortage
+
+The underlying records stay in the store. The player-facing life is a selection
+over them, keeping where a thread began and where it came to rest.
+
+### Belief crossings belong to the person, not the world
+
+An important belief becoming established, weakening or breaking MAY enter that
+person's chronicle. It enters broader history only if the belief becomes public
+or causes a consequential occurrence.
+
+    King becomes convinced Aster is safe          -> his chronicle
+    King refuses famine relief because of it      -> history
+
+### Repetition after saturation is not biography
+
+Once trust and respect between two people have reached their ceiling, the
+fourteenth agreement between them says nothing further about either life. The
+underlying consequence records remain — other systems read them — but a life
+story keeps the first and the last, not all thirteen.
+
+### History is not rumour
+
+An objective occurrence and what people said about it are two layers and must
+never be merged.
+
+    Objective : King A killed Renald.
+    Rumour    : Renald had been sleeping with the Queen.
+
+A presentation may show both, clearly labelled. It may never rewrite the
+objective summary using the rumour. A rumour becomes historical in its own right
+when its SPREAD or its CONSEQUENCES become meaningful — recorded then as its own
+occurrence, not as a correction to the first one.
+
+### Core distinctions
+
+> **A thought can be important to a person without being important to history.**
+
+> **Internal state explains history. Consequential action becomes history.**
+
+> **World History tells the story of the world. A Personal Chronicle tells the
+> story of a life.**
+
 ### History Scope Foundation v1 boundary
 
 The first implementation pass should be deliberately narrow:

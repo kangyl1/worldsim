@@ -13,7 +13,7 @@ The user retains authority over game design, project direction, and GitHub publi
 3. If there is **ANY** design ambiguity, design problem, or architecture decision that could affect game behavior, scope, rules, simulation outcomes, or project direction, **STOP and ask the user before deciding**. Do not make autonomous game-design decisions.
 4. Small, purely mechanical implementation details may be handled without asking only when they cannot alter design intent. If uncertain, ask.
 5. GitHub repository `kangyl1/worldsim` is the source of truth when this document or any handoff summary conflicts with the current committed code. Inspect the repository and history when unsure.
-6. Minimal Settlement State v1, Selective Perception v1, Broad Intent v1, Action Selection v1, Action Execution v1, Consequence Engine v1, **Interpretation v1** and **Divine Actions in the shared causal pipeline v1** are built. Mortals notice different things, want things, try things, attempts have results, results objectively change the world, and mortals now decide what those results MEANT — which changes what they want later. **TWO divine powers, Send Rain and Bless Harvest, have been migrated onto that same road**, and the road itself is now generic: `scripts/divine_action_rules.gd` is the single surface that registers how any power enters the world. Divine Voice alone still gets one collective meaning from the populace-level `DivineReceptionSystem`. **Historical Selection + Chronicle v1** is also built: the simulation now decides which occurrences mattered enough to become history, and links them causally. **Belief Formation v1** is built on top of that: mortals accumulate durable, revisable, per-mortal beliefs from their own repeated interpretations, and the first divine belief can now bootstrap organically. **Population & Locality Coverage Foundation v1** made the rules generic around the seeded fixtures: no rules file names a settlement or a mortal, so generated places and people can take part by existing in state. **Broader Interpretation Coverage v1** widened what mortals can conclude: the three settlement-condition topics the event cycle produces every year are now interpreted, per observer, by where they live and who they are. **Situational Choices & Theatrical Feedback v1** made that depth visible: a presentation-only layer decides what the player is told each year and how it is worded, reading records and writing nothing. **Divine Sandbox & Cumulative Consequences Foundation v1** turned Send Rain from a correct answer into a force: the player picks the target, water accumulates in the ground, and the same power helps, does nothing, or floods a settlement depending on what that ground already held. **Bless Harvest — Shared-Pipeline Sandbox v1** migrated the second power the same way, and deliberately NOT the same shape: abundance accumulates and its top state is simply a settlement that keeps producing, because a power must not punish its own repetition by arithmetic. Migrating any further power, designing what its occurrence could MEAN, religion in any form, world generation itself, and the later history systems (myth, decay, competing accounts) must not be built until the user explicitly asks.
+6. Minimal Settlement State v1, Selective Perception v1, Broad Intent v1, Action Selection v1, Action Execution v1, Consequence Engine v1, **Interpretation v1** and **Divine Actions in the shared causal pipeline v1** are built. Mortals notice different things, want things, try things, attempts have results, results objectively change the world, and mortals now decide what those results MEANT — which changes what they want later. **TWO divine powers, Send Rain and Bless Harvest, have been migrated onto that same road**, and the road itself is now generic: `scripts/divine_action_rules.gd` is the single surface that registers how any power enters the world. Divine Voice alone still gets one collective meaning from the populace-level `DivineReceptionSystem`. **Historical Selection + Chronicle v1** is also built: the simulation now decides which occurrences mattered enough to become history, and links them causally. **Belief Formation v1** is built on top of that: mortals accumulate durable, revisable, per-mortal beliefs from their own repeated interpretations, and the first divine belief can now bootstrap organically. **Population & Locality Coverage Foundation v1** made the rules generic around the seeded fixtures: no rules file names a settlement or a mortal, so generated places and people can take part by existing in state. **Broader Interpretation Coverage v1** widened what mortals can conclude: the three settlement-condition topics the event cycle produces every year are now interpreted, per observer, by where they live and who they are. **Situational Choices & Theatrical Feedback v1** made that depth visible: a presentation-only layer decides what the player is told each year and how it is worded, reading records and writing nothing. **Divine Sandbox & Cumulative Consequences Foundation v1** turned Send Rain from a correct answer into a force: the player picks the target, water accumulates in the ground, and the same power helps, does nothing, or floods a settlement depending on what that ground already held. **Bless Harvest — Shared-Pipeline Sandbox v1** migrated the second power the same way, and deliberately NOT the same shape: abundance accumulates and its top state is simply a settlement that keeps producing, because a power must not punish its own repetition by arithmetic. **Divine Intensity & Duration Foundation v1** then gave both migrated powers a magnitude and a lifetime: the player chooses how strongly and for how long, intensity and duration stay separate questions, and a standing order re-enters the ordinary pipeline every year it runs rather than becoming a background modifier. Migrating any further power, designing what its occurrence could MEAN, religion in any form, world generation itself, and the later history systems (myth, decay, competing accounts) must not be built until the user explicitly asks.
 7. The player-facing interface shows a mortal's perspective; Developer Mode shows the machine. Never merge the two. See "Interface rules".
 
 8. Humans are the current seeded actors and test fixtures, not Worldsim's protagonist species. The world under God's influence is the enduring subject. Future-facing architecture must describe entities by capabilities — perception, knowledge, interpretation, belief, action, ecological response and social organisation — rather than hardcode `human` as an unstated requirement. Additional species, races and simultaneous leading actors remain later roadmap work. The player remains the only god-level actor.
@@ -25,7 +25,7 @@ move additional races or Create Life ahead of Section 41's order.
 ## Project reference
 
 - Repository: `kangyl1/worldsim`
-- Current important commit: `4e8fe9b001ba465cea74086e75f5f904d2b63889` — `Migrate Bless Harvest to the shared pipeline sandbox`, the second power to leave the legacy road
+- Current important commit: `83f9a2a` — `Add divine intensity and persistent interventions`, the milestone that gave the player magnitude and duration as well as target
 
 The mortal causal chain, one commit per layer, oldest first:
 
@@ -48,6 +48,7 @@ The mortal causal chain, one commit per layer, oldest first:
 - `ede5410f3af1734d4b06568e39e11a88922edd31` — `Add Situational Choices and Theatrical Feedback v1` (the player can finally see what the simulation had been doing all along)
 - `ebceffd2a2a9ecd9c9eff4819f8637c74ac8765b` — `Add Divine Sandbox and Cumulative Consequences Foundation v1` (the god applies a force, and the world lives with the result)
 - `4e8fe9b001ba465cea74086e75f5f904d2b63889` — `Migrate Bless Harvest to the shared pipeline sandbox` (a second force, accumulating differently, punishing nobody)
+- `83f9a2a` — `Add divine intensity and persistent interventions` (how hard, and for how long, became two separate questions)
 
 - Local project path: `/Users/jamienfam/Documents/ChatGPT/worldsim`
 - Tested Godot version: `4.7.1`
@@ -86,12 +87,13 @@ The current foundation includes:
 - Situational Choices & Theatrical Feedback v1: deterministic templates turn existing records into at most three player-facing developments a year, in three voices, with every line grounded in state the simulation actually holds
 - Divine Sandbox & Cumulative Consequences Foundation v1: explicit divine targeting, one accumulating environmental pressure, and the same power reading as help, waste or catastrophe depending on the ground
 - Bless Harvest — Shared-Pipeline Sandbox v1: a second migrated power with its own accumulating condition, whose sustained state is abundance rather than ruin, and whose meanings a cautious observer can decline for a lifetime
+- Divine Intensity & Duration Foundation v1: four qualitative intensity levels converted by each power itself, per-power duration modes declared in the registry, and standing orders that re-enter the ordinary pipeline every year they run
 - knowledge generation from existing events, outcome-aware and refreshing stable ids
 - a world map interface with clickable settlements and crisis markers
 - world -> settlement -> person navigation in one reusable panel
 - in-game Developer Mode (DEV button, F1 secondary) exposing raw simulation values, read-only
 - a centralised presentation layer turning numbers into qualitative labels
-- deterministic tests across twenty-three suites
+- deterministic tests across twenty-four suites
 - a 72-turn regression suite
 
 Current core source files:
@@ -143,6 +145,7 @@ Test suites, all deterministic:
 | `tests/feedback_test.gd` | the player is told the truth, theatrically, boundedly, and presentation changes nothing |
 | `tests/sandbox_test.gd` | explicit targeting, accumulating water, help to catastrophe, and nothing protecting the player |
 | `tests/blessing_test.gd` | the second migration, persistent abundance, no built-in punishment, and actor-neutral rules |
+| `tests/intensity_test.gd` | magnitude and duration as separate dimensions, standing orders through the real pipeline, and stopping that reverses nothing |
 
 Do not assume this summary is exhaustive or newer than the code. Inspect the repository first, and use GitHub as the source of truth if anything conflicts.
 
@@ -159,13 +162,11 @@ objective half: history is SELECTED and CAUSALLY LINKED. What remains unbuilt is
 everything after that — myth, competing accounts, cultural memory and gradual
 forgetting.
 
-The single best next implementation focus is **Bless Harvest — Shared-Pipeline
-Sandbox v1**, continuing roadmap item 12. Its approved boundary is explicit
-settlement targeting, free repeatability subject only to the existing Divine
-Power economy, migration to the shared causal pipeline, and an objective
-agricultural abundance / extraordinary-yield condition. The migration removes
-direct faith, follower, reputation and predetermined-meaning writes from the
-power. Exact social and ecological reactions remain deferred.
+**Bless Harvest — Shared-Pipeline Sandbox v1 is built**, completing the second
+migration of roadmap item 12, and **Divine Intensity & Duration Foundation v1**
+followed it: the two migrated powers now take a magnitude and a duration as well
+as a target. The next implementation focus has not been chosen — that is the
+user's decision, and nothing here schedules one.
 
 **The Autonomous Story Test (GDD section 42) now passes**, on all ten of its
 conditions, asserted by `tests/chronicle_test.gd`.
@@ -856,6 +857,70 @@ As built:
   harvest_yield now has designed meanings"). Expectations were updated, never
   assertions: `mortal_speech` is now the undesigned-topic example and the shared
   set is `["bless_harvest", "send_rain"]`
+
+Divine Intensity & Duration Foundation v1 constraints, settled with the user and
+to be preserved:
+
+- the player's question is now **WHAT? -> WHERE? -> HOW STRONGLY? -> HOW LONG?**
+  The player chooses the force, its magnitude and its duration; **the world
+  decides the outcome.** Nothing about the outcome is declared by the act
+- **intensity and duration are separate dimensions and must never be
+  collapsed.** A gentle act sustained twenty years and an overwhelming act done
+  once are different acts with different histories, and one number cannot say
+  both. A test asserts each varies independently of the other
+- **intensity is qualitative — four levels, never a 0-100 slider.** `gentle`,
+  `normal`, `strong`, `overwhelming`, declared once in
+  `divine_action_rules.gd`. A numeric intensity control would ask the player to
+  tune a value, which is the opposite of deciding how forcefully to act
+- **each power converts intensity itself, and there is no universal
+  multiplier.** `RAIN_WATER_BY_INTENSITY` (10/22/35/50) and
+  `BLESSING_ABUNDANCE_BY_INTENSITY` (12/30/45/62) are the power's own tables:
+  what "strong" means is a question about the force, not about divinity in
+  general. A shared multiplier would make every future power scale like rain.
+  Prototype tuning, not final balance
+- **duration is a per-power capability declared in the registry**, beside
+  `pipeline` and `occurrence`. Modes are `once`, `sustained` (a stated number of
+  years) and `until_stopped`; `modes_for()` answers what a power supports, and a
+  future power that can only ever happen once — a Smite, say — says so in one
+  line. An unregistered or unsupported mode falls back to `once`
+- **a malformed duration is REFUSED, not clamped.** `is_valid_duration()` /
+  `duration_error()` reject a sustained order outside
+  `MIN_SUSTAINED_YEARS`..`MAX_SUSTAINED_YEARS` (1..10), and the check runs in
+  `resolve_action()` **before Divine Power is spent or any state is touched**,
+  so a refused order costs nothing, rains nothing, records nothing and does not
+  consume the year. Silently reshaping a 9999-year order into a ten-year one
+  would mean the player asked for one thing and the world did another. Intensity
+  and mode still fall back rather than refuse, deliberately — that is backward
+  compatibility for callers that name neither
+- **a standing order is not a special case.** `tick_interventions()` runs each
+  year through `apply_divine_effect()`, the same path the player's own act
+  takes: same effect, same consequence, same chance for a mortal to perceive it
+  and reach their own conclusion. It is a repeated act, never a background
+  modifier that skips the pipeline
+- **stopping ends the applications and reverses nothing.** What the intervention
+  already caused is part of the world. The headline verification: **gentle rain
+  (+10) left running twenty years floods Westfield**, because +10 outpaces the
+  -6 yearly drift; stopping halts the applications, leaves the flood, and the
+  ground drains at the world's own pace. Nothing predetermined that outcome and
+  nothing undoes it
+- **cost is charged once, at the start** — the user's decision. Charging per
+  year would consume the whole divine income on a single order
+- **a standing order does not satisfy `action_taken`** — also the user's
+  decision. The player still chooses what to do each year while it runs
+- re-ordering the same power on the same target **replaces** the standing order
+  rather than stacking a second one; `world_state.record_intervention()` keys on
+  `intervention_id(action_id, target_id)`. One-shot acts still stack freely, and
+  several different interventions may run at once
+- `tick_interventions()` is guarded by `last_applied_year >= state.year` so an
+  order cannot apply twice in one year. **The guard did not bite under mutation**
+  and that is reported honestly: it is defensive against a future tick
+  reordering, because `tick_interventions()` runs only inside `advance_year()`
+  and cannot fire in the turn the order is given. A genuine double application
+  inserted into `resolve_action()` IS caught by the timing test
+- the interface builds the intensity and mode rows **programmatically in
+  `Main.gd`**, so `Main.tscn` stays untouched by this milestone
+- **no Smite and no Divine Voice design is included or implied**, and the
+  Chronicle sparsity guardrail is unchanged at two entries a year
 
 **Known limitation.** The LEGACY feedback horizon of GDD Section 97 is not
 built. Nothing models an event's later reputation — the Chronicle has

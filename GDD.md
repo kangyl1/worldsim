@@ -4067,6 +4067,60 @@ This section is future direction. It does not add Divine Tokens, prayer
 aggregation, population search, Create Life, or Apostles to the current
 implementation roadmap. Section 41 remains authoritative.
 
+### Built — intensity and duration
+
+Everything above remains future direction. This subsection records the one part
+of the divine action economy that is now IMPLEMENTED, so later design does not
+re-open it: **Divine Intensity & Duration Foundation v1**.
+
+The player's question was WHAT and WHERE. It is now:
+
+> **WHAT? -> WHERE? -> HOW STRONGLY? -> HOW LONG?**
+
+The player chooses the force, its magnitude, and its duration. **The world
+decides the outcome.**
+
+**Intensity and duration are separate dimensions and must never be collapsed.**
+A gentle act sustained for twenty years and an overwhelming act done once are
+different acts with different histories, and one number cannot express both.
+
+**Intensity is qualitative — four levels, never a slider.** `gentle`, `normal`,
+`strong`, `overwhelming`. A raw 0-100 intensity control would ask the player to
+tune a number, which is the opposite of choosing how forcefully to act.
+
+**Each power converts intensity itself.** There is no universal divine
+multiplier: rain reads the levels as water and blessing reads them as abundance,
+because what "strong" means is a question about the force, not about divinity.
+
+**Duration is a per-power capability, declared in the registry** beside
+`pipeline` and `occurrence`. The modes are `once`, `sustained` (a stated number
+of years) and `until_stopped`. A power that can only ever happen once says so in
+one line, and nothing else in the simulation needs to know.
+
+**A malformed duration is refused, never silently corrected.** An order outside
+the permitted range is rejected before any Divine Power is spent or any state is
+touched. Quietly turning a 9999-year order into a ten-year one would mean the
+player asked for one thing and the world did another.
+
+**A standing order is not a special case.** Every year it runs, it travels the
+ordinary divine pipeline: the same effect, the same consequence, the same chance
+for a mortal to perceive it and reach their own conclusion. It is a repeated
+act, not a background modifier.
+
+**Stopping ends the applications and reverses nothing.** What the intervention
+already caused is part of the world's history. Gentle rain left running long
+enough floods a settlement, and stopping it leaves the flood to drain at the
+world's own pace — nothing predetermined that outcome, and nothing undoes it.
+
+**Cost is charged once, at the start**, and a standing order does not consume
+the player's choice in later years. The player still decides what to do each
+year while it runs.
+
+Re-ordering the same power on the same target REPLACES the standing order rather
+than stacking a second one; one-shot acts still stack freely. No Smite and no
+Divine Voice design is implied or included, and the Chronicle sparsity guardrail
+is unchanged.
+
 ---
 
 ## 99. Presentation Extension — Fake Phone Shell + Divine Control Interface

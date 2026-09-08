@@ -31,6 +31,40 @@ extends RefCounted
 const PIPELINE_SHARED := "shared"
 const PIPELINE_LEGACY := "legacy"
 
+# HOW STRONGLY. The shared vocabulary, and only the vocabulary — what each level
+# actually DOES is the power's own business, converted in its resolver. A shared
+# `effect * intensity` multiplier would make every power behave alike, which is
+# the opposite of the point: rain converts intensity into water, a blessing into
+# abundance, and a future Smite would convert it into destructive force while a
+# future Divine Voice might convert it into reach rather than damage.
+#
+# Four named levels, never a raw number in front of the player. The player
+# thinks in divine force; Developer Mode shows the arithmetic.
+const INTENSITY_GENTLE := "gentle"
+const INTENSITY_NORMAL := "normal"
+const INTENSITY_STRONG := "strong"
+const INTENSITY_OVERWHELMING := "overwhelming"
+const INTENSITIES := [
+	INTENSITY_GENTLE, INTENSITY_NORMAL, INTENSITY_STRONG, INTENSITY_OVERWHELMING
+]
+# What an act is when nobody said otherwise. Existing callers — and every test
+# written before this milestone — keep their behaviour through this.
+const DEFAULT_INTENSITY := INTENSITY_NORMAL
+
+# HOW LONG. Separate from intensity on purpose: gentle rain forever and
+# overwhelming rain once are different histories, and collapsing them into one
+# "power" number would lose that.
+const MODE_ONCE := "once"
+const MODE_SUSTAINED := "sustained"
+const MODE_UNTIL_STOPPED := "until_stopped"
+const MODES := [MODE_ONCE, MODE_SUSTAINED, MODE_UNTIL_STOPPED]
+const DEFAULT_MODE := MODE_ONCE
+
+# How long a finite `sustained` order may run. Small on purpose: indefinite
+# intervention is what `until_stopped` is for.
+const MIN_SUSTAINED_YEARS := 1
+const MAX_SUSTAINED_YEARS := 10
+
 # THE REGISTRATION SURFACE. Migrating a power is: flip its `pipeline` to
 # PIPELINE_SHARED, make sure its objective effect writes no belief or faith, and
 # optionally design interpretation candidates for its topic later.
@@ -52,6 +86,7 @@ const PIPELINE_LEGACY := "legacy"
 const DIVINE_ACTIONS := {
 	"send_rain": {
 		"pipeline": PIPELINE_SHARED,
+		"modes": [MODE_ONCE, MODE_SUSTAINED, MODE_UNTIL_STOPPED],
 		"occurrence": {
 			"topic": "weather_rain",
 			"claim": "Rain fell on %s",
@@ -61,6 +96,7 @@ const DIVINE_ACTIONS := {
 	},
 	"bless_harvest": {
 		"pipeline": PIPELINE_SHARED,
+		"modes": [MODE_ONCE, MODE_SUSTAINED, MODE_UNTIL_STOPPED],
 		"occurrence": {
 			"topic": "harvest_yield",
 			"claim": "%s's fields yielded more than their soil should allow",
@@ -104,6 +140,56 @@ func register(action_id: String, entry: Dictionary) -> void:
 	if action_id.is_empty():
 		return
 	actions[action_id] = entry.duplicate(true)
+
+
+# Which durations this power supports. **Not every power takes every mode**, and
+# that is the point of asking the registry rather than assuming: a future Smite
+# would list `once` alone, because a sustained smiting is a different design
+# question nobody has answered. A power that lists nothing supports `once`.
+func modes_for(action_id: String) -> Array[String]:
+	var entry: Dictionary = actions.get(action_id, {})
+	var declared: Array = entry.get("modes", [MODE_ONCE])
+	var supported: Array[String] = []
+	for mode_value in declared:
+		supported.append(str(mode_value))
+	return supported
+
+
+func supports_mode(action_id: String, mode: String) -> bool:
+	return mode in modes_for(action_id)
+
+
+func is_persistent_mode(mode: String) -> bool:
+	return mode == MODE_SUSTAINED or mode == MODE_UNTIL_STOPPED
+
+
+# Anything unrecognised falls back to the default rather than failing, so a
+# stale interface selection cannot strand the player.
+func normalise_intensity(intensity: String) -> String:
+	return intensity if intensity in INTENSITIES else DEFAULT_INTENSITY
+
+
+func normalise_mode(action_id: String, mode: String) -> String:
+	return mode if supports_mode(action_id, mode) else DEFAULT_MODE
+
+
+# A finite order must say how long it runs, in range. REJECTED rather than
+# clamped: silently turning a 9999-year order into a 10-year one means the
+# player asked for one thing and the world quietly did another, and a divine
+# sandbox should never do that. `once` and `until_stopped` carry no duration and
+# ignore the field.
+func is_valid_duration(mode: String, duration_years: int) -> bool:
+	if mode != MODE_SUSTAINED:
+		return true
+	return duration_years >= MIN_SUSTAINED_YEARS and duration_years <= MAX_SUSTAINED_YEARS
+
+
+func duration_error(mode: String, duration_years: int) -> String:
+	if is_valid_duration(mode, duration_years):
+		return ""
+	return "A sustained act must run between %d and %d years; %d was asked for." % [
+		MIN_SUSTAINED_YEARS, MAX_SUSTAINED_YEARS, duration_years
+	]
 
 
 func is_divine_action(action_id: String) -> bool:

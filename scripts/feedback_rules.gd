@@ -548,6 +548,26 @@ func divine_feedback(state: WorldState, result: Dictionary) -> Dictionary:
 			state.location_name(location_id),
 			_band_label(str(change["field"]), int(change["after"])).to_lower()
 		])
+	# A standing order announces itself once, when it is given. What it does in
+	# later years is told by the world crossing thresholds, not by repeating
+	# this headline every single year.
+	var standing := state.get_intervention(
+		state.intervention_id(str(record["action_type"]), location_id)
+	)
+	if not standing.is_empty() and bool(standing["active"]) \
+		and int(standing["started_year"]) == int(record["year"]):
+		var duration_line := "It will continue until you command otherwise."
+		if str(standing["mode"]) == DivineActionRules.MODE_SUSTAINED:
+			duration_line = "It will continue for %d more year(s)." % int(standing["remaining_years"])
+		lines.append(duration_line)
+		return {
+			"headline": "YOU OPEN THE HEAVENS" if str(record["action_type"]) == "send_rain"
+				else "YOU BLESS THE FIELDS OF %s" % state.location_name(location_id).to_upper(),
+			"body": str(record["result"]),
+			"changes": lines,
+			"pipeline": str(record["pipeline"]),
+			"water_state": state.water_state(location_id)
+		}
 	# The same power, worded by what it has come to. The escalation is read from
 	# the ground rather than from a counter: a first rain on dry soil and a
 	# fourth on standing water are the same act and are not the same event.

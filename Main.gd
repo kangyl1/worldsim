@@ -8,6 +8,7 @@ const ACTION_ROW_WIDTH := 34
 const PERSON_META_PREFIX := "person:"
 const DEV_TAB_META := "dev_tab:"
 const DEV_PERSON_META := "dev_person:"
+const STOP_META := "stop_intervention:"
 const DEV_SECTIONS := ["world", "locations", "locality", "people", "perceptions", "knowledge", "intents", "actions", "executions", "divine", "consequences", "interpretations", "mortal_beliefs", "chronicle", "feedback", "belief", "history"]
 const DEV_LIST_LIMIT := 24
 const BACK_META := "back"
@@ -75,6 +76,11 @@ var selected_location_id: String = ""
 # state belongs — `WorldState` never learns what the player has been shown.
 var last_divine_feedback: Dictionary = {}
 var last_developments: Array[Dictionary] = []
+# HOW STRONGLY and HOW LONG the next act will be given. Interface state, held in
+# the interface: `WorldState` never learns what the player has selected.
+var selected_intensity: String = DivineActionRules.DEFAULT_INTENSITY
+var selected_mode: String = DivineActionRules.DEFAULT_MODE
+var selected_duration_years: int = 3
 var hovered_action_index: int = -1
 var hovered_person_id: String = ""
 var selected_person_id: String = ""
@@ -93,6 +99,9 @@ var developer_person_id: String = ""
 @onready var event_description: Label = %EventDescription
 @onready var result_text: RichTextLabel = %ResultText
 @onready var action_hint: Label = %ActionHint
+var intensity_row: HBoxContainer
+var mode_row: HBoxContainer
+var interventions_text: RichTextLabel
 @onready var world_map: WorldMapView = %WorldMap
 @onready var location_text: RichTextLabel = %LocationText
 @onready var history_text: RichTextLabel = %HistoryText
@@ -119,6 +128,10 @@ func _ready() -> void:
 	var world_locations := simulation.state.get_location_ids()
 	if selected_location_id.is_empty() and not world_locations.is_empty():
 		selected_location_id = world_locations[0]
+	# Intensity, duration and the standing-order list, built in code. The scene
+	# file is left alone deliberately: this is a prototype control surface, not
+	# a layout redesign.
+	_build_divine_controls()
 	var map_locations := {}
 	for location_id: String in simulation.state.get_location_ids():
 		var location := simulation.state.get_location(location_id)
@@ -160,7 +173,10 @@ func choose_action(index: int) -> void:
 	# The settlement the player has selected on the map is where the act lands.
 	# No power is hidden, no target is chosen for them, and nothing redirects
 	# the act to whichever place the simulation thinks needs it most.
-	var result := simulation.resolve_action(ACTION_KEYS[index], selected_location_id)
+	var result := simulation.resolve_action(
+		ACTION_KEYS[index], selected_location_id,
+		selected_intensity, selected_mode, selected_duration_years
+	)
 	if not result["ok"]:
 		result_text.text = str(result["message"])
 		return
@@ -195,6 +211,7 @@ func _render() -> void:
 	result_text.text = _feedback_text(state)
 
 	_render_actions()
+	_render_divine_controls()
 	_render_map()
 	_render_location()
 	_render_history()
@@ -249,6 +266,89 @@ func _feedback_text(state: WorldState) -> String:
 		return "[color=#9ca5a4]%s[/color]\n\n[color=#68757c]No major development.[/color]" \
 			% state.last_result
 	return "\n\n".join(blocks)
+
+
+# GENTLE | NORMAL | STRONG | OVERWHELMING, and ONCE | SUSTAINED | UNTIL STOPPED.
+#
+# Named levels only. The player never sees "intensity 63": they choose a degree
+# of divine force, and the arithmetic behind it stays in Developer Mode.
+func _build_divine_controls() -> void:
+	var column := action_hint.get_parent()
+	if column == null:
+		return
+	intensity_row = HBoxContainer.new()
+	for level: String in DivineActionRules.INTENSITIES:
+		var button := Button.new()
+		button.text = level.to_upper()
+		button.toggle_mode = true
+		button.pressed.connect(_on_intensity_chosen.bind(level))
+		intensity_row.add_child(button)
+	column.add_child(intensity_row)
+
+	mode_row = HBoxContainer.new()
+	for mode: String in DivineActionRules.MODES:
+		var button := Button.new()
+		button.text = mode.replace("_", " ").to_upper()
+		button.toggle_mode = true
+		button.pressed.connect(_on_mode_chosen.bind(mode))
+		mode_row.add_child(button)
+	column.add_child(mode_row)
+
+	# Ongoing divine effects must never become invisible background automation,
+	# so what the god has standing orders for is listed with a way to revoke it.
+	interventions_text = RichTextLabel.new()
+	interventions_text.bbcode_enabled = true
+	interventions_text.fit_content = true
+	interventions_text.custom_minimum_size = Vector2(0, 64)
+	interventions_text.meta_clicked.connect(_on_intervention_meta)
+	column.add_child(interventions_text)
+
+
+func _on_intensity_chosen(level: String) -> void:
+	selected_intensity = level
+	_render()
+
+
+func _on_mode_chosen(mode: String) -> void:
+	selected_mode = mode
+	_render()
+
+
+func _on_intervention_meta(meta: Variant) -> void:
+	var value := str(meta)
+	if not value.begins_with(STOP_META):
+		return
+	simulation.stop_intervention(value.substr(STOP_META.length()))
+	_render()
+
+
+func _render_divine_controls() -> void:
+	if intensity_row == null:
+		return
+	for index in range(intensity_row.get_child_count()):
+		var button := intensity_row.get_child(index) as Button
+		button.button_pressed = str(DivineActionRules.INTENSITIES[index]) == selected_intensity
+	for index in range(mode_row.get_child_count()):
+		var button := mode_row.get_child(index) as Button
+		button.button_pressed = str(DivineActionRules.MODES[index]) == selected_mode
+
+	var state := simulation.state
+	var standing: Array[Dictionary] = state.active_intervention_list()
+	if standing.is_empty():
+		interventions_text.text = "[color=#68757c]No standing divine orders.[/color]"
+		return
+	var lines: Array[String] = ["[color=#68757c]ACTIVE DIVINE INTERVENTIONS[/color]"]
+	for record: Dictionary in standing:
+		var remaining := "until stopped"
+		if str(record["mode"]) == DivineActionRules.MODE_SUSTAINED:
+			remaining = "%d year(s) remaining" % int(record["remaining_years"])
+		lines.append("[color=#cfd6d8]%s — %s %s, %s[/color]  [url=%s%s][color=#e8be63][STOP][/color][/url]" % [
+			state.location_name(str(record["target_id"])),
+			str(record["intensity"]).capitalize(),
+			simulation.get_action(str(record["action_id"]))["title"].to_lower(),
+			remaining, STOP_META, str(record["id"])
+		])
+	interventions_text.text = "\n".join(lines)
 
 
 func _render_actions() -> void:
@@ -1198,6 +1298,26 @@ func _developer_divine_lines() -> Array[String]:
 	lines.append(_dev_field("  parameters", str(latest["parameters"])))
 	# Where the PLAYER aimed, which need not be where the year's event landed.
 	lines.append(_dev_field("  player target", _or_none(state.last_divine_target_id)))
+	lines.append(_dev_field("  intensity", str(latest["parameters"].get("intensity", "-"))))
+	lines.append("")
+	# The god's standing orders, with the arithmetic the player never sees.
+	lines.append("[color=#76c8d5]STANDING ORDERS[/color]")
+	if state.active_intervention_list().is_empty():
+		lines.append("[color=#73627f]  none[/color]")
+	for record: Dictionary in state.active_interventions:
+		var force := "-"
+		if str(record["action_id"]) == "send_rain":
+			force = str(WorldSimulation.RAIN_WATER_BY_INTENSITY.get(str(record["intensity"]), "-"))
+		elif str(record["action_id"]) == "bless_harvest":
+			force = str(WorldSimulation.BLESSING_ABUNDANCE_BY_INTENSITY.get(str(record["intensity"]), "-"))
+		lines.append("[color=%s]  %-34s %-13s %-14s force %-4s started %d  last %d  left %s[/color]" % [
+			"#cfd6d8" if bool(record["active"]) else "#68757c",
+			str(record["id"]), str(record["intensity"]), str(record["mode"]), force,
+			int(record["started_year"]), int(record["last_applied_year"]),
+			"-" if str(record["mode"]) == DivineActionRules.MODE_UNTIL_STOPPED
+				else str(record["remaining_years"])
+		])
+	lines.append(_dev_field("  applied this year", state.last_intervention_events.size()))
 	lines.append(_dev_field("  event location", _or_none(state.current_event_location_id)))
 	lines.append("")
 	# The trace, as pointers rather than as a merged record.

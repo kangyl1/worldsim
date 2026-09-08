@@ -164,6 +164,16 @@ var feedback_rules := FeedbackRules.new()
 # raining on one place will eventually flood it — roughly four consecutive
 # years from the baseline — and a player who stops will see it drain back over
 # about a decade.
+# HOW MUCH WATER each level of divine force puts into the ground. The shared
+# vocabulary lives in the registry; this is rain's own reading of it, and no
+# other power is obliged to scale the same way. `normal` is the value Send Rain
+# has always used, so every existing caller and test keeps its behaviour.
+const RAIN_WATER_BY_INTENSITY := {
+	DivineActionRules.INTENSITY_GENTLE: 10,
+	DivineActionRules.INTENSITY_NORMAL: 22,
+	DivineActionRules.INTENSITY_STRONG: 35,
+	DivineActionRules.INTENSITY_OVERWHELMING: 50
+}
 const RAIN_WATER_GAIN := 22
 const WATER_DRIFT_PER_YEAR := 6
 
@@ -184,6 +194,14 @@ const RAIN_OUTCOMES := {
 # What one blessing adds, and how fast abundance fades when nobody blesses.
 # Prototype tuning: roughly three consecutive blessings to reach a sustained
 # extraordinary state from ordinary, and about a decade of silence to return.
+# And abundance's own reading of the same four words. Deliberately a different
+# curve from rain's: these are two forces, not one force with two names.
+const BLESSING_ABUNDANCE_BY_INTENSITY := {
+	DivineActionRules.INTENSITY_GENTLE: 12,
+	DivineActionRules.INTENSITY_NORMAL: 30,
+	DivineActionRules.INTENSITY_STRONG: 45,
+	DivineActionRules.INTENSITY_OVERWHELMING: 62
+}
 const BLESSING_ABUNDANCE_GAIN := 30
 const ABUNDANCE_DRIFT_PER_YEAR := 7
 
@@ -282,7 +300,23 @@ func can_resolve(action_id: String) -> bool:
 # allowed to: divine power is a force applied where the god chooses, not a
 # response the simulation approves of. Nothing here consults whether the target
 # needs it, and nothing picks a better one.
-func resolve_action(action_id: String, target_location_id: String = "") -> Dictionary:
+# `intensity` is how hard, `mode` is how long, and they are independent: gentle
+# rain forever and overwhelming rain once are different orders with different
+# histories. Both default so that every caller written before this milestone
+# keeps its exact behaviour — a bare `resolve_action("send_rain", "westfield")`
+# is still one normal rain.
+#
+# A persistent mode costs its power ONCE, when the order is given. The world
+# then carries it out yearly for free. Charging per year would spend the whole
+# of divine income on a single standing order and lock the player out of
+# everything else, which would make persistence a trap rather than a tool.
+func resolve_action(
+	action_id: String,
+	target_location_id: String = "",
+	intensity: String = DivineActionRules.DEFAULT_INTENSITY,
+	mode: String = DivineActionRules.DEFAULT_MODE,
+	duration_years: int = 0
+) -> Dictionary:
 	if state.action_taken:
 		return {"ok": false, "message": "The world is already interpreting your choice."}
 	if not actions.has(action_id):
@@ -292,6 +326,15 @@ func resolve_action(action_id: String, target_location_id: String = "") -> Dicti
 	var cost := int(action["cost"])
 	if state.divine_power < cost:
 		return {"ok": false, "message": "Insufficient Divine Power. Choose another response."}
+
+	var chosen_intensity := divine_action_rules.normalise_intensity(intensity)
+	var chosen_mode := divine_action_rules.normalise_mode(action_id, mode)
+	# Checked BEFORE anything is spent or changed, so a refused order costs the
+	# player nothing and leaves the turn untouched. An out-of-range duration is
+	# refused outright rather than quietly reshaped into a legal one.
+	var duration_problem := divine_action_rules.duration_error(chosen_mode, duration_years)
+	if not duration_problem.is_empty():
+		return {"ok": false, "message": duration_problem}
 
 	# A fresh turn: last turn's crossings are no longer news.
 	state.last_water_events = []
@@ -307,42 +350,17 @@ func resolve_action(action_id: String, target_location_id: String = "") -> Dicti
 	if location_id.is_empty() or not state.locations.has(location_id):
 		location_id = state.current_event_location_id
 	state.last_divine_target_id = location_id
-	var before := _settlement_snapshot(location_id)
-	var immediate_result := _apply_immediate_action(action_id, location_id)
-	# The same consequence pipeline mortals use. What the act changed is already
-	# in the world; this records that it happened and gives mortals something to
-	# notice. No motive is attached: "rain fell" is the fact, and what it means
-	# is theirs to decide.
-	var divine_consequence := consequence_rules.plan_divine(
-		state, action_id, location_id, _settlement_changes(location_id, before),
-		divine_action_rules.occurrence_for(action_id)
-	)
-	# Read before applying: apply() hands the fact to perception and erases it
-	# from the record, so the claim has to be taken while it is still there.
-	var planned_fact: Dictionary = divine_consequence.get("pending_fact", {})
-	var occurrence_claim := str(planned_fact.get("claim", ""))
-	var applied_consequence := state.record_consequence(
-		consequence_rules.apply(state, divine_consequence)
-	)
-	# What the god did, kept apart from what it changed and from what anyone
-	# will make of it. Recorded for BOTH paths: the record is about the act.
-	var divine_record := state.record_divine_action({
-		"id": "divine_%04d_%s_%s" % [state.year, action_id, location_id],
-		"year": state.year,
-		"action_type": action_id,
-		"target_id": location_id,
-		"subject_id": state.current_event_id,
-		"parameters": {"event_id": state.current_event_id},
-		"power_cost": cost,
-		"result": immediate_result,
-		"consequence_id": str(applied_consequence.get("id", "")),
-		# Which road this power takes. The whole point of the flag is that both
-		# roads must never run for one act.
-		"pipeline": divine_action_rules.pipeline_for(action_id),
-		# What mortals were offered, if anything. Named here so the record can
-		# point at the rest of the chain without absorbing it.
-		"occurrence_topic": divine_action_rules.topic_for(action_id)
-	})
+	# A standing order is recorded BEFORE its first application, so the
+	# application below is that order's first year rather than a separate act.
+	# Recorded first and applied once: no double application in the year an
+	# order is given.
+	if divine_action_rules.is_persistent_mode(chosen_mode):
+		_open_intervention(action_id, location_id, chosen_intensity, chosen_mode, duration_years)
+	var outcome := apply_divine_effect(action_id, location_id, chosen_intensity, cost)
+	var immediate_result := str(outcome["result"])
+	var occurrence_claim := str(outcome["claim"])
+	var applied_consequence: Dictionary = outcome["consequence"]
+	var divine_record: Dictionary = outcome["record"]
 	state.previous_action_id = action_id
 	state.action_taken = true
 	state.last_result = immediate_result
@@ -443,6 +461,12 @@ func advance_year() -> Dictionary:
 	# without ever writing a consequence record, and a famine nobody recorded is
 	# still a famine.
 	var conditions_before := _settlement_conditions()
+	# Standing divine orders are carried out FIRST, so whatever they change is
+	# already in the world when perception, interpretation and history look at
+	# it later in this same tick. They still cannot reach a want already formed:
+	# intents run below, on the world the orders have just produced, which is
+	# the ordinary one-step-per-year rule and not a shortcut around it.
+	state.last_intervention_events = tick_interventions()
 	state.last_relationship_changes = tick_relationships()
 	state.last_knowledge_shares = tick_knowledge()
 	state.last_intents = tick_intents()
@@ -844,6 +868,150 @@ func _log_beliefs(updates: Array[Dictionary]) -> void:
 		])
 
 
+# One divine effect, all the way through the shared pipeline: change the world,
+# plan the consequence, hand the fact to perception, and file the act.
+#
+# BOTH roads run through here — the player's own act and a standing order's
+# yearly application. A standing order is a reason the god acted, never a way of
+# acting that the pipeline does not see. What it does NOT do is charge power or
+# consume the year's choice; those belong to the player's decision, not to
+# carrying one out.
+func apply_divine_effect(
+	action_id: String,
+	location_id: String,
+	intensity: String = DivineActionRules.DEFAULT_INTENSITY,
+	power_cost: int = 0
+) -> Dictionary:
+	var before := _settlement_snapshot(location_id)
+	var immediate_result := _apply_immediate_action(action_id, location_id, intensity)
+	# The same consequence pipeline mortals use. What the act changed is already
+	# in the world; this records that it happened and gives mortals something to
+	# notice. No motive is attached: "rain fell" is the fact, and what it means
+	# is theirs to decide.
+	var divine_consequence := consequence_rules.plan_divine(
+		state, action_id, location_id, _settlement_changes(location_id, before),
+		divine_action_rules.occurrence_for(action_id)
+	)
+	# Read before applying: apply() hands the fact to perception and erases it
+	# from the record, so the claim has to be taken while it is still there.
+	var planned_fact: Dictionary = divine_consequence.get("pending_fact", {})
+	var occurrence_claim := str(planned_fact.get("claim", ""))
+	var applied_consequence := state.record_consequence(
+		consequence_rules.apply(state, divine_consequence)
+	)
+	# What the god did, kept apart from what it changed and from what anyone
+	# will make of it. Recorded for BOTH pipelines: the record is about the act.
+	var divine_record := state.record_divine_action({
+		"id": "divine_%04d_%s_%s_%d" % [
+			state.year, action_id, location_id, state.divine_action_archive.size()
+		],
+		"year": state.year,
+		"action_type": action_id,
+		"target_id": location_id,
+		"subject_id": state.current_event_id,
+		"parameters": {"event_id": state.current_event_id, "intensity": intensity},
+		"power_cost": power_cost,
+		"result": immediate_result,
+		"consequence_id": str(applied_consequence.get("id", "")),
+		"pipeline": divine_action_rules.pipeline_for(action_id),
+		"occurrence_topic": divine_action_rules.topic_for(action_id)
+	})
+	return {
+		"action_id": action_id,
+		"target_id": location_id,
+		"intensity": intensity,
+		"result": immediate_result,
+		"claim": occurrence_claim,
+		"consequence": applied_consequence,
+		"record": divine_record
+	}
+
+
+# --- Standing divine orders -------------------------------------------------
+
+# Record the order. Its FIRST application is the caller's, immediately after
+# this — so the year an order is given sees exactly one application of it.
+func _open_intervention(
+	action_id: String, location_id: String, intensity: String,
+	mode: String, duration_years: int
+) -> Dictionary:
+	# Already validated by the caller: a malformed duration is refused before
+	# anything reaches here, so the value is used exactly as the player gave it.
+	var years := duration_years if mode == DivineActionRules.MODE_SUSTAINED else 0
+	return state.record_intervention({
+		"action_id": action_id,
+		"target_id": location_id,
+		"intensity": intensity,
+		"mode": mode,
+		# Years still owed AFTER this year's application. `until_stopped` never
+		# counts down and is bounded only by the player revoking it.
+		"remaining_years": maxi(years - 1, 0),
+		"started_year": state.year,
+		"last_applied_year": state.year,
+		"active": true
+	})
+
+
+# Carry out every standing order, once each, for the year now beginning.
+#
+# Each application reads the world AS IT IS NOW. Nothing was precomputed when
+# the order was given: a settlement that has drained since last year takes the
+# rain differently, which is the whole reason a standing order is interesting.
+#
+# Every application produces its own divine action record and its own
+# consequence. A standing order is a reason the god acted, never a way of
+# acting without the pipeline noticing.
+func tick_interventions() -> Array[Dictionary]:
+	var applied: Array[Dictionary] = []
+	for record_value in state.active_intervention_list():
+		var record: Dictionary = record_value
+		# The order was given this year and has already had its first
+		# application. Without this it would fire twice in its opening year.
+		if int(record["last_applied_year"]) >= state.year:
+			continue
+		if str(record["mode"]) == DivineActionRules.MODE_SUSTAINED \
+			and int(record["remaining_years"]) <= 0:
+			record["active"] = false
+			continue
+		var location_id := str(record["target_id"])
+		if not state.locations.has(location_id):
+			record["active"] = false
+			continue
+		var outcome := apply_divine_effect(
+			str(record["action_id"]), location_id, str(record["intensity"])
+		)
+		record["last_applied_year"] = state.year
+		if str(record["mode"]) == DivineActionRules.MODE_SUSTAINED:
+			record["remaining_years"] = maxi(int(record["remaining_years"]) - 1, 0)
+			if int(record["remaining_years"]) <= 0:
+				record["active"] = false
+		outcome["intervention_id"] = str(record["id"])
+		applied.append(outcome)
+	state.last_intervention_events = applied
+	_log_interventions(applied)
+	return applied
+
+
+# Revoke a standing order. Future applications stop; nothing that already
+# happened is undone, and the world recovers only through its own drift.
+func stop_intervention(record_id: String) -> bool:
+	return state.stop_intervention(record_id)
+
+
+func stop_intervention_for(action_id: String, target_id: String) -> bool:
+	return state.stop_intervention(state.intervention_id(action_id, target_id))
+
+
+func _log_interventions(applied: Array[Dictionary]) -> void:
+	if not debug_logging_enabled or applied.is_empty():
+		return
+	print("[INTERVENTIONS %d] %d standing order(s) applied" % [state.year, applied.size()])
+	for outcome: Dictionary in applied:
+		print("  %s -> %s (%s)" % [
+			str(outcome["action_id"]), str(outcome["target_id"]), str(outcome["intensity"])
+		])
+
+
 func _divine_actions_this_year() -> Array[Dictionary]:
 	var found: Array[Dictionary] = []
 	for record: Dictionary in state.divine_action_archive:
@@ -1025,12 +1193,16 @@ func _settlement_changes(location_id: String, before: Dictionary) -> Array:
 	return changes
 
 
-func _apply_immediate_action(action_id: String, location_id: String) -> String:
+func _apply_immediate_action(
+	action_id: String,
+	location_id: String,
+	intensity: String = DivineActionRules.DEFAULT_INTENSITY
+) -> String:
 	match action_id:
 		"send_rain":
-			return _resolve_send_rain(location_id)
+			return _resolve_send_rain(location_id, intensity)
 		"bless_harvest":
-			return _resolve_bless_harvest(location_id)
+			return _resolve_bless_harvest(location_id, intensity)
 		"speak_mortal":
 			return _resolve_speak_mortal()
 		"do_nothing":
@@ -1058,12 +1230,16 @@ func _apply_immediate_action(action_id: String, location_id: String) -> String:
 # thing every time — it puts water in the ground — and what that WAS depends on
 # what the ground was already holding. The god is not prevented from ruining a
 # harvest by watering a field that was already drowning.
-func _resolve_send_rain(location_id: String) -> String:
+func _resolve_send_rain(
+	location_id: String, intensity: String = DivineActionRules.DEFAULT_INTENSITY
+) -> String:
 	var place := state.location_name(location_id)
 	var before_state := state.water_state(location_id)
 	state.intervention_counts["rain_during_drought"] += int(state.current_event_id == "drought")
 
-	state.change_water(location_id, RAIN_WATER_GAIN)
+	state.change_water(location_id, int(RAIN_WATER_BY_INTENSITY.get(
+		intensity, RAIN_WATER_GAIN
+	)))
 	var after_state := state.water_state(location_id)
 
 	# The harvest answers to what the ground was like when the rain arrived.
@@ -1151,12 +1327,16 @@ func _process_water_drift() -> void:
 # Consequence: faith and followers no longer respond to blessings at all, the
 # same deliberate gap Send Rain left. It closes when the remaining powers
 # migrate and faith is redesigned to accept per-mortal belief.
-func _resolve_bless_harvest(location_id: String) -> String:
+func _resolve_bless_harvest(
+	location_id: String, intensity: String = DivineActionRules.DEFAULT_INTENSITY
+) -> String:
 	var place := state.location_name(location_id)
 	var before_state := state.abundance_state(location_id)
 	state.intervention_counts["blessed_harvest"] += 1
 
-	state.change_abundance(location_id, BLESSING_ABUNDANCE_GAIN)
+	state.change_abundance(location_id, int(BLESSING_ABUNDANCE_BY_INTENSITY.get(
+		intensity, BLESSING_ABUNDANCE_GAIN
+	)))
 	var after_state := state.abundance_state(location_id)
 
 	var outcome: Dictionary = HARVEST_OUTCOMES.get(after_state, {})

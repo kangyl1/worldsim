@@ -162,6 +162,20 @@ var last_water_events: Array[Dictionary] = []
 # Abundance thresholds crossed since the player's turn began. Current turn only,
 # for the same reason as water: drift moves the level within the tick.
 var last_abundance_events: Array[Dictionary] = []
+
+# Standing divine orders: what the god has told the world to keep doing.
+#
+# Distinct from `divine_action_archive`, and the distinction is load-bearing.
+# One entry here is a COMMAND ("rain on Westfield until I say otherwise"); every
+# year it fires it produces its own divine action record and its own
+# consequence, exactly as a one-shot act does. Nothing skips the pipeline
+# because its source happens to be standing.
+#
+# Interpretation must never read this. It is the player's control panel, not
+# something anybody in the world can see — mortals observe rain, not orders.
+var active_interventions: Array[Dictionary] = []
+# Applications and revocations from the turn just taken, for presentation.
+var last_intervention_events: Array[Dictionary] = []
 var action_taken: bool = false
 var last_result: String = ""
 # The POPULACE's reading of a divine act, owned by DivineReceptionSystem. Not
@@ -1410,3 +1424,57 @@ func get_beliefs_for(holder_id: String) -> Array[Dictionary]:
 func condition_before_turn(location_id: String, band: String) -> int:
 	var bands: Dictionary = conditions_before_turn.get(location_id, {})
 	return int(bands.get(band, -1))
+
+
+# --- Standing divine orders -------------------------------------------------
+
+func intervention_id(action_id: String, target_id: String) -> String:
+	return "intervention_%s_%s" % [action_id, target_id]
+
+
+# One standing order per power per place. Ordering the same power onto the same
+# settlement again REPLACES the order rather than stacking a second schedule:
+# telling the rain to fall harder is a change of instruction, not a second rain.
+# One-shot acts are unaffected and may be repeated freely.
+func record_intervention(entry: Dictionary) -> Dictionary:
+	var record_id := intervention_id(str(entry["action_id"]), str(entry["target_id"]))
+	for index in range(active_interventions.size()):
+		if str(active_interventions[index]["id"]) == record_id:
+			var existing: Dictionary = active_interventions[index]
+			for field: String in [
+				"intensity", "mode", "remaining_years", "last_applied_year", "active"
+			]:
+				existing[field] = entry[field]
+			return existing
+	var stored := entry.duplicate(true)
+	stored["id"] = record_id
+	active_interventions.append(stored)
+	return stored
+
+
+func get_intervention(record_id: String) -> Dictionary:
+	for record: Dictionary in active_interventions:
+		if str(record["id"]) == record_id:
+			return record
+	return {}
+
+
+func active_intervention_list() -> Array[Dictionary]:
+	var found: Array[Dictionary] = []
+	for record: Dictionary in active_interventions:
+		if bool(record["active"]):
+			found.append(record)
+	return found
+
+
+# Revoking stops FUTURE applications and nothing else. What the standing order
+# already did to the world stays done: stopping the rain does not drain a flood,
+# and the settlement recovers through the same drift as everything else.
+func stop_intervention(record_id: String) -> bool:
+	var record := get_intervention(record_id)
+
+	if record.is_empty() or not bool(record["active"]):
+		return false
+	record["active"] = false
+	record["remaining_years"] = 0
+	return true

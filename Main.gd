@@ -1290,6 +1290,38 @@ func _developer_chronicle_lines() -> Array[String]:
 			lines.append(_dev_field("  category %s" % category, str(in_category)))
 	lines.append("[color=#73627f]  region: no region entity exists in the world model yet.[/color]")
 
+	# The same records grouped into readable stories. A VIEW: every episode is
+	# rebuilt from the chronicle above, points at its members by id, and stores
+	# nothing of its own.
+	var episodes: Array = simulation.episode_rules.episodes(state)
+	lines.append("")
+	lines.append(_dev_heading("HISTORICAL EPISODES  ·  %d over %d records" % [
+		episodes.size(), state.chronicle.size()
+	]))
+	if episodes.is_empty():
+		lines.append("[color=#73627f]Nothing has yet run long enough to be a story.[/color]")
+	for episode: Dictionary in _tail(episodes, DEV_LIST_LIMIT):
+		lines.append("[color=#d8c98a]  %s   y%d-%d%s   [%d][/color]" % [
+			str(episode["title"]), int(episode["start_year"]), int(episode["end_year"]),
+			" (open)" if bool(episode["open"]) else "", int(episode["importance"])
+		])
+		lines.append("[color=#cfd6d8]    %s[/color]" % str(episode["summary"]))
+		lines.append(_dev_field("      type", str(episode["episode_type"])))
+		lines.append(_dev_field("      location", _or_none(str(episode["location_id"]))))
+		lines.append(_dev_field("      members", "%d  (%d turning points)" % [
+			(episode["member_record_ids"] as Array).size(),
+			(episode["turning_point_ids"] as Array).size()
+		]))
+		lines.append("[color=#8d989d]      ids  %s[/color]"
+			% ", ".join(episode["member_record_ids"]))
+		if not (episode["caused_by"] as Array).is_empty():
+			lines.append("[color=#76c8d5]      caused_by  %s[/color]"
+				% ", ".join(episode["caused_by"]))
+	for location_id: String in state.get_location_ids():
+		lines.append(_dev_field("  %s still shown one at a time" % location_id, str(
+			simulation.episode_rules.standalone_for_location(state, location_id).size()
+		)))
+
 	# The moments a conviction changed state. Stored apart from the chronicle on
 	# purpose: a private belief is not something that happened in the world, and
 	# these reach only the holder's own Personal Chronicle.

@@ -5692,6 +5692,54 @@ occurrences still happened and the underlying records still exist; the history
 layer decides only how they are PRESENTED. This is a presentation and selection
 question, not a licence to forget.
 
+### Episode Compression — as built
+
+> **Raw Chronicle keeps every objective occurrence. Episode Compression groups
+> related occurrences into player-facing historical episodes.**
+
+> **One episode may summarise many records, but every statement in it must be
+> supported by those records.**
+
+> **Compression may condense truth. It may not manufacture truth.**
+
+An episode is a VIEW, not a record. It names a span of years, points at its
+members by id, and marks which of them were the moments that mattered. It
+stores nothing, copies no summary, and is rebuilt from the chronicle each time
+it is asked for, so there is no second history to fall out of step with the
+first.
+
+Two families in v2:
+
+**Continuing conditions** — one settlement, one band, from the year it went
+wrong to the year it came right. **A genuine recovery closes an episode.** Four
+famines separated by four recoveries stay four famines; the world's own state
+transitions draw the boundaries and no fixed year-gap is invented. A settlement
+that never recovers has one long open episode instead.
+
+**Divine arcs** — from the god's first act at a place until the world has
+finished living with it. Deliberately NOT until the god stops:
+
+> **The action may end before the history it created ends.**
+
+An arc that closed with the last raincloud would leave the flood it caused as
+orphan entries. It closes when the last crisis it opened is lifted.
+
+**A lone closed record is not an episode.** It is an occurrence, and it stays a
+standalone entry rather than being dressed up as a story of one. A lone OPEN
+record is different: a settlement destitute for thirty years with no further
+record is exactly the hardship this layer exists to make legible.
+
+**Importance is not a sum.** It is the strongest thing that happened, nudged by
+duration and by how many real beats there were, both capped. Summing would make
+a long dull episode outrank a short catastrophic one by arithmetic alone.
+
+**An episode is not world significance.** Existing World History rules are
+untouched; being an episode promotes nothing.
+
+Personal Chronicle is deliberately out of scope. Beliefs, interpretations and
+relationship changes have their own curation, and running a second compression
+over them would flatten the one lens that is meant to be dense.
+
 ### Presentation strength follows importance
 
 Not every entry should be written as though the world were ending. Presentation

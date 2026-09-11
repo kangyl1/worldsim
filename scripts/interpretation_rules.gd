@@ -629,6 +629,57 @@ const WORLD_CANDIDATES := {
 			}
 		]
 	},
+	# What a destructive force is TAKEN to have been. The world records that
+	# something struck; nobody is told why, and no reading here says punishment,
+	# wrath or desert, because the simulation holds no such fact.
+	#
+	# The plain reading wins by default, as it does for rain: ruin is what a
+	# witness sees, and deciding nothing mortal could have done it takes either
+	# a disposition toward that conclusion or a prior conviction that something
+	# out there acts.
+	"divine_destruction": {
+		STANCE_WITNESS: [
+			{
+				"id": "destruction_is_ruin",
+				"meaning": "Everything we had here is broken.",
+				"effect": {},
+				"base_score": 54,
+				"factors": [
+					{"kind": "trait", "value": "cautious", "score": 10},
+					{"kind": "confidence_below", "value": UNCERTAIN_CONFIDENCE, "score": -30}
+				]
+			},
+			{
+				"id": "destruction_was_not_mortal",
+				"meaning": "Nothing of this world did that.",
+				"effect": {},
+				"base_score": 36,
+				"factors": [
+					{
+						"kind": "belief_at_least",
+						"value": {
+							"proposition": BeliefRules.DIVINE_INTERVENTION_EXISTS,
+							"confidence": BeliefRules.ESTABLISHED_CONFIDENCE
+						},
+						"score": 22
+					},
+					{"kind": "trait", "value": "gullible", "score": 10},
+					{"kind": "confidence_below", "value": UNCERTAIN_CONFIDENCE, "score": -30}
+				]
+			}
+		],
+		STANCE_DISTANT: [
+			{
+				"id": "elsewhere_was_struck",
+				"meaning": "%s has been struck.",
+				"effect": {},
+				"base_score": 50,
+				"factors": [
+					{"kind": "confidence_below", "value": UNCERTAIN_CONFIDENCE, "score": -30}
+				]
+			}
+		]
+	},
 	"flooding": {
 		STANCE_WITNESS: [
 			{

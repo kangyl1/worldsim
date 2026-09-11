@@ -199,6 +199,29 @@ func _divine_arcs(state: WorldState, claimed: Dictionary) -> Array[Dictionary]:
 		# remain, the world is still living with what the god did, and the
 		# episode is still running even if the god stopped years ago.
 		var unresolved: Dictionary = {}
+		var damaged: Dictionary = {}
+		# A ONE-SHOT act leaves no condition record of its own damage.
+		#
+		# The chronicle compares each year against the world as it stood at the
+		# TOP of that year, which is after the player has already acted. A standing
+		# order's damage therefore shows up as a transition and a single strike's
+		# never does. The act still knows exactly what it moved, because its
+		# consequence records every band it changed and what it changed it to, and
+		# reading that is what lets an arc follow a one-shot act's aftermath at
+		# all. Without it a smite is a one-year story about nothing.
+		for act_value in acts:
+			var act: Dictionary = act_value
+			# chronicle record -> the divine act it points at -> that act's
+			# consequence. The chronicle record's own source id is the ACT's, not
+			# the consequence's, and following the wrong one silently finds nothing.
+			var divine_record: Dictionary = state.get_divine_action(str(act["source_record_id"]))
+			var caused: Dictionary = state.get_consequence(
+				str(divine_record.get("consequence_id", "")))
+			for change_value in caused.get("state_changes", []):
+				var change: Dictionary = change_value
+				if int(change.get("after", 1)) == CRISIS_BAND:
+					unresolved[str(change["field"])] = true
+					damaged[str(change["field"])] = true
 		var end_year := start_year
 		for record: Dictionary in _location_records(state, location_id):
 			if int(record["year"]) < start_year:
@@ -210,6 +233,12 @@ func _divine_arcs(state: WorldState, claimed: Dictionary) -> Array[Dictionary]:
 				continue
 			var still_running := not unresolved.is_empty()
 			var is_act := source == SOURCE_DIVINE
+			# Only the bands the god actually drove into crisis. A famine that
+			# was already running when the strike landed is not the strike's
+			# story, and sweeping every later trouble at the same place into
+			# the arc would be over-compression wearing a god's name.
+			if not is_act and not damaged.has(_band_of(record)):
+				continue
 			if not is_act and not still_running and int(record["year"]) > _last_year(acts):
 				# The world has finished with it, and this is a new trouble.
 				break
@@ -419,6 +448,13 @@ func _divine_summary(
 		]
 	]
 	if troubles == 0:
+		# A single strike leaves no condition record of its own damage, so an
+		# arc can be long and have nothing but the act in it. Saying only that
+		# the god acted would hide the reason the story is still running.
+		if bool(episode["open"]):
+			return "%s %s has not recovered in the %d years since." % [
+				opening, place, maxi(int(episode["end_year"]) - int(episode["start_year"]), 1)
+			]
 		return opening
 	var after := int(episode["end_year"]) - last_act_year
 	if after <= 0:

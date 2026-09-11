@@ -116,7 +116,7 @@ func _test_routing_lives_in_one_place() -> void:
 	# An unregistered power gets the old road, never the new one by default.
 	assert(rules.pipeline_for("summon_locusts") == DivineActionRules.PIPELINE_LEGACY,
 		"an unregistered power was silently granted the shared pipeline")
-	assert(rules.shared_pipeline_actions() == ["bless_harvest", "send_rain"],
+	assert(rules.shared_pipeline_actions() == ["bless_harvest", "send_rain", "smite"],
 		"the migrated set is not what CLAUDE.md records: %s"
 			% str(rules.shared_pipeline_actions()))
 	print("  ONE SURFACE: %d powers registered, %d on the shared road." % [

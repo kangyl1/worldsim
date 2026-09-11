@@ -562,7 +562,7 @@ func _test_other_powers_are_unchanged() -> void:
 		assert(not str(result["interpretation"]).is_empty(),
 			"an unmigrated power lost its collective meaning")
 	var rules := DivineActionRules.new()
-	assert(rules.shared_pipeline_actions() == ["bless_harvest", "send_rain"],
+	assert(rules.shared_pipeline_actions() == ["bless_harvest", "send_rain", "smite"],
 		"the migrated set is not what CLAUDE.md records: %s"
 			% str(rules.shared_pipeline_actions()))
 	print("  LEGACY KEPT: %s still read collectively." % str(result["interpretation"]))

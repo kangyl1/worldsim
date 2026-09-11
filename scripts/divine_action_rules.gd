@@ -104,6 +104,28 @@ const DIVINE_ACTIONS := {
 			"confidence": 90
 		}
 	},
+	# Smite DESTROYS. It does not kill: Take Life is a separate power and is not
+	# built. A smite may one day end lives, but only as a consequence of the
+	# destruction, never as its definition — and nothing in the world currently
+	# models a life ending, so v1 destroys only what the simulation actually
+	# holds.
+	#
+	# ONE-SHOT ONLY, deliberately, even though the intervention machinery would
+	# carry a standing order without complaint. A permanent destructive field
+	# raises questions nothing here can answer — is it one strike a year, is it
+	# perceived afresh each time, does it ever stop being news — and an
+	# unanswered semantic is worse than a missing feature. A sustained smite is
+	# REFUSED rather than quietly performed once.
+	"smite": {
+		"pipeline": PIPELINE_SHARED,
+		"modes": [MODE_ONCE],
+		"occurrence": {
+			"topic": "divine_destruction",
+			"claim": "A destructive force struck %s",
+			"observability": "local",
+			"confidence": 95
+		}
+	},
 	"speak_mortal": {
 		"pipeline": PIPELINE_LEGACY,
 		"occurrence": {
@@ -171,6 +193,21 @@ func normalise_intensity(intensity: String) -> String:
 
 func normalise_mode(action_id: String, mode: String) -> String:
 	return mode if supports_mode(action_id, mode) else DEFAULT_MODE
+
+
+# Asking a power for a duration it does not have is REFUSED, not quietly
+# reshaped. `normalise_mode` still exists for callers that name no mode at all
+# and get the default; this is for the caller who names one the power cannot do.
+#
+# The distinction matters most for a one-shot power. Silently turning "smite
+# this place every year until I say stop" into a single strike would perform
+# something the player did not ask for and hide that it had done so.
+func mode_error(action_id: String, mode: String) -> String:
+	if mode.is_empty() or supports_mode(action_id, mode):
+		return ""
+	if mode not in MODES:
+		return "That is not a way an act can be carried out."
+	return "%s cannot be carried out that way; it happens once or not at all." % action_id
 
 
 # A finite order must say how long it runs, in range. REJECTED rather than

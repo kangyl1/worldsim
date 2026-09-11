@@ -1290,6 +1290,32 @@ func _developer_chronicle_lines() -> Array[String]:
 			lines.append(_dev_field("  category %s" % category, str(in_category)))
 	lines.append("[color=#73627f]  region: no region entity exists in the world model yet.[/color]")
 
+	# Destructive acts, and exactly what they moved. Kept separate from the
+	# divine section's other powers because the question a reader has about a
+	# smite is "what did it break", and that answer is the state changes.
+	var smitings: Array[Dictionary] = []
+	for record: Dictionary in state.divine_action_archive:
+		if str(record["action_type"]) == "smite":
+			smitings.append(record)
+	lines.append("")
+	lines.append(_dev_heading("SMITE  ·  %d destructive acts" % smitings.size()))
+	if smitings.is_empty():
+		lines.append("[color=#73627f]No destructive force has been used.[/color]")
+	for record: Dictionary in _tail(smitings, DEV_LIST_LIMIT):
+		lines.append("[color=#d66a5e]  y%-4d %-10s %-13s cost %d[/color]" % [
+			int(record["year"]), str(record["target_id"]),
+			str((record["parameters"] as Dictionary).get("intensity", "?")),
+			int(record["power_cost"])
+		])
+		lines.append(_dev_field("      occurrence", _or_none(str(record["consequence_id"]))))
+		lines.append(_dev_field("      topic", _or_none(str(record.get("occurrence_topic", "")))))
+		var consequence: Dictionary = state.get_consequence(str(record["consequence_id"]))
+		for change_value in consequence.get("state_changes", []):
+			var change: Dictionary = change_value
+			lines.append("[color=#8d989d]        %s %s -> %s[/color]" % [
+				str(change["field"]), str(change["before"]), str(change["after"])
+			])
+
 	# The same records grouped into readable stories. A VIEW: every episode is
 	# rebuilt from the chronicle above, points at its members by id, and stores
 	# nothing of its own.

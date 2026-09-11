@@ -122,6 +122,17 @@ const SUPPORTS := {
 	],
 	# Standing water where you live is evidence the place cannot keep you safe,
 	# however it got there.
+	# A place that was struck is a place that can be struck.
+	"destruction_is_ruin": [
+		{"proposition": HOME_IS_UNSAFE, "weight": 18}
+	],
+	# Concluding nothing mortal did it is evidence that something acts, and
+	# evidence that home is not safe. It is NOT evidence about whether help
+	# follows need — a destructive act says nothing either way about that.
+	"destruction_was_not_mortal": [
+		{"proposition": DIVINE_INTERVENTION_EXISTS, "weight": 20},
+		{"proposition": HOME_IS_UNSAFE, "weight": 14}
+	],
 	"flood_is_disaster": [
 		{"proposition": HOME_IS_UNSAFE, "weight": 16}
 	],

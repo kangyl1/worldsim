@@ -5085,6 +5085,49 @@ High divine magnitude is allowed to exceed ordinary biological recovery. Dependi
 
 Do not implement these effects before injury, disease, aging, or body-state systems exist. A divine power may only modify something the world can actually represent.
 
+### Smite v1 — as built
+
+Smite is a direct destructive divine force. It does not mean *set target dead*.
+
+> **Smite destroys. Take Life kills. A smite may one day end lives, but only as
+> a consequence of destruction, never as its definition.**
+
+**v1 destroys only what the world actually models.** There is no health, no
+building durability and no casualty system, so a smite moves the three
+settlement bands and nothing else — order first, then the means to live, then
+the stores. Population is deliberately untouched even though it is a modelled
+number: moving it would be the simulation asserting that people died when
+nothing here models a death.
+
+    gentle        stability -1
+    normal        stability -1, prosperity -1
+    strong        stability -2, prosperity -1, food -1
+    overwhelming  stability -3, prosperity -2, food -2
+
+Monotonic by construction: no band falls less at a higher intensity, and the
+total always grows. Costs scale with it — 2 / 3 / 5 / 8 — through an optional
+per-intensity price a power may declare; every other power keeps the flat cost
+it had.
+
+**Location targets only.** A person has no physical state that destruction
+could honestly touch, so person-target Smite waits for a health model rather
+than pretending to injure someone.
+
+**One-shot only, and a sustained smite is REFUSED rather than quietly performed
+once.** A permanent destructive field raises semantics nothing can answer — one
+strike a year, perceived afresh each time, never stopping being news — and an
+unanswered semantic is worse than a missing feature.
+
+**Destruction is objective. Meaning is mortal.** The world records that a
+destructive force struck a place. It does not record why, because there is no
+why: pressing Smite does not make the act a punishment. A mortal may conclude
+that nothing of this world did it, and that conclusion feeds the convictions
+they already had available — that something acts, and that home is not safe.
+Nobody is told it was deserved.
+
+**No recovery rule.** A smite is not a debuff that wears off. It changes the
+world, and the world's own drift and events take it from there.
+
 ### Take Life is distinct from Smite
 
 Worldsim should distinguish deliberate divine death from destructive manifestation.

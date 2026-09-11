@@ -53,6 +53,20 @@ const ACTIONS := {
 		"cost": 1,
 		"hint": "Strengthen the coming yield"
 	},
+	# The only power whose price varies with how hard it is used. `costs`
+	# overrides the flat `cost` where a power declares it; every other power
+	# keeps the single price it already had, so no existing balance moves.
+	"smite": {
+		"title": "SMITE",
+		"cost": 3,
+		"costs": {
+			DivineActionRules.INTENSITY_GENTLE: 2,
+			DivineActionRules.INTENSITY_NORMAL: 3,
+			DivineActionRules.INTENSITY_STRONG: 5,
+			DivineActionRules.INTENSITY_OVERWHELMING: 8
+		},
+		"hint": "Bring destructive force down upon a place"
+	},
 	"speak_mortal": {
 		"title": "SPEAK THROUGH A MORTAL",
 		"cost": 1,
@@ -368,11 +382,20 @@ func resolve_action(
 		return {"ok": false, "message": "That action is unknown."}
 
 	var action: Dictionary = actions[action_id]
-	var cost := int(action["cost"])
+	var chosen_intensity := divine_action_rules.normalise_intensity(intensity)
+	# A power may price itself by how hard it is used. Most do not, and keep the
+	# single cost they always had.
+	var cost := int((action.get("costs", {}) as Dictionary).get(
+		chosen_intensity, int(action["cost"])
+	))
 	if state.divine_power < cost:
 		return {"ok": false, "message": "Insufficient Divine Power. Choose another response."}
 
-	var chosen_intensity := divine_action_rules.normalise_intensity(intensity)
+	# Refused before anything is spent: a power asked to run in a way it cannot
+	# run does not quietly do something else instead.
+	var mode_problem := divine_action_rules.mode_error(action_id, mode)
+	if not mode_problem.is_empty():
+		return {"ok": false, "message": mode_problem}
 	var chosen_mode := divine_action_rules.normalise_mode(action_id, mode)
 	# Checked BEFORE anything is spent or changed, so a refused order costs the
 	# player nothing and leaves the turn untouched. An out-of-range duration is
@@ -1385,6 +1408,55 @@ func _settlement_changes(location_id: String, before: Dictionary) -> Array:
 	return changes
 
 
+# What destruction does to a place, in the only terms this world has.
+#
+# The settlement bands ARE the model: there is no health, no building
+# durability, no population casualty system, and inventing numbers for them
+# would be spectacle rather than simulation. So a smite takes order first,
+# then the means to live, then the stores — which is what a destructive force
+# does to a settlement described only by those three things.
+#
+# Monotonic by construction: no band falls less at a higher intensity than at a
+# lower one, and the total always grows. Prototype tuning, not final balance.
+const SMITE_DAMAGE := {
+	DivineActionRules.INTENSITY_GENTLE:
+		{"stability": -1},
+	DivineActionRules.INTENSITY_NORMAL:
+		{"stability": -1, "prosperity": -1},
+	DivineActionRules.INTENSITY_STRONG:
+		{"stability": -2, "prosperity": -1, "food": -1},
+	DivineActionRules.INTENSITY_OVERWHELMING:
+		{"stability": -3, "prosperity": -2, "food": -2}
+}
+
+
+# A destructive divine force, and NOTHING about why it came.
+#
+# Population is deliberately untouched. It is a modelled number, so moving it
+# would be easy — and it would be the simulation asserting that people died
+# when nothing here models a death, an injury or a ruin. The damage stops at
+# what the world can honestly describe, and Take Life remains a separate power
+# that does not exist yet.
+func _resolve_smite(
+	location_id: String, intensity: String = DivineActionRules.DEFAULT_INTENSITY
+) -> String:
+	var place := state.location_name(location_id)
+	state.intervention_counts["smote"] = int(state.intervention_counts.get("smote", 0)) + 1
+	var damage: Dictionary = SMITE_DAMAGE.get(intensity, SMITE_DAMAGE[DivineActionRules.DEFAULT_INTENSITY])
+	var fell: Array[String] = []
+	for band_value in damage:
+		var band := str(band_value)
+		var before := state.get_settlement_band(location_id, band)
+		state.change_settlement_band(location_id, band, int(damage[band]))
+		var after := state.get_settlement_band(location_id, band)
+		if after != before:
+			fell.append(band)
+	if fell.is_empty():
+		# Honest: there was nothing left here to break.
+		return "The force falls on %s, and finds nothing left to break." % place
+	return "A destructive force strikes %s." % place
+
+
 func _apply_immediate_action(
 	action_id: String,
 	location_id: String,
@@ -1395,6 +1467,8 @@ func _apply_immediate_action(
 			return _resolve_send_rain(location_id, intensity)
 		"bless_harvest":
 			return _resolve_bless_harvest(location_id, intensity)
+		"smite":
+			return _resolve_smite(location_id, intensity)
 		"speak_mortal":
 			return _resolve_speak_mortal()
 		"do_nothing":

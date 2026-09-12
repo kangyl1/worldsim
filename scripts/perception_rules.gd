@@ -57,13 +57,25 @@ const PATHWAY_COST_REASONS := {
 # One observer's chance at one event. Reads the world and changes nothing, so
 # the caller can evaluate every observer against the same snapshot before any
 # of them learns anything.
-func evaluate(state: WorldState, fact: Dictionary, observer_id: String) -> Dictionary:
+func evaluate(state: WorldState, raw_fact: Dictionary, observer_id: String) -> Dictionary:
+	# Resolved here rather than demanded of every caller. An occurrence that
+	# says where it happened is left exactly as it is; one that does not has
+	# its location worked out from its subject — the subject itself when that
+	# is a place, and the person's own settlement when it is somebody. That is
+	# what keeps every fact written before this distinction existed working
+	# unchanged, without letting a person-subject occurrence through with
+	# nowhere attached.
+	var fact := state.normalise_occurrence(raw_fact)
 	var observer := state.get_notable_entity(observer_id)
 	var opportunity := {
 		"event_id": str(fact.get("event_id", "")),
 		"observer_id": observer_id,
 		"observer_name": str(observer.get("name", observer_id)),
 		"subject_id": str(fact.get("subject_id", "")),
+		# What it was about, and where it happened, kept apart all the way
+		# through so a later reader cannot mistake one for the other.
+		"subject_type": str(fact.get("subject_type", "")),
+		"location_id": str(fact.get("location_id", "")),
 		"topic_id": str(fact.get("id", "")),
 		"observability": _mode_of(fact),
 		"eligible": false,
@@ -77,11 +89,21 @@ func evaluate(state: WorldState, fact: Dictionary, observer_id: String) -> Dicti
 	if observer.is_empty():
 		opportunity["reason"] = "unknown_observer"
 		return opportunity
+	# The tick already offers chances to the living only. This says the same
+	# thing again here, so the answer is honest for any caller asking directly
+	# — including one written later that forgets the loop ever filtered.
+	if not state.is_alive(observer_id):
+		opportunity["reason"] = "not_among_the_living"
+		return opportunity
 
 	var mode := str(opportunity["observability"])
 	var participants: Array = fact.get("participants", [])
 	var home := str(observer.get("home_location_id", ""))
-	var subject_id := str(opportunity["subject_id"])
+	# WHERE it happened, not what it was about. Comparing a home against the
+	# SUBJECT worked only while every local occurrence was about a place; a
+	# force striking Mara has subject `mara`, and no observer's home is ever a
+	# person, so nobody would have perceived it at all.
+	var where := str(opportunity["location_id"])
 	var pathway := ""
 
 	# Being part of something always beats being near it. A participant
@@ -97,7 +119,10 @@ func evaluate(state: WorldState, fact: Dictionary, observer_id: String) -> Dicti
 				if home.is_empty():
 					opportunity["reason"] = "no_home_location"
 					return opportunity
-				if home != subject_id:
+				if where.is_empty():
+					opportunity["reason"] = "occurrence_has_no_location"
+					return opportunity
+				if home != where:
 					opportunity["reason"] = "elsewhere"
 					return opportunity
 				pathway = "local"

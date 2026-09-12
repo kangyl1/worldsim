@@ -5128,6 +5128,49 @@ Nobody is told it was deserved.
 **No recovery rule.** A smite is not a debuff that wears off. It changes the
 world, and the world's own drift and events take it from there.
 
+### Person-Subject Perception v1 — as built
+
+> **Every occurrence has a subject and may have a location.**
+
+> **The subject tells us what the occurrence is about. The location tells us
+> where it happened.**
+
+    location event                 person event
+    subject_type: "location"       subject_type: "person"
+    subject_id:   "aster"          subject_id:   "mara"
+    location_id:  "aster"          location_id:  "westfield"
+
+> **Local observability is determined by the event's LOCATION, never by
+> assuming the subject is a place.**
+
+For years those were the same thing and nothing needed to tell them apart: a
+drought in Aster is about Aster. So perception decided who saw something local
+by comparing an observer's home against the occurrence's SUBJECT. That works
+until an occurrence is about a person — a force striking Mara in Westfield has
+subject `mara`, no observer's home is ever `mara`, and the event would have
+been perceived by nobody at all.
+
+**A person's location is their home, and only until movement exists.** One
+helper answers it, so the day movement arrives it is that function which
+changes and not perception, history or any power.
+
+**Resolution, not guesswork.** An occurrence that states its own type and
+location is left untouched; one that does not has them worked out from whether
+its subject id is a registered settlement or a registered person. A subject
+that is neither keeps an empty type rather than being assigned one. This is
+what lets every occurrence written before the distinction existed keep working
+unchanged.
+
+**A power aimed at a person is refused, not redirected.** `smite("mara")` named
+a real entity, matched no settlement, and used to land quietly on whatever
+settlement the year's event was in — the god struck a village believing they
+had struck somebody. An unknown id still falls back, which is the documented
+guard against a stale selection stranding the player; a known person is a
+deliberate aim at something the power cannot reach, and is told so.
+
+Person-target Smite, Heal, Take Life and Resurrection remain unbuilt. This is
+the foundation every one of them was waiting on.
+
 ### Mortal Physical State v1 — as built
 
 > **Mortals may be physically harmed independently of their beliefs,

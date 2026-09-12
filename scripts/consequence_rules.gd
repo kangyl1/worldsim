@@ -164,6 +164,8 @@ func plan_divine(
 		"id": "%s_%04d_%s" % [location_id, state.year, str(template["topic"])],
 		"event_id": action_id,
 		"subject_id": location_id,
+		"subject_type": WorldState.SUBJECT_LOCATION,
+		"location_id": location_id,
 		"topic": str(template["topic"]),
 		"claim": str(template["claim"]) % state.location_name(location_id),
 		"confidence": int(template["confidence"]),
@@ -183,7 +185,9 @@ func plan_divine(
 func apply(state: WorldState, record: Dictionary) -> Dictionary:
 	var fact: Dictionary = record.get("pending_fact", {})
 	if not fact.is_empty():
-		state.pending_perception_facts.append(fact)
+		# Through the normalising door, so the occurrence states where it
+		# happened even when its subject is a person.
+		state.offer_perceivable_fact(fact)
 		record["events_created"].append(str(fact["id"]))
 		# Keep what this occurrence STATED, so the record can describe itself
 		# after the fact has been handed to perception. The claim is objective by

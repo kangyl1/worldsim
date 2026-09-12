@@ -153,7 +153,10 @@ func _test_the_record_is_shaped_around_acts_not_rain() -> void:
 	var result := simulation.resolve_action("send_rain") as Dictionary
 	var record: Dictionary = simulation.state.get_divine_action(str(result["divine_action_id"]))
 	var required := [
-		"id", "year", "action_type", "target_id", "subject_id", "parameters",
+		"id", "year", "action_type", "target_id",
+		# Person-Subject Perception v1: what KIND of thing was aimed at, so a
+		# later power can be pointed at somebody without any caller inferring it.
+		"target_type", "subject_id", "parameters",
 		"power_cost", "result", "consequence_id", "pipeline", "occurrence_topic"
 	]
 	for field: String in required:

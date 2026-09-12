@@ -491,6 +491,81 @@ func add_notable_entity(
 	return true
 
 
+# --- occurrence subjects ----------------------------------------------------
+#
+# THE SUBJECT IS WHAT AN OCCURRENCE IS ABOUT. THE LOCATION IS WHERE IT
+# HAPPENED. They are the same thing only by coincidence.
+#
+# For a drought in Aster the subject IS the place, and for years nothing needed
+# to tell them apart — so perception decided who saw something local by
+# comparing an observer's home against the occurrence's SUBJECT. That works
+# perfectly until an occurrence is about a person: a force striking Mara in
+# Westfield has subject `mara`, no observer's home is ever `mara`, and nobody
+# would perceive it at all.
+#
+# Every perceivable occurrence therefore carries both, and locality reads the
+# location. This is what person-target Smite, Heal and Take Life were all
+# waiting on; none of them is built here.
+const SUBJECT_LOCATION := "location"
+const SUBJECT_PERSON := "person"
+const SUBJECT_TYPES := [SUBJECT_LOCATION, SUBJECT_PERSON]
+
+
+# Where a person is, for the purposes of anything that cares.
+#
+# v1 answers with their HOME, because movement does not exist: an entity has an
+# association with a settlement and no position. Every caller goes through here
+# rather than reaching for `home_location_id` itself, so the day movement
+# arrives it is this function that changes and nothing else.
+func location_of_person(entity_id: String) -> String:
+	if not notable_entities.has(entity_id):
+		return ""
+	return str((notable_entities[entity_id] as Dictionary).get("home_location_id", ""))
+
+
+func subject_type_of(subject_id: String) -> String:
+	if locations.has(subject_id):
+		return SUBJECT_LOCATION
+	if notable_entities.has(subject_id):
+		return SUBJECT_PERSON
+	return ""
+
+
+func location_of_subject(subject_type: String, subject_id: String) -> String:
+	match subject_type:
+		SUBJECT_LOCATION:
+			return subject_id if locations.has(subject_id) else ""
+		SUBJECT_PERSON:
+			return location_of_person(subject_id)
+	return ""
+
+
+# Fills in what an occurrence did not say, and nothing it did.
+#
+# Resolution, not guesswork: the subject's type comes from whether the id is a
+# registered location or a registered entity, and a subject that is neither
+# keeps an empty type rather than being quietly assigned one. An occurrence
+# that states its own location or type is left alone.
+func normalise_occurrence(fact: Dictionary) -> Dictionary:
+	var record := fact.duplicate(true)
+	var subject_id := str(record.get("subject_id", ""))
+	var subject_type := str(record.get("subject_type", ""))
+	if subject_type.is_empty():
+		subject_type = subject_type_of(subject_id)
+	record["subject_type"] = subject_type
+	if str(record.get("location_id", "")).is_empty():
+		record["location_id"] = location_of_subject(subject_type, subject_id)
+	return record
+
+
+# The one door a perceivable occurrence comes through, so nothing can be
+# offered to the world without saying where it happened.
+func offer_perceivable_fact(fact: Dictionary) -> Dictionary:
+	var record := normalise_occurrence(fact)
+	pending_perception_facts.append(record)
+	return record
+
+
 # --- physical state ---------------------------------------------------------
 
 func is_alive(entity_id: String) -> bool:

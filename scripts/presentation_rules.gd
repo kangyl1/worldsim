@@ -322,3 +322,20 @@ static func physical_sentence(condition: String, person_name: String) -> String:
 	if person_name.is_empty() or not PHYSICAL_SENTENCES.has(condition):
 		return ""
 	return str(PHYSICAL_SENTENCES[condition]) % person_name
+
+
+# --- occurrence subjects ------------------------------------------------------
+#
+# What an occurrence was about, said in words. A place needs no "in": the
+# settlement IS the subject. A person does, because where it happened to them
+# is a separate fact and the sentence loses it otherwise.
+static func occurrence_subject_phrase(
+	subject_type: String, subject_name: String, location_name: String
+) -> String:
+	if subject_name.is_empty():
+		return ""
+	if subject_type != WorldState.SUBJECT_PERSON:
+		return subject_name
+	if location_name.is_empty() or location_name == subject_name:
+		return subject_name
+	return "%s in %s" % [subject_name, location_name]

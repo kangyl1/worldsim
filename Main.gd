@@ -1348,6 +1348,30 @@ func _developer_chronicle_lines() -> Array[String]:
 			simulation.episode_rules.standalone_for_location(state, location_id).size()
 		)))
 
+	# What each occurrence was ABOUT and WHERE it happened, side by side, plus
+	# who could see it and why not. Targeting bugs are invisible until these
+	# two columns are shown together.
+	lines.append("")
+	lines.append(_dev_heading("OCCURRENCES  ·  subject vs location"))
+	if state.last_perceptions.is_empty():
+		lines.append("[color=#73627f]Nothing was offered to notice this year.[/color]")
+	var seen_topics: Dictionary = {}
+	for chance: Dictionary in state.last_perceptions:
+		var topic := str(chance["topic_id"])
+		if not seen_topics.has(topic):
+			seen_topics[topic] = true
+			lines.append("[color=#cfd6d8]  %s[/color]" % topic)
+			lines.append("[color=#8d989d]     subject %s (%s)   at %s   %s[/color]" % [
+				_or_none(str(chance["subject_id"])),
+				_or_none(str(chance.get("subject_type", ""))),
+				_or_none(str(chance.get("location_id", ""))),
+				str(chance["observability"])
+			])
+		lines.append("[color=#8d989d]       %-12s %s[/color]" % [
+			str(chance["observer_name"]),
+			"perceived" if bool(chance["perceived"]) else "missed — %s" % str(chance["reason"])
+		])
+
 	# Who is alive, how hurt they are, and whether they can still act.
 	lines.append("")
 	lines.append(_dev_heading("PHYSICAL STATE  ·  life, injury and agency"))

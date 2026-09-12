@@ -404,6 +404,22 @@ func resolve_action(
 	if not duration_problem.is_empty():
 		return {"ok": false, "message": duration_problem}
 
+	# A power aimed at a PERSON is refused, not redirected — and refused HERE,
+	# before a single point of divine power is spent.
+	#
+	# This was the dangerous ambiguity: `smite("mara")` named a real entity, no
+	# settlement matched, and the act quietly landed on whatever settlement the
+	# year's event happened to be in. The god struck a village believing they
+	# had struck somebody. An unknown id still falls back — that is the
+	# documented guard against a stale interface selection stranding the player
+	# — but a known person is a deliberate aim at something this power cannot
+	# reach, and saying so is the only honest answer.
+	if state.notable_entities.has(target_location_id):
+		return {
+			"ok": false,
+			"message": "%s cannot be aimed at a person." % str(action["title"])
+		}
+
 	# A fresh turn: last turn's crossings are no longer news.
 	state.last_water_events = []
 	state.last_abundance_events = []
@@ -1154,6 +1170,9 @@ func apply_divine_effect(
 		"year": state.year,
 		"action_type": action_id,
 		"target_id": location_id,
+		# Explicit, so Heal and Take Life can later be aimed at a person
+		# without any caller having to infer what kind of thing was targeted.
+		"target_type": WorldState.SUBJECT_LOCATION,
 		"subject_id": state.current_event_id,
 		"parameters": {"event_id": state.current_event_id, "intensity": intensity},
 		"power_cost": power_cost,
@@ -1581,7 +1600,7 @@ func _offer_water_fact(location_id: String, water_state: String) -> void:
 	var template: Dictionary = WATER_KNOWLEDGE.get(water_state, {})
 	if template.is_empty():
 		return
-	state.pending_perception_facts.append({
+	state.offer_perceivable_fact({
 		"id": "%s_%s" % [location_id, str(template["id_suffix"])],
 		"event_id": str(template["topic"]),
 		"subject_id": location_id,
@@ -1672,7 +1691,7 @@ func _offer_abundance_fact(location_id: String, abundance_state: String) -> void
 		"abundance_state": abundance_state,
 		"year": state.year
 	})
-	state.pending_perception_facts.append({
+	state.offer_perceivable_fact({
 		"id": "%s_%s" % [location_id, str(template["id_suffix"])],
 		"event_id": str(template["topic"]),
 		"subject_id": location_id,

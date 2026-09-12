@@ -290,3 +290,35 @@ static func topic_phrase(topic: String) -> String:
 	if TOPIC_PHRASES.has(topic):
 		return str(TOPIC_PHRASES[topic])
 	return topic.replace("_", " ")
+
+
+# --- physical condition -------------------------------------------------------
+#
+# One number underneath, a word on the surface. Raw damage is Developer Mode's;
+# the player is told how somebody is, not what they score.
+const PHYSICAL_LABELS := {
+	"healthy": "Unhurt",
+	"hurt": "Hurt",
+	"seriously_injured": "Seriously injured",
+	"critical": "Gravely injured",
+	"dead": "Dead"
+}
+
+# What a change of physical state sounds like. States the transition and stops:
+# there is no anatomy here to describe, so nothing may describe one.
+const PHYSICAL_SENTENCES = {
+	"hurt": "%s was hurt.",
+	"seriously_injured": "%s was seriously injured.",
+	"critical": "%s was gravely injured.",
+	"dead": "%s died."
+}
+
+
+static func physical_label(condition: String) -> String:
+	return str(PHYSICAL_LABELS.get(condition, condition.replace("_", " ")))
+
+
+static func physical_sentence(condition: String, person_name: String) -> String:
+	if person_name.is_empty() or not PHYSICAL_SENTENCES.has(condition):
+		return ""
+	return str(PHYSICAL_SENTENCES[condition]) % person_name

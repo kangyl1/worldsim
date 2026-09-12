@@ -629,6 +629,16 @@ func evaluate_knowledge_share(
 func share_knowledge(source_id: String, target_id: String, knowledge_id: String) -> Dictionary:
 	var evaluation := evaluate_knowledge_share(source_id, target_id, knowledge_id)
 	evaluation["shared"] = false
+	# The one funnel every route to somebody else's knowledge passes through,
+	# which is why the guard belongs here rather than at each caller. Gating
+	# only who may SPEAK left the dead still being spoken to: the King went on
+	# learning things for years after he died, because Mara was still telling
+	# him. Neither half of a conversation survives death.
+	if not state.is_alive(source_id) or not state.is_alive(target_id):
+		evaluation["allowed"] = false
+		evaluation["reason"] = "not_among_the_living"
+		_log_knowledge_share(evaluation)
+		return evaluation
 	if not bool(evaluation["allowed"]):
 		_log_knowledge_share(evaluation)
 		return evaluation
@@ -672,8 +682,9 @@ func share_knowledge(source_id: String, target_id: String, knowledge_id: String)
 func tick_knowledge() -> Array[Dictionary]:
 	state.age_knowledge()
 	var attempts: Array[Dictionary] = []
-	var source_ids: Array = state.notable_entities.keys()
-	source_ids.sort()
+	# The living only. Death ends agency; it does not delete anybody from the
+	# world, and what they already knew stays exactly where it was.
+	var source_ids: Array = state.living_entity_ids()
 	for source_index in source_ids.size():
 		if attempts.size() >= KnowledgeRules.MAX_YEARLY_SHARES:
 			break
@@ -700,8 +711,9 @@ func tick_intents() -> Array[Dictionary]:
 	# Intentions only: this pass records what actors want, and changes nothing
 	# else in the world. Nobody attempts anything here.
 	var made: Array[Dictionary] = []
-	var actor_ids: Array = state.notable_entities.keys()
-	actor_ids.sort()
+	# The dead want nothing. Action selection and execution both read from the
+	# intents formed here, so gating this one gates all three.
+	var actor_ids: Array = state.living_entity_ids()
 	for actor_index in actor_ids.size():
 		if made.size() >= IntentRules.MAX_INTENTS_PER_YEAR:
 			break
@@ -764,8 +776,8 @@ func tick_perception() -> Array[Dictionary]:
 	state.pending_perception_facts = []
 	if facts.is_empty():
 		return opportunities
-	var entity_ids: Array = state.notable_entities.keys()
-	entity_ids.sort()
+	# No ghost perception: the dead do not learn what happened after them.
+	var entity_ids: Array = state.living_entity_ids()
 	for fact: Dictionary in facts:
 		for entity_id_value in entity_ids:
 			opportunities.append(perception_rules.evaluate(state, fact, str(entity_id_value)))
@@ -942,6 +954,7 @@ func personal_chronicle(entity_id: String) -> Array[Dictionary]:
 	var entries: Array[Dictionary] = []
 	entries.append_array(chronicle_rules.personal_chronicle_for(state, entity_id))
 	entries.append_array(_belief_life_entries(entity_id))
+	entries.append_array(_physical_life_entries(entity_id))
 	entries.sort_custom(func(a, b): return int(a["year"]) < int(b["year"]))
 	return entries
 
@@ -954,6 +967,24 @@ func personal_chronicle(entity_id: String) -> Array[Dictionary]:
 # became convinced and unconvinced of the same thing seven times. The same
 # first-and-last rule the rest of the Personal Chronicle uses applies: where the
 # conviction arrived, and where it came to rest.
+# What happened to somebody's body, where it meaningfully changed.
+#
+# Only band changes are stored in the first place, so there is nothing here to
+# filter: accumulating damage without crossing a band is not an event in
+# anyone's life and never became a turning point. Death always is.
+func _physical_life_entries(entity_id: String) -> Array[Dictionary]:
+	var kept: Array[Dictionary] = []
+	for record: Dictionary in state.physical_turning_points_for(entity_id):
+		var entry := record.duplicate(true)
+		entry["entry_kind"] = "physical_turning_point"
+		entry["summary"] = PresentationRules.physical_sentence(
+			str(record["after_condition"]),
+			str(state.get_notable_entity(entity_id).get("name", entity_id))
+		)
+		kept.append(entry)
+	return kept
+
+
 func _belief_life_entries(entity_id: String) -> Array[Dictionary]:
 	var threads: Dictionary = {}
 	var order: Array[String] = []
@@ -1246,8 +1277,9 @@ func tick_interpretations() -> Array[Dictionary]:
 	# relationship move. Without that, whoever was iterated first would colour
 	# what the next one made of the same event.
 	var reached: Array[Dictionary] = []
-	var observer_ids: Array = state.notable_entities.keys()
-	observer_ids.sort()
+	# Nobody concludes anything after they are dead. Conclusions they already
+	# reached remain in the archive.
+	var observer_ids: Array = state.living_entity_ids()
 	for observer_id_value in observer_ids:
 		var observer_id := str(observer_id_value)
 		for knowledge: Dictionary in interpretation_rules.pending_for(state, observer_id):
@@ -1338,7 +1370,11 @@ func _knowledge_targets_for(source_id: String) -> Array[String]:
 		var relationship: Dictionary = relationship_value
 		if str(relationship["source_id"]) == source_id:
 			var target_id := str(relationship["target_id"])
-			if target_id not in targets:
+			# Nobody tells the dead anything. Gating only the SPEAKER left the
+			# dead still receiving rumours: the King went on learning things
+			# for years after he died, because somebody was still talking to
+			# him. Death ends both halves of a conversation.
+			if target_id not in targets and state.is_alive(target_id):
 				targets.append(target_id)
 	targets.sort()
 	return targets

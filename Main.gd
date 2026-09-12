@@ -1348,6 +1348,31 @@ func _developer_chronicle_lines() -> Array[String]:
 			simulation.episode_rules.standalone_for_location(state, location_id).size()
 		)))
 
+	# Who is alive, how hurt they are, and whether they can still act.
+	lines.append("")
+	lines.append(_dev_heading("PHYSICAL STATE  ·  life, injury and agency"))
+	for entity_id: String in state.notable_entities.keys():
+		var entity: Dictionary = state.get_notable_entity(entity_id)
+		lines.append("[color=#cfd6d8]  %-12s %-18s damage %-3d  %s[/color]" % [
+			str(entity.get("name", entity_id)),
+			PresentationRules.physical_label(state.physical_condition(entity_id)),
+			state.get_physical_damage(entity_id),
+			"may act" if state.is_alive(entity_id) else "NO AGENCY"
+		])
+		var death: Dictionary = state.get_death(entity_id)
+		if not death.is_empty():
+			lines.append("[color=#8d989d]        died y%d  cause %s  source %s %s[/color]" % [
+				int(death["year"]), str(death["cause_type"]),
+				str(death["source_type"]), _or_none(str(death["source_id"]))
+			])
+	var turns: Array = state.physical_turning_points
+	lines.append(_dev_field("  physical turning points", str(turns.size())))
+	for turn: Dictionary in _tail(turns, DEV_LIST_LIMIT):
+		lines.append("[color=#8d989d]    y%-4d %-12s %s -> %s  (+%d)[/color]" % [
+			int(turn["year"]), str(turn["entity_id"]),
+			str(turn["before_condition"]), str(turn["after_condition"]), int(turn["amount"])
+		])
+
 	# The moments a conviction changed state. Stored apart from the chronicle on
 	# purpose: a private belief is not something that happened in the world, and
 	# these reach only the holder's own Personal Chronicle.

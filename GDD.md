@@ -5128,6 +5128,67 @@ Nobody is told it was deserved.
 **No recovery rule.** A smite is not a debuff that wears off. It changes the
 world, and the world's own drift and events take it from there.
 
+### Mortal Physical State v1 — as built
+
+> **Mortals may be physically harmed independently of their beliefs,
+> relationships, or social state.**
+
+> **Injury is physical state. Death is life state.** They are related and not
+> identical.
+
+> **Physical damage may cause death. Direct divine death will be a separate
+> mechanism.**
+
+That last line is why there are two fields rather than one number meaning both.
+A future Take Life ends a life WITHOUT physical damage; a model where death is
+merely "damage at maximum" could not express it.
+
+**This is not hit points.** No anatomy, no blood, no limbs, no stamina, no
+armour, no combat. One bounded number per person saying how badly hurt they
+are, because that is the smallest thing that can honestly carry a future Heal,
+Take Life or Resurrection.
+
+    0-19   unhurt        45-69  seriously injured
+    20-44  hurt          70-99  gravely injured        100  dead
+
+`apply_physical_damage(entity, amount, source)` is **generic on purpose**. A
+future fire, collapse, battle or falling rock calls exactly this; nothing about
+it belongs to any one power. Damage is monotonic and bounded, the dead cannot be
+harmed further, and `source` carries structured provenance so a death stays
+answerable by what caused it rather than by parsing prose.
+
+**No recovery.** Nothing heals on its own. Adding regeneration because games
+usually have it would be inventing a medical system nobody designed; Heal will
+own that question when it exists.
+
+#### Death ends agency, not existence in history
+
+A dead mortal forms no intents, takes no actions, perceives nothing new and
+neither tells nor is told. Everything they were stays exactly where it was:
+traits, relationships, beliefs, knowledge, their Personal Chronicle and every
+record naming them remain inspectable. **Dead does not mean deleted.**
+
+The knowledge guard sits at `learn_knowledge`, the single funnel every route to
+knowing anything passes through — gating only the speakers was not enough, and
+the dead went on being told things for years.
+
+#### Physical turning points
+
+Only a change of BAND is a moment in a life; accumulating damage without
+crossing one is not. Those moments live in their own store and reach the
+holder's Personal Chronicle, exactly as belief turning points do, and for the
+same reason: being hurt is not automatically something that happened to the
+world, and history must not grow a source made of every scratch.
+
+#### Person-target Smite is NOT built
+
+Smite still targets locations only. Person targeting is not a small addition:
+divine targeting resolves against settlements, the consequence layer builds a
+location-subject occurrence, and **perception decides who saw something local by
+comparing an observer's home against the occurrence's subject** — which assumes
+that subject is a place. A person subject would be perceived by nobody. That is
+a targeting and perception pass of its own, not a line in this one.
+
 ### Take Life is distinct from Smite
 
 Worldsim should distinguish deliberate divine death from destructive manifestation.

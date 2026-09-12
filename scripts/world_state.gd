@@ -311,6 +311,51 @@ var chronicle: Array[Dictionary] = []
 # divine path appends to, this one is what individual people accept. Belief
 # Formation v1 neither reads nor writes the legacy list, nor `faith`, nor
 # `followers`.
+# --- Mortal Physical State v1 -----------------------------------------------
+#
+# Mortals may be physically harmed independently of what they believe, who they
+# trust, or how their settlement is doing.
+#
+# INJURY IS PHYSICAL STATE. DEATH IS LIFE STATE. They are related and not
+# identical: damage accumulates on one scale, and crossing its end changes the
+# other. A future Take Life will end a life WITHOUT physical damage, which is
+# exactly why the two are separate fields rather than one number meaning both.
+#
+# This is not hit points. There is no anatomy, no blood, no stamina, no armour
+# and no combat — one bounded number per person saying how badly hurt they are,
+# because that is the smallest thing that can honestly carry a future Heal,
+# Take Life or Resurrection.
+const PHYSICAL_MIN := 0
+const PHYSICAL_MAX := 100
+# Reaching this IS death. Damage cannot exceed it, so "how dead" is not a
+# quantity the model pretends to have.
+const LETHAL_DAMAGE := 100
+
+const CONDITION_HEALTHY := "healthy"
+const CONDITION_HURT := "hurt"
+const CONDITION_SERIOUS := "seriously_injured"
+const CONDITION_CRITICAL := "critical"
+const CONDITION_DEAD := "dead"
+const PHYSICAL_CONDITIONS := [
+	CONDITION_HEALTHY, CONDITION_HURT, CONDITION_SERIOUS,
+	CONDITION_CRITICAL, CONDITION_DEAD
+]
+
+# Upper bound of each band, in order. Prototype tuning, not final balance.
+const PHYSICAL_THRESHOLDS := [
+	{"condition": CONDITION_HEALTHY, "max": 19},
+	{"condition": CONDITION_HURT, "max": 44},
+	{"condition": CONDITION_SERIOUS, "max": 69},
+	{"condition": CONDITION_CRITICAL, "max": 99}
+]
+
+# The moments a body meaningfully changed state, kept apart from the entity and
+# apart from the chronicle for the same reason belief turning points are: a
+# person being hurt is not automatically something that happened to the world,
+# and history must not grow a source made of every scratch. These reach the
+# holder's own Personal Chronicle.
+var physical_turning_points: Array[Dictionary] = []
+
 var mortal_beliefs: Array[Dictionary] = []
 
 # The moments a belief meaningfully CHANGED STATE, kept apart from the beliefs
@@ -434,9 +479,147 @@ func add_notable_entity(
 		"traits": unique_traits,
 		"home_location_id": home_location_id if locations.has(home_location_id) else "",
 		"data": data.duplicate(true),
-		"knowledge": {}
+		"knowledge": {},
+		# Alive and unhurt unless something says otherwise. Every accessor
+		# below also defaults, so an entity built before this existed — or by a
+		# fixture that names neither field — reads as a healthy living person
+		# rather than as a corpse with no record.
+		"is_alive": true,
+		"physical_damage": PHYSICAL_MIN,
+		"death": {}
 	}
 	return true
+
+
+# --- physical state ---------------------------------------------------------
+
+func is_alive(entity_id: String) -> bool:
+	if not notable_entities.has(entity_id):
+		return false
+	# Defaulted, so an entity created before this field existed is alive rather
+	# than accidentally dead.
+	return bool((notable_entities[entity_id] as Dictionary).get("is_alive", true))
+
+
+func get_physical_damage(entity_id: String) -> int:
+	if not notable_entities.has(entity_id):
+		return 0
+	return int((notable_entities[entity_id] as Dictionary).get("physical_damage", PHYSICAL_MIN))
+
+
+func physical_condition(entity_id: String) -> String:
+	if not notable_entities.has(entity_id):
+		return ""
+	if not is_alive(entity_id):
+		return CONDITION_DEAD
+	return physical_condition_for(get_physical_damage(entity_id))
+
+
+func physical_condition_for(damage: int) -> String:
+	if damage >= LETHAL_DAMAGE:
+		return CONDITION_DEAD
+	for threshold: Dictionary in PHYSICAL_THRESHOLDS:
+		if damage <= int(threshold["max"]):
+			return str(threshold["condition"])
+	return CONDITION_CRITICAL
+
+
+func get_death(entity_id: String) -> Dictionary:
+	if not notable_entities.has(entity_id):
+		return {}
+	return ((notable_entities[entity_id] as Dictionary).get("death", {}) as Dictionary).duplicate(true)
+
+
+# Everyone still able to act. The one question every mortal loop asks.
+func living_entity_ids() -> Array[String]:
+	var found: Array[String] = []
+	var ids: Array = notable_entities.keys()
+	ids.sort()
+	for entity_id_value in ids:
+		if is_alive(str(entity_id_value)):
+			found.append(str(entity_id_value))
+	return found
+
+
+# THE generic way a mortal is physically harmed.
+#
+# Deliberately not Smite's: a future fire, collapse, battle or falling rock
+# calls exactly this. `source` carries structured provenance so a death can
+# later be told apart by what caused it — killed by a divine act, by a
+# disaster, or one day taken directly — without parsing prose.
+#
+# Damage is monotonic and bounded. It never decreases here (recovery, if it is
+# ever built, is its own mechanism), and it stops at the lethal bound so that
+# "how dead" is not a number this model pretends to have.
+func apply_physical_damage(
+	entity_id: String, amount: int, source: Dictionary = {}
+) -> Dictionary:
+	if not notable_entities.has(entity_id):
+		return {}
+	if amount <= 0:
+		return {}
+	# The dead cannot be harmed further. Damaging a corpse changes nothing, and
+	# must not overwrite how or when they actually died.
+	if not is_alive(entity_id):
+		return {}
+	var entity: Dictionary = notable_entities[entity_id]
+	var before := get_physical_damage(entity_id)
+	var before_condition := physical_condition(entity_id)
+	var after := clampi(before + amount, PHYSICAL_MIN, LETHAL_DAMAGE)
+	entity["physical_damage"] = after
+	var died := after >= LETHAL_DAMAGE
+	if died:
+		entity["is_alive"] = false
+		# Structured, not a sentence. What killed them has to stay answerable
+		# by a later system rather than by reading English.
+		entity["death"] = {
+			"year": year,
+			"cause_type": "physical_damage",
+			"source_type": str(source.get("source_type", "unknown")),
+			"source_id": str(source.get("source_id", "")),
+			"location_id": str(source.get("location_id",
+				entity.get("home_location_id", ""))),
+			"damage_at_death": after
+		}
+	notable_entities[entity_id] = entity
+	var after_condition := physical_condition(entity_id)
+	var change := {
+		"entity_id": entity_id,
+		"year": year,
+		"before": before,
+		"after": after,
+		"amount": after - before,
+		"before_condition": before_condition,
+		"after_condition": after_condition,
+		"died": died,
+		"source_type": str(source.get("source_type", "unknown")),
+		"source_id": str(source.get("source_id", ""))
+	}
+	# Only a change of BAND is a moment in a life. Accumulating three points of
+	# damage is not something a chronicle should ever mention.
+	if before_condition != after_condition:
+		record_physical_turning_point(change)
+	return change
+
+
+func record_physical_turning_point(change: Dictionary) -> Dictionary:
+	var stored := change.duplicate(true)
+	stored["id"] = "hurt_%04d_%s_%s" % [
+		int(stored["year"]), str(stored["entity_id"]), str(stored["after_condition"])
+	]
+	for existing: Dictionary in physical_turning_points:
+		if str(existing["id"]) == str(stored["id"]):
+			return existing
+	physical_turning_points.append(stored)
+	return stored
+
+
+func physical_turning_points_for(entity_id: String) -> Array[Dictionary]:
+	var found: Array[Dictionary] = []
+	for record: Dictionary in physical_turning_points:
+		if str(record["entity_id"]) == entity_id:
+			found.append(record)
+	return found
 
 
 func set_home_location(entity_id: String, location_id: String) -> bool:
@@ -813,6 +996,15 @@ func relationship_id(source_id: String, target_id: String) -> String:
 
 func learn_knowledge(entity_id: String, knowledge_data: Dictionary) -> Dictionary:
 	if not notable_entities.has(entity_id):
+		return {}
+	# THE funnel. Every route by which anybody comes to know anything passes
+	# here — perception, rumour, being told — so the dead are kept out of all
+	# of them in one place. Gating the speakers alone was not enough: the King
+	# went on learning things for years after he died, because somebody was
+	# still telling him and that path did not go through the sharing rules.
+	#
+	# What he already knew is untouched. Death ends learning, not memory.
+	if not is_alive(entity_id):
 		return {}
 	var knowledge_id := str(knowledge_data.get("id", ""))
 	if knowledge_id.is_empty():
